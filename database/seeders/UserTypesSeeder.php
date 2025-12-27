@@ -4,8 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-
+use App\Models\UserType;  // Assuming you have a UserType model
 
 class UserTypesSeeder extends Seeder
 {
@@ -14,11 +13,10 @@ class UserTypesSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('user_types')->insert([
-            ['type' => 'admin', 'description' => 'System Administrator'],
-            ['type' => 'staff', 'description' => 'Scholarship Coordinator'],
-            ['type' => 'student', 'description' => 'BISU Enrolled Student'],
-            ['type' => 'guest', 'description' => 'Visitor Access'],
-        ]);
+        // Use firstOrCreate to avoid duplicates
+        UserType::firstOrCreate(['type' => 'admin'], ['description' => 'System Administrator']);
+        UserType::firstOrCreate(['type' => 'staff'], ['description' => 'Scholarship Coordinator']);
+        UserType::firstOrCreate(['type' => 'student'], ['description' => 'BISU Enrolled Student']);
+        UserType::firstOrCreate(['type' => 'guest'], ['description' => 'Visitor Access']);
     }
 }

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,6 +17,12 @@ class DatabaseSeeder extends Seeder
             UserTypesSeeder::class,
             TestUsersSeeder::class,
         ]);
+
+
+        Role::create(['name' => 'Super Admin']);
+        Role::create(['name' => 'Scholarship Coordinator']);
+        Role::create(['name' => 'Student']);
+        Role::create(['name' => 'Guest']);
 
         // OPTIONAL: Create a test admin (you can remove if not needed)
         // \App\Models\User::factory()->create([

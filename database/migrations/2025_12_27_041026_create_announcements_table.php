@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_types', function (Blueprint $table) {
+        Schema::create('announcements', function (Blueprint $table) {
             $table->id();
-            $table->string('type')->unique(); 
-            // Example: admin, staff, student, guest
-            
-            $table->string('description')->nullable();
+            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
+            $table->string('title');
+            $table->text('desriptions');
+            $table->date('posted_on');
             $table->timestamps();
+            $table->date('when_released');
+            $table->date('when_received');
         });
     }
 
@@ -26,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_types');
+        Schema::dropIfExists('announcements');
     }
 };

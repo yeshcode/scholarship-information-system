@@ -14,18 +14,19 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             
                 $table->id();
-        
-                $table->foreignId('user_type_id')->default(3); // 1=admin, 2=staff, 3=student
+                $table->foreignId('user_type_id')->constrained('user_types')->onDelete('cascade');// 1=admin, 2=staff, 3=student
                 $table->string('user_id')->unique(); // Student number / staff ID
                 $table->string('bisu_email')->unique();
                 $table->string('firstname');
                 $table->string('lastname');
-                $table->string('validation')->default('pending');
                 $table->string('status')->default('active');
+                $table->string('contact_no');
+
         
                 $table->string('password');
                 $table->rememberToken();
-                $table->timestamps();
+                $table->timestamps('created_at');
+                $table->timestamps('updated_at');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
