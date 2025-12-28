@@ -16,4 +16,10 @@ class YearLevel extends Model
     {
         return $this->hasMany(Section::class, 'year_level_id', 'id');  // FK in sections: year_level_id, local PK: id
     }
+
+    // Added: hasMany users (reverse of User belongsTo yearLevel)
+    public function users()
+    {
+        return $this->hasMany(User::class, 'year_level_id', 'id');  // FK in users: year_level_id, local PK: id
+    }
 }

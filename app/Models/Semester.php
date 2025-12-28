@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Semester extends Model
 {
     protected $fillable = [
-        'term',
-        'academic_year',       // e.g., 'Fall 2023'
-        'start_date', // e.g., '2023-09-01'
-        'end_date', 
-        'is_current',  // e.g., '2023-12-31'
+        'term',             // e.g., 'Fall'
+        'academic_year',    // e.g., '2023'
+        'start_date',       // e.g., '2023-09-01'
+        'end_date',         // e.g., '2023-12-31'
+        'is_current',       // e.g., true/false
     ];
 
     // Relationships
