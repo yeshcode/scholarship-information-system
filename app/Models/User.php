@@ -5,118 +5,118 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles;  // Required for Spatie role assignments (e.g., assignRole())
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles;  // Includes HasRoles for roles and permissions
+    use HasFactory, Notifiable, HasRoles;
 
-    // Fields that can be mass-assigned (must match your users migration exactly)
     protected $fillable = [
-        'user_id',           // Unique user ID
-        'bisu_email',        // Email for login
-        'user_type_id',      // Foreign key to user_types table
-        'firstname',         // User's first name
-        'lastname',          // User's last name
-        'student_id',        // Student ID (for students only)
-        'status',            // e.g., 'active' or 'inactive'
-        'contact_no',        // Contact number
-        'password',          // Hashed password
-    ];
-
-    // Fields to hide in JSON responses (security)
-    protected $hidden = [
+        'user_id',           // Unique string ID (for display/custom logic)
+        'bisu_email',
+        'user_type_id',
+        'firstname',
+        'lastname',
+        'student_id',        // For students
+        'status',
+        'contact_no',
         'password',
-        'remember_token',
+        'college_id',        // Added for students
+        'year_level_id',     // Added for students
+        'section_id',        // Added for students
     ];
 
-    // Casts for automatic type conversion
+    protected $hidden = ['password', 'remember_token'];
+
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
-    // Relationship: User belongs to a UserType (links to user_types table)
+    // Relationships (fixed to use 'id' as local key for FKs)
     public function userType()
     {
         return $this->belongsTo(UserType::class, 'user_type_id', 'id');
     }
 
-        // hasMany: User has many announcements (via created_by in announcements table)
-        public function announcements()
-        {
-            return $this->hasMany(Announcement::class, 'created_by', 'user_id');  // FK in announcements: created_by, local PK: user_id
-        }
-    
-        // hasMany: User has many notifications (via recipient_user_id in notifications table, as recipient)
-        public function notifications()
-        {
-            return $this->hasMany(Notification::class, 'recipient_user_id', 'user_id');  // Assuming recipient_user_id is the FK; adjust if it's user_id
-        }
-    
-        // hasMany: User has many notifications (via created_by in notifications table, as creator)
-        public function createdNotifications()
-        {
-            return $this->hasMany(Notification::class, 'created_by', 'user_id');  // FK in notifications: created_by, local PK: user_id
-        }
-    
-        // hasMany: User has many stipends (via student_id in stipends table, as student)
-        public function stipendsAsStudent()
-        {
-            return $this->hasMany(Stipend::class, 'student_id', 'user_id');  // FK in stipends: student_id, local PK: user_id
-        }
-    
-        // hasMany: User has many stipends (via created_by in stipends table, as creator)
-        public function createdStipends()
-        {
-            return $this->hasMany(Stipend::class, 'created_by', 'user_id');  // FK in stipends: created_by, local PK: user_id
-        }
-    
-        // hasMany: User has many stipends (via updated_by in stipends table, as updater)
-        public function updatedStipends()
-        {
-            return $this->hasMany(Stipend::class, 'updated_by', 'user_id');  // FK in stipends: updated_by, local PK: user_id
-        }
-    
-        // hasMany: User has many stipend releases (via created_by in stipend_releases table, as creator)
-        public function createdStipendReleases()
-        {
-            return $this->hasMany(StipendsRelease::class, 'created_by', 'user_id');  // FK in stipend_releases: created_by, local PK: user_id
-        }
-    
-        // hasMany: User has many stipend releases (via updated_by in stipend_releases table, as updater)
-        public function updatedStipendReleases()
-        {
-            return $this->hasMany(StipendsRelease::class, 'updated_by', 'user_id');  // FK in stipend_releases: updated_by, local PK: user_id
-        }
-    
-        // hasMany: User has many scholars (via student_id in scholars table, as student)
-        public function scholarsAsStudent()
-        {
-            return $this->hasMany(Scholar::class, 'student_id', 'user_id');  // FK in scholars: student_id, local PK: user_id
-        }
-    
-        // hasMany: User has many scholars (via updated_by in scholars table, as updater)
-        public function updatedScholars()
-        {
-            return $this->hasMany(Scholar::class, 'updated_by', 'user_id');  // FK in scholars: updated_by, local PK: user_id
-        }
-    
-        // hasMany: User has many scholarships (via user_id in scholarships table, as creator)
-        public function scholarships()
-        {
-            return $this->hasMany(Scholarship::class, 'user_id', 'user_id');  // FK in scholarships: user_id, local PK: user_id
-        }
-    
-        // hasMany: User has many scholarships (via updated_by in scholarships table, as updater) - Add if your scholarships table has updated_by
-        public function updatedScholarships()
-        {
-            return $this->hasMany(Scholarship::class, 'updated_by', 'user_id');  // FK in scholarships: updated_by, local PK: user_id
-        }
-    
-        // hasMany: User has many enrollments (via student_id in enrollments table, as student)
-        public function enrollments()
-        {
-            return $this->hasMany(Enrollment::class, 'student_id', 'user_id');  // FK in enrollments: student_id, local PK: user_id
-        }
+    public function college()
+    {
+        return $this->belongsTo(College::class, 'college_id', 'id');
     }
+
+    public function yearLevel()
+    {
+        return $this->belongsTo(YearLevel::class, 'year_level_id', 'id');
+    }
+
+    public function section()
+    {
+        return $this->belongsTo(Section::class, 'section_id', 'id');
+    }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class, 'user_id', 'id');  // FK: user_id, local PK: id
+    }
+
+    // Fixed: Use 'id' for created_by/updated_by relationships (assumes FKs in other tables point to users.id)
+    public function announcements()
+    {
+        return $this->hasMany(Announcement::class, 'created_by', 'id');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'recipient_user_id', 'id');
+    }
+
+    public function createdNotifications()
+    {
+        return $this->hasMany(Notification::class, 'created_by', 'id');
+    }
+
+    public function stipendsAsStudent()
+    {
+        return $this->hasMany(Stipend::class, 'student_id', 'id');  // Custom match (if stipends.student_id == users.user_id)
+    }
+
+    public function createdStipends()
+    {
+        return $this->hasMany(Stipend::class, 'created_by', 'id');
+    }
+
+    public function updatedStipends()
+    {
+        return $this->hasMany(Stipend::class, 'updated_by', 'id');
+    }
+
+    public function createdStipendReleases()
+    {
+        return $this->hasMany(StipendsRelease::class, 'created_by', 'id');
+    }
+
+    public function updatedStipendReleases()
+    {
+        return $this->hasMany(StipendsRelease::class, 'updated_by', 'id');
+    }
+
+    public function scholarsAsStudent()
+    {
+        return $this->hasMany(Scholar::class, 'student_id', 'id');  // Custom match
+    }
+
+    public function updatedScholars()
+    {
+        return $this->hasMany(Scholar::class, 'updated_by', 'id');
+    }
+
+    public function scholarships()
+    {
+        return $this->hasMany(Scholarship::class, 'user_id', 'id');  // Assuming FK is to 'id'
+    }
+
+    public function updatedScholarships()
+    {
+        return $this->hasMany(Scholarship::class, 'updated_by', 'id');
+    }
+}

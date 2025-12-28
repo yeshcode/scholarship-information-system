@@ -20,8 +20,23 @@ class DatabaseSeeder extends Seeder
         Role::firstOrCreate(['name' => 'Scholarship Coordinator']);
         Role::firstOrCreate(['name' => 'Student']);
 
-        // Step 3: Seed users LAST
-        // Now that user_types and roles exist, create users with links to both.
+        // Step 3: Seed foundational tables (colleges, year_levels, semesters)
+        // These are independent and needed for other tables.
+        $this->call(CollegeSeeder::class);      // Seeds colleges
+        $this->call(YearLevelSeeder::class);    // Seeds year_levels
+        $this->call(SemesterSeeder::class);     // Seeds semesters
+
+        // Step 4: Seed courses (depends on colleges)
+        $this->call(CourseSeeder::class);       // Seeds courses
+
+        // Step 5: Seed sections (depends on courses and year_levels)
+        $this->call(SectionSeeder::class);      // Seeds sections
+
+        // Step 6: Seed users LAST
+        // Now that user_types, roles, colleges, etc., exist, create users with links.
         $this->call(TestUsersSeeder::class);
+
+        // Step 7: Seed enrollments LAST (depends on users, semesters, sections)
+        $this->call(EnrollmentSeeder::class);   // Seeds enrollments
     }
 }

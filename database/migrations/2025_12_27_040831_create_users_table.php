@@ -20,11 +20,19 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');                   // Required
             $table->unsignedBigInteger('user_type_id');  // Foreign key (required)
+            // Added: FKs for students (nullable)
+            $table->unsignedBigInteger('college_id')->nullable();
+            $table->unsignedBigInteger('year_level_id')->nullable();
+            $table->unsignedBigInteger('section_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
 
-            // Fixed: Reference 'user_type_id' (was 'user_type')
+            // Fixed: Reference 'user_type_id'
             $table->foreign('user_type_id')->references('id')->on('user_types')->onDelete('cascade');
+            // Added: FK constraints for students
+            $table->foreign('college_id')->references('id')->on('colleges')->onDelete('set null');
+            $table->foreign('year_level_id')->references('id')->on('year_levels')->onDelete('set null');
+            $table->foreign('section_id')->references('id')->on('sections')->onDelete('set null');
         });
 
         // Other tables unchanged

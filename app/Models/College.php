@@ -16,4 +16,10 @@ class College extends Model
     {
         return $this->hasMany(Course::class, 'college_id', 'id');  // FK in courses: college_id, local PK: id
     }
+
+    // Added: hasMany users (reverse of User belongsTo college)
+    public function users()
+    {
+        return $this->hasMany(User::class, 'college_id', 'id');  // FK in users: college_id, local PK: id
+    }
 }

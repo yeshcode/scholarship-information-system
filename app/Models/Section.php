@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Section extends Model
 {
     protected $fillable = [
-        'section_name',            // e.g., 'Section A'
-        'course_id',       // FK to courses table
-        'year_level_id',   // FK to year_levels table
+        'section_name',      // e.g., 'Section A'
+        'course_id',         // FK to courses table
+        'year_level_id',     // FK to year_levels table
     ];
 
     // Relationships
@@ -29,5 +29,11 @@ class Section extends Model
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class, 'section_id', 'id');  // FK in enrollments: section_id, local PK: id
+    }
+
+    // Added: hasMany users (reverse of User belongsTo section)
+    public function users()
+    {
+        return $this->hasMany(User::class, 'section_id', 'id');  // FK in users: section_id, local PK: id
     }
 }
