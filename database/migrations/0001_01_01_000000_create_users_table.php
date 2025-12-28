@@ -6,29 +6,28 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            
-                $table->id();
-                $table->foreignId('user_type_id')->constrained('user_types')->onDelete('cascade');// 1=admin, 2=staff, 3=student
-                $table->string('user_id')->unique(); // Student number / staff ID
-                $table->string('bisu_email')->unique();
-                $table->string('firstname');
-                $table->string('lastname');
-                $table->string('status')->default('active');
-                $table->string('contact_no');
+            $table->id();
+            $table->string('user_id')->unique();          // Student number / staff ID
+            $table->string('bisu_email')->unique();       // Unique email
+            $table->string('firstname');                  // Required
+            $table->string('lastname');                   // Required
+            $table->string('status')->default('active');  // With default
+            $table->string('contact_no');                 // Required
+            $table->string('student_id')->nullable();     // For students
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');                   // Required
+            $table->unsignedBigInteger('user_type_id');  // Foreign key (required)
+            $table->rememberToken();
+            $table->timestamps();
 
-        
-                $table->string('password');
-                $table->rememberToken();
-                $table->timestamps('created_at');
-                $table->timestamps('updated_at');
+            // Fixed: Reference 'user_type_id' (was 'user_type')
+            $table->foreign('user_type_id')->references('id')->on('user_types')->onDelete('cascade');
         });
 
+        // Other tables unchanged
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
@@ -45,13 +44,10 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };

@@ -5,58 +5,61 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
+    // Add this method if missing - for GET /login (shows login form)
     public function create()
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
-    public function store(Request $request): RedirectResponse
+    // Our custom store() method for POST /login (handles login and redirects)
+    public function store(Request $request)
     {
-        // Validate input
         $request->validate([
-            'username' => 'required|string', // user_id or bisu_email
-            'password' => 'required|string',
+            'email' => 'required|email',
+            'password' => 'required',
         ]);
 
-        // Attempt login
-        $credentials = [
-            'user_id' => $request->username, // use 'bisu_email' if preferred
-            'password' => $request->password,
-        ];
+        $user = \App\Models\User::where('bisu_email', $request->email)->first();
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-
-            // Redirect to dynamic dashboard
-            return redirect()->intended(route('dashboard'));
+        if (!$user) {
+            throw ValidationException::withMessages(['email' => 'Invalid credentials.']);
         }
 
-        // If login fails
-        return back()->withErrors([
-            'username' => 'Invalid username or password.',
-        ])->onlyInput('username');
+        // Password check: Students use student_id, others use hashed password
+        if ($user->hasRole('Student')) {
+            if ($request->password !== $user->student_id) {
+                throw ValidationException::withMessages(['password' => 'Invalid credentials.']);
+            }
+        } else {
+            if (!\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+                throw ValidationException::withMessages(['password' => 'Invalid credentials.']);
+            }
+        }
+
+        Auth::login($user);
+
+        // Redirect based on role
+        if ($user->hasRole('Super Admin')) {
+            return redirect('/admin/dashboard');
+        } elseif ($user->hasRole('Scholarship Coordinator')) {
+            return redirect('/coordinator/dashboard');
+        } elseif ($user->hasRole('Student')) {
+            return redirect('/student/dashboard');
+        }
+
+        return redirect('/');  // Fallback
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
-    public function destroy(Request $request): RedirectResponse
+    // Logout method (should already be there)
+    public function destroy(Request $request)
     {
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
         return redirect('/');
     }
 }

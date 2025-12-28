@@ -1,20 +1,56 @@
+<!-- This is the navigation bar for your app. It shows role-based links after login. -->
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
-                <!-- Logo -->
+                <!-- Logo: Links to the correct dashboard based on user role -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
+                    @auth
+                        @if(auth()->user()->hasRole('Super Admin'))
+                            <a href="{{ route('admin.dashboard') }}">
+                                <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                            </a>
+                        @elseif(auth()->user()->hasRole('Scholarship Coordinator'))
+                            <a href="{{ route('coordinator.dashboard') }}">
+                                <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                            </a>
+                        @elseif(auth()->user()->hasRole('Student'))
+                            <a href="{{ route('student.dashboard') }}">
+                                <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                            </a>
+                        @else
+                            <a href="{{ url('/') }}">
+                                <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                            </a>
+                        @endif
+                    @else
+                        <a href="{{ url('/') }}">
+                            <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                        </a>
+                    @endauth
                 </div>
 
-                <!-- Navigation Links -->
+                <!-- Navigation Links: Shows "Dashboard" link based on role -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
+                    @auth
+                        @if(auth()->user()->hasRole('Super Admin'))
+                            <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                                {{ __('Dashboard') }}
+                            </x-nav-link>
+                            <!-- Future: Add more Super Admin links here, e.g., <x-nav-link href="/admin/users">Users</x-nav-link> -->
+                        @elseif(auth()->user()->hasRole('Scholarship Coordinator'))
+                            <x-nav-link :href="route('coordinator.dashboard')" :active="request()->routeIs('coordinator.dashboard')">
+                                {{ __('Dashboard') }}
+                            </x-nav-link>
+                            <!-- Future: Add more Coordinator links here, e.g., <x-nav-link href="/coordinator/applications">Applications</x-nav-link> -->
+                        @elseif(auth()->user()->hasRole('Student'))
+                            <x-nav-link :href="route('student.dashboard')" :active="request()->routeIs('student.dashboard')">
+                                {{ __('Dashboard') }}
+                            </x-nav-link>
+                            <!-- Future: Add more Student links here, e.g., <x-nav-link href="/student/scholarships">Scholarships</x-nav-link> -->
+                        @endif
+                    @endauth
                 </div>
             </div>
 
@@ -34,19 +70,13 @@
                     </x-slot>
 
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
+                        <!-- Logout link -->
+                        <x-dropdown-link :href="route('logout')" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            {{ __('Log Out') }}
                         </x-dropdown-link>
 
-                        <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                             @csrf
-
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
                         </form>
                     </x-slot>
                 </x-dropdown>
@@ -67,9 +97,24 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
+            @auth
+                @if(auth()->user()->hasRole('Super Admin'))
+                    <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                        {{ __('Dashboard') }}
+                    </x-responsive-nav-link>
+                    <!-- Future: Add more Super Admin links here for mobile -->
+                @elseif(auth()->user()->hasRole('Scholarship Coordinator'))
+                    <x-responsive-nav-link :href="route('coordinator.dashboard')" :active="request()->routeIs('coordinator.dashboard')">
+                        {{ __('Dashboard') }}
+                    </x-responsive-nav-link>
+                    <!-- Future: Add more Coordinator links here for mobile -->
+                @elseif(auth()->user()->hasRole('Student'))
+                    <x-responsive-nav-link :href="route('student.dashboard')" :active="request()->routeIs('student.dashboard')">
+                        {{ __('Dashboard') }}
+                    </x-responsive-nav-link>
+                    <!-- Future: Add more Student links here for mobile -->
+                @endif
+            @endauth
         </div>
 
         <!-- Responsive Settings Options -->
@@ -80,19 +125,12 @@
             </div>
 
             <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
+                <x-responsive-nav-link :href="route('logout')" onclick="event.preventDefault(); document.getElementById('logout-form-mobile').submit();">
+                    {{ __('Log Out') }}
                 </x-responsive-nav-link>
 
-                <!-- Authentication -->
-                <form method="POST" action="{{ route('logout') }}">
+                <form id="logout-form-mobile" action="{{ route('logout') }}" method="POST" class="d-none">
                     @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
                 </form>
             </div>
         </div>
