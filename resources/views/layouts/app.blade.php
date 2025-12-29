@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name', 'Scholarship Management Information System') }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -28,19 +28,22 @@
         @endisset
 
         <!-- Page Content -->
+
+        <!-- Page-Specific Content (Yielded from individual views) -->
+     
         <main class="py-6">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    {{-- Support Blade component syntax --}}
+                    {{-- {{ Support Blade component syntax }} --}}
                     @isset($slot)
                         {{ $slot }}
-                    @endisset
-
-                    {{-- Support traditional section syntax --}}
-                    @yield('content')
+                    @endisset 
+{{-- 
+                    {{ Support traditional section syntax }} --}}
+                     @yield('content')
                 </div>
             </div>
-        </main>
+        </main> 
     </div>
 </body>
 </html>
