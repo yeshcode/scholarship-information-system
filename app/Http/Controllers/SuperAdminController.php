@@ -661,5 +661,12 @@ public function bulkUploadUsers(Request $request)
 
     return redirect()->route('admin.dashboard', ['page' => 'manage-users'])->with('success', $message);
 }
+
+// Add this for the delete confirmation page
+public function deleteUser($id)
+{
+    $user = User::findOrFail($id);
+    return view('super-admin.users-delete', compact('user'));
+}
     // Add similar methods for other tables (e.g., createYearLevel, storeYearLevel, etc.)
 }

@@ -95,6 +95,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/users/{id}', [SuperAdminController::class, 'updateUser'])->name('admin.users.update');
         Route::delete('/users/{id}', [SuperAdminController::class, 'destroyUser'])->name('admin.users.destroy');
         Route::post('/users/bulk-upload', [SuperAdminController::class, 'bulkUploadUsers'])->name('admin.users.bulk-upload');
+        Route::get('/users/{id}/delete', [SuperAdminController::class, 'deleteUser'])->name('admin.users.delete');  // Add this for confirmation
     });
 
     // Scholarship Coordinator routes (only Coordinators can access)
