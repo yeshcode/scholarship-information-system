@@ -50,6 +50,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/year-levels', [SuperAdminController::class, 'storeYearLevel'])->name('admin.year-levels.store');
         Route::put('/year-levels/{id}', [SuperAdminController::class, 'updateYearLevel'])->name('admin.year-levels.update');
         Route::delete('/year-levels/{id}', [SuperAdminController::class, 'destroyYearLevel'])->name('admin.year-levels.destroy');
+        Route::get('/year-levels/{id}/delete', [SuperAdminController::class, 'deleteYearLevel'])->name('admin.year-levels.delete');  // Add this for confirmation
 
         // User Types CRUD
         Route::get('/user-types/create', [SuperAdminController::class, 'createUserType'])->name('admin.user-types.create');

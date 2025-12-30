@@ -199,6 +199,13 @@ public function editYearLevel($id)
     return view('super-admin.year-levels-edit', compact('yearLevel'));
 }
 
+// Add this for the delete confirmation page
+public function deleteYearLevel($id)
+{
+    $yearLevel = YearLevel::findOrFail($id);
+    return view('super-admin.year-levels-delete', compact('yearLevel'));
+}
+
 // User Types CRUD
 public function createUserType()
 {

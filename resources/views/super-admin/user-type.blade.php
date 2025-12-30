@@ -20,7 +20,7 @@
         <div class="overflow-x-auto max-h-[calc(100vh-200px)] overflow-y-auto">  {{-- Strict height for internal scrolling --}}
             <table class="table-auto w-full border-collapse text-center min-w-full">  {{-- min-w-full ensures full width --}}
                 <thead class="bg-blue-600 text-black sticky top-0">  {{-- Light blue header --}}
-                    <tr>
+                    <tr class="bg-gray-200">
                         <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">ID</th>
                         <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Name</th>
                         <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Description</th>

@@ -1,42 +1,52 @@
-
+{{-- resources/views/super-admin/year-levels.blade.php --}}
+@php $fullWidth = true; @endphp  {{-- Enable full-width for this page --}}
+@extends('layouts.app')
 
 @section('content')
+<div class="p-6">  {{-- Padding for content --}}
+    @if(session('success'))
+        <div class="bg-green-100 text-green-800 p-4 mb-4 rounded-lg shadow-sm">{{ session('success') }}</div>
+    @endif
 
+    <!-- Add Year Level Button (Upper Right, Enhanced Design) -->
+    <div class="flex justify-end mb-6">
+        <a href="{{ route('admin.year-levels.create') }}" class="inline-flex items-center bg-black text-black hover:bg-gray-800 font-bold py-3 px-6 rounded-lg shadow-md transition duration-200">
+            <span class="mr-2">+</span> Add Year Level
+        </a>
+    </div>
 
-@if(session('success'))
-    <div class="bg-green-100 text-green-800 p-4 mb-4 rounded">{{ session('success') }}</div>
-@endif
-
-<!-- Add Button (Links to Separate Page, Black/White for Visibility) -->
-<a href="{{ route('admin.year-levels.create') }}" class="bg-white text-black border border-black hover:bg-gray-100 font-bold py-2 px-4 rounded mb-4 inline-block">
-    Add Year Level
-</a>
-
-<!-- Table with Data -->
-<div class="overflow-x-auto">
-    <table class="table-auto w-full border-collapse border border-gray-300 text-center">
-        <thead>
-            <tr class="bg-gray-200">
-                <th class="border border-gray-300 px-4 py-2">ID</th>
-                <th class="border border-gray-300 px-4 py-2">Year Level Name</th>
-                <th class="border border-gray-300 px-4 py-2">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($yearLevels ?? [] as $yearLevel)
-                <tr class="hover:bg-gray-100">
-                    <td class="border border-gray-300 px-4 py-2">{{ $yearLevel->id }}</td>
-                    <td class="border border-gray-300 px-4 py-2">{{ $yearLevel->year_level_name }}</td>
-                    <td class="border border-gray-300 px-4 py-2">
-                        <a href="{{ route('admin.year-levels.edit', $yearLevel->id) }}" class="text-blue-500 mr-2">Edit</a>
-                        <form method="POST" action="{{ route('admin.year-levels.destroy', $yearLevel->id) }}" style="display:inline;">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="text-red-500" onclick="return confirm('Delete?')">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <!-- Table Card (Full-width, internal scrolling, compressed rows) -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="overflow-x-auto max-h-[calc(100vh-200px)] overflow-y-auto">  {{-- Strict height for internal scrolling --}}
+            <table class="table-auto w-full border-collapse text-center min-w-full">
+                <thead class="bg-blue-200 text-black sticky top-0">  {{-- Light blue header --}}
+                    <tr>
+                        <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Year Level Name</th>
+                        <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($yearLevels ?? [] as $yearLevel)
+                        <tr class="hover:bg-gray-50 transition duration-150 even:bg-gray-25">
+                            <td class="border border-gray-300 px-3 py-2 text-gray-800">{{ $yearLevel->year_level_name }}</td>
+                            <td class="border border-gray-300 px-3 py-2 space-x-2">
+                                <a href="{{ route('admin.year-levels.edit', $yearLevel->id) }}" class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-black font-medium py-1 px-3 rounded shadow transition duration-200 text-sm">
+                                    <span class="mr-1">✏️</span> Edit
+                                </a>
+                                <a href="{{ route('admin.year-levels.delete', $yearLevel->id) }}" class="inline-flex items-center bg-red-500 hover:bg-red-600 text-black font-medium py-1 px-3 rounded shadow transition duration-200 text-sm">
+                                    <span class="mr-1">🗑️</span> Delete
+                                </a>
+                            </td>
+                        </tr>
+                    @endforeach
+                    @if(empty($yearLevels))
+                        <tr>
+                            <td colspan="2" class="px-3 py-4 text-gray-500 text-center">No year levels found. <a href="{{ route('admin.year-levels.create') }}" class="text-blue-500 underline hover:text-blue-700">Add one now</a>.</td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 @endsection
