@@ -17,12 +17,12 @@
             <option value="{{ $college->id }}" {{ $college->id == $course->college_id ? 'selected' : '' }}>{{ $college->college_name }}</option>
         @endforeach
     </select>
-    <button type="submit" class="bg-yellow-500 text-white px-4 py-2 rounded">Update Course</button>
+    <button type="submit" class="bg-yellow-500 text-black px-4 py-2 rounded">Update Course</button>
     <a href="{{ route('admin.dashboard', ['page' => 'courses']) }}" class="ml-4 text-gray-500">Cancel</a>
 </form>
 
 <form method="POST" action="{{ route('admin.courses.destroy', $course->id) }}" class="mt-4">
     @csrf @method('DELETE')
-    <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded" onclick="return confirm('Delete?')">Delete Course</button>
+    <button type="submit" class="bg-red-500 text-black px-4 py-2 rounded" onclick="return confirm('Delete?')">Delete Course</button>
 </form>
 @endsection

@@ -67,6 +67,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/courses', [SuperAdminController::class, 'storeCourse'])->name('admin.courses.store');
         Route::put('/courses/{id}', [SuperAdminController::class, 'updateCourse'])->name('admin.courses.update');
         Route::delete('/courses/{id}', [SuperAdminController::class, 'destroyCourse'])->name('admin.courses.destroy');
+        Route::get('/courses/{id}/delete', [SuperAdminController::class, 'deleteCourse'])->name('admin.courses.delete');  // Add this for confirmation
 
         // Semesters CRUD
         Route::get('/semesters/create', [SuperAdminController::class, 'createSemester'])->name('admin.semesters.create');
@@ -74,6 +75,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/semesters', [SuperAdminController::class, 'storeSemester'])->name('admin.semesters.store');
         Route::put('/semesters/{id}', [SuperAdminController::class, 'updateSemester'])->name('admin.semesters.update');
         Route::delete('/semesters/{id}', [SuperAdminController::class, 'destroySemester'])->name('admin.semesters.destroy');
+        Route::get('/semesters/{id}/delete', [SuperAdminController::class, 'deleteSemester'])->name('admin.semesters.delete');  // Add this for confirmation
 
         // Enrollments CRUD
         Route::get('/enrollments/enroll-students', [SuperAdminController::class, 'enrollStudents'])->name('admin.enrollments.enroll-students');

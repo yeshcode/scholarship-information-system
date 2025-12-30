@@ -318,6 +318,12 @@ public function destroyCourse($id)
     return redirect()->route('admin.dashboard', ['page' => 'courses'])->with('success', 'Course deleted successfully!');
 }
 
+public function deleteCourse($id)
+{
+    $course = Course::findOrFail($id);
+    return view('super-admin.courses-delete', compact('course'));
+}
+
 
 
 
@@ -366,6 +372,12 @@ public function destroySemester($id)
 {
     Semester::findOrFail($id)->delete();
     return redirect()->route('admin.dashboard', ['page' => 'semesters'])->with('success', 'Semester deleted successfully!');
+}
+
+public function deleteSemester($id)
+{
+    $semester = Semester::findOrFail($id);
+    return view('super-admin.semesters-delete', compact('semester'));
 }
 
 
