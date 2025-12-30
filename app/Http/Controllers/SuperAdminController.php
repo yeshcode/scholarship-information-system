@@ -37,7 +37,7 @@ class SuperAdminController extends Controller
         }
 
         elseif ($page === 'user-type') {
-            $data['userTypes'] = UserType::all(); // No relationships needed    
+            $data['userTypes'] = UserType::orderBy('id')->get();  // Added ->orderBy('id') for sequential display by ID
         }
 
         elseif ($page === 'courses') {
@@ -254,6 +254,12 @@ public function editUserType($id)
 {
     $userType = UserType::findOrFail($id);
     return view('super-admin.user-types-edit', compact('userType'));
+}
+
+public function deleteUserType($id)
+{
+    $userType = UserType::findOrFail($id);
+    return view('super-admin.user-types-delete', compact('userType'));
 }
 
 // Courses CRUD Methods

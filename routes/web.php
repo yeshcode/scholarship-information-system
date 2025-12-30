@@ -55,6 +55,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/user-types', [SuperAdminController::class, 'storeUserType'])->name('admin.user-types.store');
         Route::put('/user-types/{id}', [SuperAdminController::class, 'updateUserType'])->name('admin.user-types.update');
         Route::delete('/user-types/{id}', [SuperAdminController::class, 'destroyUserType'])->name('admin.user-types.destroy');
+        Route::get('/user-types/{id}/delete', [SuperAdminController::class, 'deleteUserType'])->name('admin.user-types.delete');
 
         // Courses CRUD
         Route::get('/courses/create', [SuperAdminController::class, 'createCourse'])->name('admin.courses.create');
