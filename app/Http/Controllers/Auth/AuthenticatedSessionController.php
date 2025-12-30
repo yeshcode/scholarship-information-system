@@ -16,43 +16,31 @@ class AuthenticatedSessionController extends Controller
     }
 
     // Our custom store() method for POST /login (handles login and redirects)
-    public function store(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        $user = \App\Models\User::where('bisu_email', $request->email)->first();
-
-        if (!$user) {
-            throw ValidationException::withMessages(['email' => 'Invalid credentials.']);
-        }
-
-        // Password check: Students use student_id, others use hashed password
-        if ($user->hasRole('Student')) {
-            if ($request->password !== $user->student_id) {
-                throw ValidationException::withMessages(['password' => 'Invalid credentials.']);
-            }
-        } else {
-            if (!\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
-                throw ValidationException::withMessages(['password' => 'Invalid credentials.']);
-            }
-        }
-
-        Auth::login($user);
-
-        // Redirect based on role
-        if ($user->hasRole('Super Admin')) {
-            return redirect('/admin/dashboard');
-        } elseif ($user->hasRole('Scholarship Coordinator')) {
-            return redirect('/coordinator/dashboard');
-        } elseif ($user->hasRole('Student')) {
-            return redirect('/student/dashboard');
-        }
-
-        return redirect('/');  // Fallback
-    }
+   // Our custom store() method for POST /login (handles login and redirects)
+   public function store(Request $request)
+   {
+       $request->validate([
+           'email' => 'required|email',
+           'password' => 'required',
+       ]);
+   
+       $user = \App\Models\User::where('bisu_email', $request->email)->first();
+   
+       if (!$user) {
+           throw ValidationException::withMessages(['email' => 'Invalid credentials.']);
+       }
+   
+       // UPDATED: Password check - Now all users use Hash::check for hashed passwords
+       if (!\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+           throw ValidationException::withMessages(['password' => 'Invalid credentials.']);
+       }
+   
+       Auth::login($user);
+   
+       // UPDATED: Dynamic redirect based on user_type dashboard_url
+       $dashboardUrl = $user->userType->dashboard_url ?? '/';  // Fallback to home if not set
+       return redirect($dashboardUrl);
+   }
 
     // Logout method (should already be there)
     public function destroy(Request $request)
