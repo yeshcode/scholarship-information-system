@@ -126,6 +126,13 @@ class SuperAdminController extends Controller
         return redirect()->route('admin.dashboard', ['page' => 'sections'])->with('success', 'Section deleted successfully!');
     }
 
+    // In app/Http/Controllers/SectionController.php
+    public function delete($id)
+    {
+        $section = Section::findOrFail($id);  // Assuming Section model
+        return view('super-admin.sections-delete', compact('section'));
+    }
+
     // Colleges CRUD
 public function createCollege()
 {

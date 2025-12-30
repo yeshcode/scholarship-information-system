@@ -24,7 +24,7 @@
         </select>
         <input type="text" name="section_name" placeholder="Section Name" class="border p-2 w-full" required>
     </div>
-    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Add Section</button>
+    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded">Add Section</button>
     <a href="{{ route('admin.dashboard', ['page' => 'sections']) }}" class="ml-4 text-gray-500">Cancel</a>
 </form>
 @endsection

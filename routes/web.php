@@ -33,7 +33,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sections/{id}/edit', [SuperAdminController::class, 'editSection'])->name('admin.sections.edit');
         Route::post('/sections', [SuperAdminController::class, 'storeSection'])->name('admin.sections.store');
         Route::put('/sections/{id}', [SuperAdminController::class, 'updateSection'])->name('admin.sections.update');
-        Route::delete('/sections/{id}', [SuperAdminController::class, 'destroySection'])->name('admin.sections.destroy');
+        Route::get('/sections/{id}/delete', [SuperAdminController::class, 'delete'])->name('admin.sections.delete');  // For confirmation page
+        Route::delete('/sections/{id}', [SuperAdminController::class, 'destroySection'])->name('admin.sections.destroy');  // For actual deletion
+
 
         // Colleges CRUD
         Route::get('/colleges/create', [SuperAdminController::class, 'createCollege'])->name('admin.colleges.create'); 
