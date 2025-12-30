@@ -198,14 +198,31 @@ public function createUserType()
     return view('super-admin.user-types-create');
 }
 
+// public function storeUserType(Request $request)
+// {
+//     $request->validate([
+//         'name' => 'required|string|max:255',
+//         'description' => 'nullable|string|max:500',
+//     ]);
+//     UserType::create($request->only(['name', 'description']));
+//     return redirect()->route('admin.dashboard', ['page' => 'user-type'])->with('success', 'User Type added!');
+// }
+
 public function storeUserType(Request $request)
 {
     $request->validate([
         'name' => 'required|string|max:255',
         'description' => 'nullable|string|max:500',
+        'dashboard_url' => 'nullable|string|max:255',
     ]);
-    UserType::create($request->only(['name', 'description']));
-    return redirect()->route('admin.dashboard', ['page' => 'user-type'])->with('success', 'User Type added!');
+    
+    // Create the user_type
+    $userType = UserType::create($request->only(['name', 'description', 'dashboard_url']));
+    
+    // Also create a matching Spatie role (if it doesn't exist)
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => $userType->name]);
+    
+    return redirect()->route('admin.dashboard', ['page' => 'user-type'])->with('success', 'User Type and Role added!');
 }
 
 public function updateUserType(Request $request, $id)
@@ -213,9 +230,17 @@ public function updateUserType(Request $request, $id)
     $request->validate([
         'name' => 'required|string|max:255',
         'description' => 'nullable|string|max:500',
+        'dashboard_url' => 'nullable|string|max:255',
     ]);
     $userType = UserType::findOrFail($id);
-    $userType->update($request->only(['name', 'description']));
+    $userType->update($request->only(['name', 'description', 'dashboard_url']));
+
+     // Update or create the Spatie role
+     \Spatie\Permission\Models\Role::updateOrCreate(
+        ['name' => $userType->name],  // Match by name
+        ['name' => $userType->name]   // Ensure it exists
+    );
+
     return redirect()->route('admin.dashboard', ['page' => 'user-type'])->with('success', 'User Type updated!');
 }
 
@@ -471,7 +496,7 @@ public function storeUser(Request $request)
         'password' => 'required|string|min:8',
     ]);
     
-    User::create([
+    $user = User::create([
         'user_id' => $request->user_id,
         'bisu_email' => $request->bisu_email,
         'firstname' => $request->firstname,
@@ -485,6 +510,9 @@ public function storeUser(Request $request)
         'password' => bcrypt($request->password),
         'status' => 'active',
     ]);
+    
+    // NEW: Assign Spatie role based on user_type (e.g., "Student")
+    $user->assignRole($user->userType->name);
     
     return redirect()->route('admin.dashboard', ['page' => 'manage-users'])->with('success', 'User added successfully!');
 }
@@ -522,6 +550,7 @@ public function showBulkUploadForm()
     $sections = Section::with('course', 'yearLevel')->get();
     return view('super-admin.users-bulk-upload', compact('colleges', 'yearLevels', 'sections'));
 }
+
 // Bulk Upload for Students (Updated for Dynamic CSV)
 public function bulkUploadUsers(Request $request)
 {
@@ -550,7 +579,7 @@ public function bulkUploadUsers(Request $request)
             'college_id' => $request->college_id,
             'year_level_id' => $request->year_level_id,
             'section_id' => $request->section_id,
-            'password' => bcrypt('password123'),
+            // Remove the default password here; we'll set it conditionally below
             'status' => 'active',
         ];
 
@@ -566,8 +595,23 @@ public function bulkUploadUsers(Request $request)
             continue;
         }
 
+        // NEW: Set password based on user type
+        if ($studentTypeId == $userData['user_type_id'] && !empty($userData['student_id'])) {
+            // For students, hash the student_id as the default password
+            $userData['password'] = \Illuminate\Support\Facades\Hash::make($userData['student_id']);
+        } else {
+            // For non-students, use a default hashed password
+            $userData['password'] = bcrypt('password123');
+        }
+
         try {
-            User::create($userData);  // Just create user, no enrollment
+            $user = User::create($userData);  // Create the user
+            
+            // NEW: Assign Spatie role after creation
+            $user->load('userType');  // Load the relationship
+            if ($user->userType) {
+                $user->assignRole($user->userType->name);
+            }
         } catch (\Exception $e) {
             $errors[] = 'Row skipped: ' . $e->getMessage();
         }

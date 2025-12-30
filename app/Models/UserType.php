@@ -9,6 +9,7 @@ class UserType extends Model
     protected $fillable = [
         'name',           // e.g., 'Admin', 'Student', 'Coordinator'
         'description',    // e.g., 'Administrator with full access'
+        'dashboard_url', 
     ];
 
     // Relationships

@@ -119,4 +119,18 @@ class User extends Authenticatable
     {
         return $this->hasMany(Scholarship::class, 'updated_by', 'id');
     }
+
+
+    // Helper: Sync user_type with Spatie role on save (optional, for auto-assignment)
+    protected static function booted()
+    {
+        static::saved(function ($user) {
+            if ($user->userType) {
+                $roleName = $user->userType->name;  // e.g., "Student"
+            if (!$user->hasRole($roleName)) {
+                $user->assignRole($roleName);  // Assign Spatie role
+                }
+            }
+        });
+    }
 }
