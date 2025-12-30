@@ -28,22 +28,16 @@
         @endisset
 
         <!-- Page Content -->
-
-        <!-- Page-Specific Content (Yielded from individual views) -->
-     
         <main class="py-6">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    {{-- {{ Support Blade component syntax }} --}}
+            <div class="{{ isset($fullWidth) ? 'w-full px-4' : 'max-w-7xl mx-auto sm:px-6 lg:px-8' }}">  {{-- Changed px-0 to px-4 for margins --}}
+                <div class="{{ isset($fullWidth) ? 'bg-white overflow-hidden shadow-sm sm:rounded-lg' : 'bg-white overflow-hidden shadow-sm sm:rounded-lg p-6' }}">
                     @isset($slot)
                         {{ $slot }}
-                    @endisset 
-{{-- 
-                    {{ Support traditional section syntax }} --}}
-                     @yield('content')
+                    @endisset
+                    @yield('content')
                 </div>
             </div>
-        </main> 
+        </main>
     </div>
 </body>
 </html>

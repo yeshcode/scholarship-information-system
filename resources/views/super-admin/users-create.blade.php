@@ -77,7 +77,7 @@
         <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
         <input type="password" name="password" id="password" class="border p-2 w-full" required>
     </div>
-    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Add User</button>
+    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-600">Add User</button>
     <a href="{{ route('admin.dashboard', ['page' => 'manage-users']) }}" class="ml-4 text-gray-500">Cancel</a>
 </form>
 @endsection

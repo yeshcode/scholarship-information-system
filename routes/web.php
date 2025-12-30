@@ -33,7 +33,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sections/{id}/edit', [SuperAdminController::class, 'editSection'])->name('admin.sections.edit');
         Route::post('/sections', [SuperAdminController::class, 'storeSection'])->name('admin.sections.store');
         Route::put('/sections/{id}', [SuperAdminController::class, 'updateSection'])->name('admin.sections.update');
-        Route::delete('/sections/{id}', [SuperAdminController::class, 'destroySection'])->name('admin.sections.destroy');
+        Route::get('/sections/{id}/delete', [SuperAdminController::class, 'delete'])->name('admin.sections.delete');  // For confirmation page
+        Route::delete('/sections/{id}', [SuperAdminController::class, 'destroySection'])->name('admin.sections.destroy');  // For actual deletion
+
 
         // Colleges CRUD
         Route::get('/colleges/create', [SuperAdminController::class, 'createCollege'])->name('admin.colleges.create'); 
@@ -41,6 +43,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/colleges', [SuperAdminController::class, 'storeCollege'])->name('admin.colleges.store');
         Route::put('/colleges/{id}', [SuperAdminController::class, 'updateCollege'])->name('admin.colleges.update');
         Route::delete('/colleges/{id}', [SuperAdminController::class, 'destroyCollege'])->name('admin.colleges.destroy');
+        Route::get('/colleges/{id}/delete', [SuperAdminController::class, 'deleteCollege'])->name('admin.colleges.delete');  // Add this for confirmation
 
         // Year Levels CRUD
         Route::get('/year-levels/create', [SuperAdminController::class, 'createYearLevel'])->name('admin.year-levels.create');
@@ -48,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/year-levels', [SuperAdminController::class, 'storeYearLevel'])->name('admin.year-levels.store');
         Route::put('/year-levels/{id}', [SuperAdminController::class, 'updateYearLevel'])->name('admin.year-levels.update');
         Route::delete('/year-levels/{id}', [SuperAdminController::class, 'destroyYearLevel'])->name('admin.year-levels.destroy');
+        Route::get('/year-levels/{id}/delete', [SuperAdminController::class, 'deleteYearLevel'])->name('admin.year-levels.delete');  // Add this for confirmation
 
         // User Types CRUD
         Route::get('/user-types/create', [SuperAdminController::class, 'createUserType'])->name('admin.user-types.create');
@@ -55,6 +59,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/user-types', [SuperAdminController::class, 'storeUserType'])->name('admin.user-types.store');
         Route::put('/user-types/{id}', [SuperAdminController::class, 'updateUserType'])->name('admin.user-types.update');
         Route::delete('/user-types/{id}', [SuperAdminController::class, 'destroyUserType'])->name('admin.user-types.destroy');
+        Route::get('/user-types/{id}/delete', [SuperAdminController::class, 'deleteUserType'])->name('admin.user-types.delete');
 
         // Courses CRUD
         Route::get('/courses/create', [SuperAdminController::class, 'createCourse'])->name('admin.courses.create');
@@ -62,6 +67,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/courses', [SuperAdminController::class, 'storeCourse'])->name('admin.courses.store');
         Route::put('/courses/{id}', [SuperAdminController::class, 'updateCourse'])->name('admin.courses.update');
         Route::delete('/courses/{id}', [SuperAdminController::class, 'destroyCourse'])->name('admin.courses.destroy');
+        Route::get('/courses/{id}/delete', [SuperAdminController::class, 'deleteCourse'])->name('admin.courses.delete');  // Add this for confirmation
 
         // Semesters CRUD
         Route::get('/semesters/create', [SuperAdminController::class, 'createSemester'])->name('admin.semesters.create');
@@ -69,6 +75,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/semesters', [SuperAdminController::class, 'storeSemester'])->name('admin.semesters.store');
         Route::put('/semesters/{id}', [SuperAdminController::class, 'updateSemester'])->name('admin.semesters.update');
         Route::delete('/semesters/{id}', [SuperAdminController::class, 'destroySemester'])->name('admin.semesters.destroy');
+        Route::get('/semesters/{id}/delete', [SuperAdminController::class, 'deleteSemester'])->name('admin.semesters.delete');  // Add this for confirmation
 
         // Enrollments CRUD
         Route::get('/enrollments/enroll-students', [SuperAdminController::class, 'enrollStudents'])->name('admin.enrollments.enroll-students');
@@ -78,6 +85,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/enrollments', [SuperAdminController::class, 'storeEnrollment'])->name('admin.enrollments.store');
         Route::put('/enrollments/{id}', [SuperAdminController::class, 'updateEnrollment'])->name('admin.enrollments.update');
         Route::delete('/enrollments/{id}', [SuperAdminController::class, 'destroyEnrollment'])->name('admin.enrollments.destroy');
+        Route::get('/enrollments/{id}/delete', [SuperAdminController::class, 'deleteEnrollment'])->name('admin.enrollments.delete');  // For confirmation
 
         // Users CRUD
         Route::get('/users/bulk-upload', [SuperAdminController::class, 'showBulkUploadForm'])->name('admin.users.bulk-upload-form');
@@ -87,6 +95,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/users/{id}', [SuperAdminController::class, 'updateUser'])->name('admin.users.update');
         Route::delete('/users/{id}', [SuperAdminController::class, 'destroyUser'])->name('admin.users.destroy');
         Route::post('/users/bulk-upload', [SuperAdminController::class, 'bulkUploadUsers'])->name('admin.users.bulk-upload');
+        Route::get('/users/{id}/delete', [SuperAdminController::class, 'deleteUser'])->name('admin.users.delete');  // Add this for confirmation
     });
 
     // Scholarship Coordinator routes (only Coordinators can access)

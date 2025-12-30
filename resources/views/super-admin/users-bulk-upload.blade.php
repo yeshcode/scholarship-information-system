@@ -50,7 +50,7 @@
         </select>
     </div>
     
-    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Upload Students</button>
+    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-600">Upload Students</button>
     <a href="{{ route('admin.dashboard', ['page' => 'manage-users']) }}" class="ml-4 text-gray-500">Back to Manage Users</a>
 </form>
 @endsection

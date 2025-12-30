@@ -37,7 +37,7 @@ class SuperAdminController extends Controller
         }
 
         elseif ($page === 'user-type') {
-            $data['userTypes'] = UserType::all(); // No relationships needed    
+            $data['userTypes'] = UserType::orderBy('id')->get();  // Added ->orderBy('id') for sequential display by ID
         }
 
         elseif ($page === 'courses') {
@@ -126,6 +126,13 @@ class SuperAdminController extends Controller
         return redirect()->route('admin.dashboard', ['page' => 'sections'])->with('success', 'Section deleted successfully!');
     }
 
+    // In app/Http/Controllers/SectionController.php
+    public function delete($id)
+    {
+        $section = Section::findOrFail($id);  // Assuming Section model
+        return view('super-admin.sections-delete', compact('section'));
+    }
+
     // Colleges CRUD
 public function createCollege()
 {
@@ -157,6 +164,13 @@ public function editCollege($id)
 {
     $college = College::findOrFail($id);
     return view('super-admin.colleges-edit', compact('college'));
+}
+
+// Add this for the delete confirmation page
+public function deleteCollege($id)
+{
+    $college = College::findOrFail($id);
+    return view('super-admin.colleges-delete', compact('college'));
 }
 
 // Year Levels CRUD
@@ -192,21 +206,18 @@ public function editYearLevel($id)
     return view('super-admin.year-levels-edit', compact('yearLevel'));
 }
 
+// Add this for the delete confirmation page
+public function deleteYearLevel($id)
+{
+    $yearLevel = YearLevel::findOrFail($id);
+    return view('super-admin.year-levels-delete', compact('yearLevel'));
+}
+
 // User Types CRUD
 public function createUserType()
 {
     return view('super-admin.user-types-create');
 }
-
-// public function storeUserType(Request $request)
-// {
-//     $request->validate([
-//         'name' => 'required|string|max:255',
-//         'description' => 'nullable|string|max:500',
-//     ]);
-//     UserType::create($request->only(['name', 'description']));
-//     return redirect()->route('admin.dashboard', ['page' => 'user-type'])->with('success', 'User Type added!');
-// }
 
 public function storeUserType(Request $request)
 {
@@ -256,6 +267,12 @@ public function editUserType($id)
     return view('super-admin.user-types-edit', compact('userType'));
 }
 
+public function deleteUserType($id)
+{
+    $userType = UserType::findOrFail($id);
+    return view('super-admin.user-types-delete', compact('userType'));
+}
+
 // Courses CRUD Methods
 public function createCourse()
 {
@@ -300,6 +317,14 @@ public function destroyCourse($id)
     Course::findOrFail($id)->delete();
     return redirect()->route('admin.dashboard', ['page' => 'courses'])->with('success', 'Course deleted successfully!');
 }
+
+public function deleteCourse($id)
+{
+    $course = Course::findOrFail($id);
+    return view('super-admin.courses-delete', compact('course'));
+}
+
+
 
 
 // Semesters CRUD Methods
@@ -347,6 +372,12 @@ public function destroySemester($id)
 {
     Semester::findOrFail($id)->delete();
     return redirect()->route('admin.dashboard', ['page' => 'semesters'])->with('success', 'Semester deleted successfully!');
+}
+
+public function deleteSemester($id)
+{
+    $semester = Semester::findOrFail($id);
+    return view('super-admin.semesters-delete', compact('semester'));
 }
 
 
@@ -457,6 +488,12 @@ public function storeEnrollStudents(Request $request)
     }
 
     return redirect()->route('admin.dashboard', ['page' => 'enrollments'])->with('success', "$enrolledCount students enrolled in the selected semester.");
+}
+
+public function deleteEnrollment($id)
+{
+    $enrollment = Enrollment::findOrFail($id);
+    return view('super-admin.enrollments-delete', compact('enrollment'));
 }
 
 
@@ -623,6 +660,13 @@ public function bulkUploadUsers(Request $request)
     }
 
     return redirect()->route('admin.dashboard', ['page' => 'manage-users'])->with('success', $message);
+}
+
+// Add this for the delete confirmation page
+public function deleteUser($id)
+{
+    $user = User::findOrFail($id);
+    return view('super-admin.users-delete', compact('user'));
 }
     // Add similar methods for other tables (e.g., createYearLevel, storeYearLevel, etc.)
 }

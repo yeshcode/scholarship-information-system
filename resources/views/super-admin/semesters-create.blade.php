@@ -16,7 +16,7 @@
     <label class="block mb-4">
         <input type="checkbox" name="is_current" value="1"> Is Current Semester?
     </label>
-    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Add Semester</button>
+    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded">Add Semester</button>
     <a href="{{ route('admin.dashboard', ['page' => 'semesters']) }}" class="ml-4 text-gray-500">Cancel</a>
 </form>
 @endsection

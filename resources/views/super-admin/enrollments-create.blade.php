@@ -28,7 +28,7 @@
         @endforeach
     </select>
     <input type="text" name="status" placeholder="Status (e.g., active)" class="border p-2 w-full mb-4" required>
-    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Add Enrollment</button>
+    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded">Add Enrollment</button>
     <a href="{{ route('admin.dashboard', ['page' => 'enrollments']) }}" class="ml-4 text-gray-500">Cancel</a>
 </form>
 @endsection
