@@ -490,6 +490,12 @@ public function storeEnrollStudents(Request $request)
     return redirect()->route('admin.dashboard', ['page' => 'enrollments'])->with('success', "$enrolledCount students enrolled in the selected semester.");
 }
 
+public function deleteEnrollment($id)
+{
+    $enrollment = Enrollment::findOrFail($id);
+    return view('super-admin.enrollments-delete', compact('enrollment'));
+}
+
 
 // Users CRUD Methods
 public function createUser()

@@ -85,6 +85,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/enrollments', [SuperAdminController::class, 'storeEnrollment'])->name('admin.enrollments.store');
         Route::put('/enrollments/{id}', [SuperAdminController::class, 'updateEnrollment'])->name('admin.enrollments.update');
         Route::delete('/enrollments/{id}', [SuperAdminController::class, 'destroyEnrollment'])->name('admin.enrollments.destroy');
+        Route::get('/enrollments/{id}/delete', [SuperAdminController::class, 'deleteEnrollment'])->name('admin.enrollments.delete');  // For confirmation
 
         // Users CRUD
         Route::get('/users/bulk-upload', [SuperAdminController::class, 'showBulkUploadForm'])->name('admin.users.bulk-upload-form');

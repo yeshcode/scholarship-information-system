@@ -1,78 +1,99 @@
+{{-- resources/views/super-admin/enrollments.blade.php --}}
+@php $fullWidth = true; @endphp  {{-- Enable full-width for this page --}}
 @extends('layouts.app')
 
 @section('content')
-@if(session('success'))
-    <div class="bg-green-100 text-green-800 p-4 mb-4 rounded">{{ session('success') }}</div>
-@endif
+<div class="p-6">  {{-- Padding for content --}}
+    @if(session('success'))
+        <div class="bg-green-100 text-green-800 p-4 mb-4 rounded-lg shadow-sm">{{ session('success') }}</div>
+    @endif
 
-@if(session('error'))
-    <div class="bg-red-100 text-red-800 p-4 mb-4 rounded">{{ session('error') }}</div>
-@endif
+    @if(session('error'))
+        <div class="bg-red-100 text-red-800 p-4 mb-4 rounded-lg shadow-sm">{{ session('error') }}</div>
+    @endif
 
-<!-- Buttons: Keep Add Enrollment for manual adds, add Enroll Students beside it -->
-<a href="{{ route('admin.enrollments.create') }}" class="bg-white text-black border border-black hover:bg-gray-100 font-bold py-2 px-4 rounded mb-4 inline-block mr-4">
-    Add Enrollment
-</a>
-<a href="{{ route('admin.enrollments.enroll-students') }}" class="bg-purple-600 hover:bg-purple-800 text-black font-bold py-2 px-4 rounded mb-4 inline-block border border-purple-600">
-    Enroll Students
-</a>
+    <!-- Buttons (Upper Right, Enhanced Design) -->
+    <div class="flex justify-end mb-6 space-x-4">
+        <a href="{{ route('admin.enrollments.create') }}" class="inline-flex items-center bg-black text-black hover:bg-gray-800 font-bold py-3 px-6 rounded-lg shadow-md transition duration-200">
+            <span class="mr-2">+</span> Add Enrollment
+        </a>
+        <a href="{{ route('admin.enrollments.enroll-students') }}" class="inline-flex items-center bg-purple-600 text-black hover:bg-purple-800 font-bold py-3 px-6 rounded-lg shadow-md transition duration-200">
+            <span class="mr-2">📚</span> Enroll Students
+        </a>
+    </div>
 
-<!-- Optional Filters for Viewing Enrolled Students (keeps your page clean) -->
-<form method="GET" action="{{ route('admin.dashboard', ['page' => 'enrollments']) }}" class="bg-gray-50 p-4 rounded border mb-6">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-            <label for="semester_id" class="block text-sm font-medium">Filter by Semester</label>
-            <select name="semester_id" id="semester_id" class="border p-2 w-full">
-                <option value="">All Semesters</option>
-                @foreach($semesters ?? [] as $semester)
-                    <option value="{{ $semester->id }}" {{ request('semester_id') == $semester->id ? 'selected' : '' }}>{{ $semester->term }} {{ $semester->academic_year }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div>
-            <label for="section_id" class="block text-sm font-medium">Filter by Section</label>
-            <select name="section_id" id="section_id" class="border p-2 w-full">
-                <option value="">All Sections</option>
-                @foreach($sections ?? [] as $section)
-                    <option value="{{ $section->id }}" {{ request('section_id') == $section->id ? 'selected' : '' }}>{{ $section->section_name }} ({{ $section->course->course_name ?? 'N/A' }})</option>
-                @endforeach
-            </select>
+    <!-- Search Bar (Filter by User, Semester, Section, or Status) -->
+    <div class="mb-6">
+        <input type="text" id="searchInput" placeholder="Search by User, Semester, Section, or Status..." class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+
+    <!-- Table Card (Full-width, internal scrolling, compressed rows) -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="overflow-x-auto max-h-[calc(100vh-250px)] overflow-y-auto">  {{-- Strict height for internal scrolling --}}
+            <table class="table-auto w-full border-collapse text-center min-w-full" id="enrollmentsTable">  {{-- Added ID for JS filtering --}}
+                <thead class="bg-blue-200 text-black sticky top-0">  {{-- Light blue header --}}
+                    <tr class="bg-gray-200">
+                        <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">User</th>
+                        <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Semester</th>
+                        <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Section</th>
+                        <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Status</th>
+                        <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($enrollments ?? [] as $enrollment)
+                        <tr class="hover:bg-gray-50 transition duration-150 even:bg-gray-25">
+                            <td class="border border-gray-300 px-3 py-2 text-gray-800">{{ $enrollment->user->firstname ?? 'N/A' }} {{ $enrollment->user->lastname ?? '' }}</td>
+                            <td class="border border-gray-300 px-3 py-2 text-gray-800">{{ $enrollment->semester->term ?? 'N/A' }} {{ $enrollment->semester->academic_year ?? '' }}</td>
+                            <td class="border border-gray-300 px-3 py-2 text-gray-800">{{ $enrollment->section->section_name ?? 'N/A' }} ({{ $enrollment->section->course->course_name ?? '' }})</td>
+                            <td class="border border-gray-300 px-3 py-2 text-gray-800">{{ $enrollment->status }}</td>
+                            <td class="border border-gray-300 px-3 py-2 space-x-2">
+                                <a href="{{ route('admin.enrollments.edit', $enrollment->id) }}" class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-black font-medium py-1 px-3 rounded shadow transition duration-200 text-sm">
+                                    <span class="mr-1">✏️</span> Edit
+                                </a>
+                                <a href="{{ route('admin.enrollments.delete', $enrollment->id) }}" class="inline-flex items-center bg-red-500 hover:bg-red-600 text-black font-medium py-1 px-3 rounded shadow transition duration-200 text-sm">
+                                    <span class="mr-1">🗑️</span> Delete
+                                </a>
+                            </td>
+                        </tr>
+                    @endforeach
+                    @if(empty($enrollments))
+                        <tr id="noResultsRow">
+                            <td colspan="5" class="px-3 py-4 text-gray-500 text-center">No enrollments found. <a href="{{ route('admin.enrollments.create') }}" class="text-blue-500 underline hover:text-blue-700">Add one now</a>.</td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
         </div>
     </div>
-    <button type="submit" class="bg-blue-500 text-black px-4 py-2 rounded mt-4 hover:bg-blue-600">Apply Filters</button>
-</form>
-
-<!-- Table with Data (unchanged from your original) -->
-<div class="overflow-x-auto">
-    <table class="table-auto w-full border-collapse border border-gray-300 text-center">
-        <thead>
-            <tr class="bg-gray-200">
-                <th class="border border-gray-300 px-4 py-2">ID</th>
-                <th class="border border-gray-300 px-4 py-2">User</th>
-                <th class="border border-gray-300 px-4 py-2">Semester</th>
-                <th class="border border-gray-300 px-4 py-2">Section</th>
-                <th class="border border-gray-300 px-4 py-2">Status</th>
-                <th class="border border-gray-300 px-4 py-2">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($enrollments ?? [] as $enrollment)
-                <tr class="hover:bg-gray-100">
-                    <td class="border border-gray-300 px-4 py-2">{{ $enrollment->id }}</td>
-                    <td class="border border-gray-300 px-4 py-2">{{ $enrollment->user->firstname ?? 'N/A' }} {{ $enrollment->user->lastname ?? '' }}</td>
-                    <td class="border border-gray-300 px-4 py-2">{{ $enrollment->semester->term ?? 'N/A' }} {{ $enrollment->semester->academic_year ?? '' }}</td>
-                    <td class="border border-gray-300 px-4 py-2">{{ $enrollment->section->section_name ?? 'N/A' }} ({{ $enrollment->section->course->course_name ?? '' }})</td>
-                    <td class="border border-gray-300 px-4 py-2">{{ $enrollment->status }}</td>
-                    <td class="border border-gray-300 px-4 py-2">
-                        <a href="{{ route('admin.enrollments.edit', $enrollment->id) }}" class="text-blue-500 mr-2">Edit</a>
-                        <form method="POST" action="{{ route('admin.enrollments.destroy', $enrollment->id) }}" style="display:inline;">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="text-red-500" onclick="return confirm('Delete?')">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
 </div>
+
+<!-- JavaScript for Search Filtering -->
+<script>
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#enrollmentsTable tbody tr');
+        let hasResults = false;
+
+        rows.forEach(row => {
+            if (row.id === 'noResultsRow') return;  // Skip the no-results row
+            const cells = row.querySelectorAll('td');
+            const user = cells[0].textContent.toLowerCase();
+            const semester = cells[1].textContent.toLowerCase();
+            const section = cells[2].textContent.toLowerCase();
+            const status = cells[3].textContent.toLowerCase();
+
+            if (user.includes(query) || semester.includes(query) || section.includes(query) || status.includes(query)) {
+                row.style.display = '';
+                hasResults = true;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Show/hide no-results message
+        const noResultsRow = document.getElementById('noResultsRow');
+        noResultsRow.style.display = hasResults ? 'none' : '';
+    });
+</script>
 @endsection
