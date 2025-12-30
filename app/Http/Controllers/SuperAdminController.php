@@ -166,6 +166,13 @@ public function editCollege($id)
     return view('super-admin.colleges-edit', compact('college'));
 }
 
+// Add this for the delete confirmation page
+public function deleteCollege($id)
+{
+    $college = College::findOrFail($id);
+    return view('super-admin.colleges-delete', compact('college'));
+}
+
 // Year Levels CRUD
 public function createYearLevel()
 {
@@ -211,16 +218,6 @@ public function createUserType()
 {
     return view('super-admin.user-types-create');
 }
-
-// public function storeUserType(Request $request)
-// {
-//     $request->validate([
-//         'name' => 'required|string|max:255',
-//         'description' => 'nullable|string|max:500',
-//     ]);
-//     UserType::create($request->only(['name', 'description']));
-//     return redirect()->route('admin.dashboard', ['page' => 'user-type'])->with('success', 'User Type added!');
-// }
 
 public function storeUserType(Request $request)
 {
@@ -320,6 +317,8 @@ public function destroyCourse($id)
     Course::findOrFail($id)->delete();
     return redirect()->route('admin.dashboard', ['page' => 'courses'])->with('success', 'Course deleted successfully!');
 }
+
+
 
 
 // Semesters CRUD Methods

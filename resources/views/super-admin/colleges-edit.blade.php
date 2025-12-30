@@ -21,6 +21,6 @@
 
 <form method="POST" action="{{ route('admin.colleges.destroy', $college->id) }}" class="mt-4">
     @csrf @method('DELETE')
-    <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded" onclick="return confirm('Delete?')">Delete College</button>
+    <button type="submit" class="bg-red-500 text-black px-4 py-2 rounded" onclick="return confirm('Delete?')">Delete College</button>
 </form>
 @endsection

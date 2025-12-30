@@ -25,7 +25,7 @@
         <div class="overflow-x-auto max-h-[calc(100vh-250px)] overflow-y-auto">  {{-- Strict height for internal scrolling --}}
             <table class="table-auto w-full border-collapse text-center min-w-full" id="sectionsTable">  {{-- Added ID for JS filtering --}}
                 <thead class="bg-blue-200 text-black sticky top-0">  {{-- Light blue header --}}
-                    <tr>
+                    <tr class="bg-gray-200">
                         <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Course</th>
                         <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Year Level</th>
                         <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Section Name</th>

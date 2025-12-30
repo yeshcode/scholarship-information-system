@@ -43,6 +43,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/colleges', [SuperAdminController::class, 'storeCollege'])->name('admin.colleges.store');
         Route::put('/colleges/{id}', [SuperAdminController::class, 'updateCollege'])->name('admin.colleges.update');
         Route::delete('/colleges/{id}', [SuperAdminController::class, 'destroyCollege'])->name('admin.colleges.destroy');
+        Route::get('/colleges/{id}/delete', [SuperAdminController::class, 'deleteCollege'])->name('admin.colleges.delete');  // Add this for confirmation
 
         // Year Levels CRUD
         Route::get('/year-levels/create', [SuperAdminController::class, 'createYearLevel'])->name('admin.year-levels.create');

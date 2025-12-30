@@ -20,7 +20,7 @@
         <div class="overflow-x-auto max-h-[calc(100vh-200px)] overflow-y-auto">  {{-- Strict height for internal scrolling --}}
             <table class="table-auto w-full border-collapse text-center min-w-full">
                 <thead class="bg-blue-200 text-black sticky top-0">  {{-- Light blue header --}}
-                    <tr>
+                    <tr class="bg-gray-200">
                         <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Year Level Name</th>
                         <th class="border border-gray-300 px-3 py-2 font-bold text-sm uppercase tracking-wide">Actions</th>
                     </tr>
