@@ -38,5 +38,16 @@ class DatabaseSeeder extends Seeder
 
         // Step 7: Seed enrollments LAST (depends on users, semesters, sections)
         $this->call(EnrollmentSeeder::class);   // Seeds enrollments
+
+        // Step 8: Seed scholarship-related tables (added for Coordinator dashboard)
+        // These depend on users (coordinators/students), semesters, and enrollments.
+        // Order matters: Scholarships first, then batches, scholars, releases, stipends, announcements, notifications.
+        $this->call(ScholarshipSeeder::class);       // Seeds scholarships (depends on users)
+        $this->call(ScholarshipBatchSeeder::class);  // Seeds scholarship batches (depends on scholarships, semesters)
+        $this->call(ScholarSeeder::class);           // Seeds scholars (depends on users, batches)
+        $this->call(StipendReleaseSeeder::class);    // Seeds stipend releases (depends on batches, users)
+        $this->call(StipendSeeder::class);           // Seeds stipends (depends on scholars, releases, users)
+        $this->call(AnnouncementSeeder::class);      // Seeds announcements (depends on users)
+        $this->call(NotificationSeeder::class);      // Seeds notifications (depends on users, announcements, releases)
     }
 }
