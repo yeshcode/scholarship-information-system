@@ -5,6 +5,8 @@ use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingsController;
 
 // Public routes
 Route::get('/', function () { return redirect('/login'); });
@@ -14,6 +16,16 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name
 
 // Protected routes (authenticated users only)
 Route::middleware(['auth'])->group(function () {
+    // NEW: Profile routes (accessible to all logged-in users) - Added here, before role-specific groups
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
+
+    Route::middleware('role:Super Admin')->group(function () {
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    });
+
+
     // Super Admin routes (only Super Admins can access)
     Route::middleware('role:Super Admin')->prefix('admin')->group(function () {
         Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('admin.dashboard');

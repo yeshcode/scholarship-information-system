@@ -133,4 +133,10 @@ class User extends Authenticatable
             }
         });
     }
+
+     // Helper: Check if user is a scholar (unchanged)
+     public function isScholar()
+     {
+         return $this->scholarsAsStudent()->exists();
+     }
 }
