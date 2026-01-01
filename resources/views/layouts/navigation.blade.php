@@ -4,9 +4,12 @@
 @endphp
 
 <!-- Upper Part: Logo and System Title (Top Row) -->
-<div class="flex items-center justify-center space-x-4 py-4 bg-white shadow-sm">
-    @if($settings && $settings->logo_path)
-        <img src="{{ asset('storage/' . $settings->logo_path) }}" alt="Logo" class="h-10 w-10">
+
+<div class="flex items-center justify-center space-x-2 py-4 bg-white shadow-sm">  <!-- Reduced space-x-4 to space-x-2 for smaller gap -->
+    @if($settings && $settings->logo_path && file_exists(public_path('storage/' . $settings->logo_path)))
+        <img src="{{ asset('storage/' . $settings->logo_path) }}" alt="Logo" class="h-8 w-8 object-contain" onerror="this.style.display='none';">  <!-- Changed to h-6 w-6 (24px) for smaller size -->
+    @else
+        <span class="text-gray-500">[No Logo]</span> <!-- Fallback if logo missing -->
     @endif
     <span class="text-lg font-bold">{{ $settings->system_name ?? 'Scholarship Information Management System' }}</span>
 </div>
