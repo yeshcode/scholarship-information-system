@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class StipendsRelease extends Model
 {
+    protected $table = 'stipend_releases';  // NEW: Explicitly set the table name to match the renamed table
+
     protected $fillable = [
         'title',
         'batch_id',       // FK to scholarship_batches table
@@ -27,13 +29,13 @@ class StipendsRelease extends Model
     // belongsTo: StipendRelease belongs to a user (as creator, via created_by)
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by', 'user_id');  // FK: created_by, related PK: user_id (since User uses custom PK)
+        return $this->belongsTo(User::class, 'created_by', 'id');  // Updated to use 'id' as PK
     }
 
     // belongsTo: StipendRelease belongs to a user (as updater, via updated_by)
     public function updater()
     {
-        return $this->belongsTo(User::class, 'updated_by', 'user_id');  // FK: updated_by, related PK: user_id
+        return $this->belongsTo(User::class, 'updated_by', 'id');  // Updated to use 'id' as PK
     }
 
     // hasMany: StipendRelease has many stipends (via release_id in stipends table)

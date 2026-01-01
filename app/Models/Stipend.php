@@ -26,19 +26,19 @@ class Stipend extends Model
     // belongsTo: Stipend belongs to a user (as student, via student_id)
     public function student()
     {
-        return $this->belongsTo(User::class, 'student_id', 'user_id');  // FK: student_id, related PK: user_id (since User uses custom PK)
+        return $this->belongsTo(User::class, 'student_id', 'id');  // FK: student_id, related PK: user_id (since User uses custom PK)
     }
 
     // belongsTo: Stipend belongs to a user (as creator, via created_by)
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by', 'user_id');  // FK: created_by, related PK: user_id
+        return $this->belongsTo(User::class, 'created_by', 'id');  // FK: created_by, related PK: user_id
     }
 
     // belongsTo: Stipend belongs to a user (as updater, via updated_by)
     public function updater()
     {
-        return $this->belongsTo(User::class, 'updated_by', 'user_id');  // FK: updated_by, related PK: user_id
+        return $this->belongsTo(User::class, 'updated_by', 'id');  // FK: updated_by, related PK: user_id
     }
 
     // belongsTo: Stipend belongs to a stipend release (via release_id)

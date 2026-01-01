@@ -20,12 +20,12 @@ class Scholarship extends Model
     // belongsTo: Scholarship belongs to a user (via user_id)
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by', 'user_id');  // FK: user_id, related PK: user_id (since User uses custom PK)
+        return $this->belongsTo(User::class, 'created_by', 'id');  // FK: user_id, related PK: user_id (since User uses custom PK)
     }
 
     public function updater()
     {
-        return $this->belongsTo(User::class, 'updated_by', 'user_id');  // FK: updated_by, related PK: user_id
+        return $this->belongsTo(User::class, 'updated_by', 'id');  // FK: updated_by, related PK: user_id
     }
 
     // hasMany: Scholarship has many scholarship batches (via scholarship_id in scholarship_batches table)
