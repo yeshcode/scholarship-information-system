@@ -114,6 +114,58 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:Scholarship Coordinator')->prefix('coordinator')->group(function () {
         Route::get('/dashboard', [CoordinatorController::class, 'dashboard'])->name('coordinator.dashboard');
         // Add more Coordinator features here later
+        // Manage Scholars (list, manual add, OCR button)
+        Route::get('/manage-scholars', [CoordinatorController::class, 'manageScholars'])->name('coordinator.manage-scholars');
+        Route::get('/manage-scholars/create', [CoordinatorController::class, 'createScholar'])->name('coordinator.scholars.create');
+        Route::post('/manage-scholars', [CoordinatorController::class, 'storeScholar'])->name('coordinator.scholars.store');
+        // Add OCR route later: Route::post('/manage-scholars/ocr', [CoordinatorController::class, 'ocrVerify'])->name('coordinator.scholars.ocr');
+    
+        // View All Enrolled Users (read-only + manual add)
+        Route::get('/enrolled-users', [CoordinatorController::class, 'viewEnrolledUsers'])->name('coordinator.enrolled-users');
+        Route::post('/enrolled-users/add', [CoordinatorController::class, 'addEnrolledUser'])->name('coordinator.enrolled-users.add');
+
+        // Manage Scholarships
+        Route::get('/manage-scholarships', [CoordinatorController::class, 'manageScholarships'])->name('coordinator.manage-scholarships');
+        Route::get('/manage-scholarships/create', [CoordinatorController::class, 'createScholarship'])->name('coordinator.scholarships.create');
+        Route::post('/manage-scholarships', [CoordinatorController::class, 'storeScholarship'])->name('coordinator.scholarships.store');
+        Route::get('/manage-scholarships/{id}/edit', [CoordinatorController::class, 'editScholarship'])->name('coordinator.scholarships.edit');
+        Route::put('/manage-scholarships/{id}', [CoordinatorController::class, 'updateScholarship'])->name('coordinator.scholarships.update');
+        Route::delete('/manage-scholarships/{id}', [CoordinatorController::class, 'destroyScholarship'])->name('coordinator.scholarships.destroy');
+        Route::get('/manage-scholarships/{id}/delete', [CoordinatorController::class, 'confirmDeleteScholarship'])->name('coordinator.scholarships.confirm-delete');
+    
+        // Manage Scholarship Batches
+        Route::get('/scholarship-batches', [CoordinatorController::class, 'manageScholarshipBatches'])->name('coordinator.scholarship-batches');
+        Route::get('/scholarship-batches/create', [CoordinatorController::class, 'createScholarshipBatch'])->name('coordinator.scholarship-batches.create');
+        Route::post('/scholarship-batches', [CoordinatorController::class, 'storeScholarshipBatch'])->name('coordinator.scholarship-batches.store');
+        Route::get('/scholarship-batches/{id}/edit', [CoordinatorController::class, 'editScholarshipBatch'])->name('coordinator.scholarship-batches.edit');
+        Route::put('/scholarship-batches/{id}', [CoordinatorController::class, 'updateScholarshipBatch'])->name('coordinator.scholarship-batches.update');
+        Route::delete('/scholarship-batches/{id}', [CoordinatorController::class, 'destroyScholarshipBatch'])->name('coordinator.scholarship-batches.destroy');
+        Route::get('/scholarship-batches/{id}/delete', [CoordinatorController::class, 'confirmDeleteScholarshipBatch'])->name('coordinator.scholarship-batches.confirm-delete');
+    
+        // Manage Stipend
+        Route::get('/manage-stipends', [CoordinatorController::class, 'manageStipends'])->name('coordinator.manage-stipends');
+        Route::get('/manage-stipends/create', [CoordinatorController::class, 'createStipend'])->name('coordinator.stipends.create');
+        Route::post('/manage-stipends', [CoordinatorController::class, 'storeStipend'])->name('coordinator.stipends.store');
+        Route::get('/manage-stipends/{id}/edit', [CoordinatorController::class, 'editStipend'])->name('coordinator.stipends.edit');
+        Route::put('/manage-stipends/{id}', [CoordinatorController::class, 'updateStipend'])->name('coordinator.stipends.update');
+        Route::delete('/manage-stipends/{id}', [CoordinatorController::class, 'destroyStipend'])->name('coordinator.stipends.destroy');
+        Route::get('/manage-stipends/{id}/delete', [CoordinatorController::class, 'confirmDeleteStipend'])->name('coordinator.stipends.confirm-delete');
+    
+        // Manage Stipend Release
+        Route::get('/manage-stipend-releases', [CoordinatorController::class, 'manageStipendReleases'])->name('coordinator.manage-stipend-releases');
+        Route::get('/manage-stipend-releases/create', [CoordinatorController::class, 'createStipendRelease'])->name('coordinator.stipend-releases.create');
+        Route::post('/manage-stipend-releases', [CoordinatorController::class, 'storeStipendRelease'])->name('coordinator.stipend-releases.store');
+        Route::get('/manage-stipend-releases/{id}/edit', [CoordinatorController::class, 'editStipendRelease'])->name('coordinator.stipend-releases.edit');
+        Route::put('/manage-stipend-releases/{id}', [CoordinatorController::class, 'updateStipendRelease'])->name('coordinator.stipend-releases.update');
+        Route::delete('/manage-stipend-releases/{id}', [CoordinatorController::class, 'destroyStipendRelease'])->name('coordinator.stipend-releases.destroy');
+        Route::get('/manage-stipend-releases/{id}/delete', [CoordinatorController::class, 'confirmDeleteStipendRelease'])->name('coordinator.stipend-releases.confirm-delete');
+    
+        // Manage Announcements
+        Route::get('/manage-announcements', [CoordinatorController::class, 'manageAnnouncements'])->name('coordinator.manage-announcements');
+        Route::get('/manage-announcements/create', [CoordinatorController::class, 'createAnnouncement'])->name('coordinator.announcements.create');
+        Route::post('/manage-announcements', [CoordinatorController::class, 'storeAnnouncement'])->name('coordinator.announcements.store');
+    // Add notify route later: Route::post('/manage-announcements/notify', [CoordinatorController::class, 'notifyAnnouncement'])->name('coordinator.announcements.notify');
+// });
     });
 
     // Student routes (only Students can access)
