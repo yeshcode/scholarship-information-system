@@ -48,11 +48,37 @@
                 <x-nav-link :href="route('admin.dashboard', ['page' => 'user-type'])" :active="request('page') === 'user-type'">
                     {{ __('User Type') }}
                 </x-nav-link>
-            @elseif(auth()->user()->hasRole('Scholarship Coordinator'))
+
+                <!-- Scholarship Coordinator Section Links -->
+
+                @elseif(auth()->user()->hasRole('Scholarship Coordinator'))
                 <x-nav-link :href="route('coordinator.dashboard')" :active="request()->routeIs('coordinator.dashboard')">
                     {{ __('Dashboard') }}
                 </x-nav-link>
-                <!-- Future: Add more Coordinator links here -->
+                <x-nav-link :href="route('coordinator.manage-scholars')" :active="request()->routeIs('coordinator.manage-scholars') || request()->routeIs('coordinator.scholars.*')">
+                    {{ __('Manage Scholars') }}
+                </x-nav-link>
+                <x-nav-link :href="route('coordinator.enrolled-users')" :active="request()->routeIs('coordinator.enrolled-users')">
+                    {{ __('Enrolled Users') }}
+                </x-nav-link>
+                <x-nav-link :href="route('coordinator.manage-scholarships')" :active="request()->routeIs('coordinator.manage-scholarships') || request()->routeIs('coordinator.scholarships.*')">
+                    {{ __('Manage Scholarships') }}
+                </x-nav-link>
+                <x-nav-link :href="route('coordinator.scholarship-batches')" :active="request()->routeIs('coordinator.scholarship-batches') || request()->routeIs('coordinator.scholarship-batches.*')">
+                    {{ __('Scholarship Batches') }}
+                </x-nav-link>
+                <x-nav-link :href="route('coordinator.manage-stipends')" :active="request()->routeIs('coordinator.manage-stipends') || request()->routeIs('coordinator.stipends.*')">
+                    {{ __('Manage Stipends') }}
+                </x-nav-link>
+                <x-nav-link :href="route('coordinator.manage-stipend-releases')" :active="request()->routeIs('coordinator.manage-stipend-releases') || request()->routeIs('coordinator.stipend-releases.*')">
+                    {{ __('Stipend Releases') }}
+                </x-nav-link>
+                <x-nav-link :href="route('coordinator.manage-announcements')" :active="request()->routeIs('coordinator.manage-announcements') || request()->routeIs('coordinator.announcements.*')">
+                    {{ __('Manage Announcements') }}
+                </x-nav-link>
+
+
+                <!-- Student Section Links -->
             @elseif(auth()->user()->hasRole('Student'))
                 <x-nav-link :href="route('student.dashboard')" :active="request()->routeIs('student.dashboard')">
                     {{ __('Dashboard') }}
