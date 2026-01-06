@@ -10,8 +10,11 @@ use App\Models\Announcement;
 use App\Models\Scholarship;
 use App\Models\User;
 use App\Models\Semester;  // Add if needed for FKs
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;  // Add this for emails
+use App\Mail\AnnouncementNotification;  // Add this for the Mailable
 use App\Services\ScholarOcrService;
 
 
@@ -383,34 +386,68 @@ public function confirmDeleteStipendRelease($id)
 }
 
     // Manage Announcements
-    public function manageAnnouncements()
-    {
-        $announcements = Announcement::with('creator')->paginate(10);
-        return view('coordinator.manage-announcements', compact('announcements'));
-    }
-
-    public function createAnnouncement()
-    {
-        return view('coordinator.create-announcement');
-    }
-
-    public function storeAnnouncement(Request $request)
-    {
-        $request->validate([
-            'title' => 'required|string',
-            'description' => 'required|string',
-            'posted_at' => 'required|date',
-        ]);
-
-        Announcement::create([
+     // Manage Announcements (unchanged, but ensure it loads with creator)
+     public function manageAnnouncements()
+     {
+         $announcements = Announcement::with('creator')->paginate(10);
+         return view('coordinator.manage-announcements', compact('announcements'));
+     }
+ 
+     // Show create announcement form (UPDATED: Add scholar list for selection)
+     public function createAnnouncement()
+     {
+         $scholars = Scholar::with('user')->get();  // Load scholars for selection if audience is specific
+         return view('coordinator.create-announcement', compact('scholars'));
+     }
+ 
+     // Store announcement and send notifications (UPDATED: Add audience, scholar selection, emails, and notifications)
+     public function storeAnnouncement(Request $request)
+     {
+         $request->validate([
+             'title' => 'required|string|max:255',
+             'description' => 'required|string',
+             'audience' => 'required|in:all_students,specific_scholars',
+             'selected_scholars' => 'nullable|array',  // For specific scholars
+             'posted_at' => 'nullable|date',  // Keep your existing field
+         ]);
+ 
+         // Create announcement
+         $announcement = Announcement::create([
             'created_by' => Auth::id(),
             'title' => $request->title,
             'description' => $request->description,
-            'posted_at' => $request->posted_at,
+            'audience' => $request->audience,
+            'posted_at' => $request->posted_at ?: now(),  // Use now() if null
         ]);
-
-        return redirect()->route('coordinator.manage-announcements')->with('success', 'Announcement created successfully.');
-    }
+ 
+         // Determine recipients
+         $recipients = collect();
+         if ($request->audience === 'all_students') {
+             $recipients = User::where('user_type', 'student')->get();  // All students (adjust 'user_type' if your field differs)
+         } elseif ($request->audience === 'specific_scholars') {
+             $recipients = Scholar::whereIn('id', $request->selected_scholars ?? [])->with('user')->get()->pluck('user');
+         }
+ 
+         // Send emails and create notifications
+         foreach ($recipients as $user) {
+             // Send email (queue for bulk if needed)
+             Mail::to($user->bisu_email)->send(new AnnouncementNotification($announcement->toArray()));
+ 
+             // Create notification record
+             Notification::create([
+                 'recipient_user_id' => $user->id,
+                 'created_by' => Auth::id(),
+                 'type' => 'announcement',
+                 'title' => $announcement->title,
+                 'message' => $announcement->description,
+                 'related_type' => Announcement::class,
+                 'related_id' => $announcement->id,
+                 'sent_at' => now(),
+             ]);
+         }
+ 
+         return redirect()->route('coordinator.manage-announcements')->with('success', 'Announcement posted and notifications sent!');
+     }
 
     // Manage Scholarships
 public function manageScholarships()
@@ -481,4 +518,6 @@ public function confirmDeleteScholarship($id)
     $scholarship = Scholarship::findOrFail($id);
     return view('coordinator.confirm-delete-scholarship', compact('scholarship'));
 }
+
+
 }

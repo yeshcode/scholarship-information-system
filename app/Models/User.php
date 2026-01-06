@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Spatie\Permission\Models\Role;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles;
+
+    
 
     protected $fillable = [
         'user_id',           // Unique string ID (for display/custom logic)
@@ -33,6 +36,11 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    // public function getAuthIdentifierName()
+    // {
+    //     return 'bisu_email';
+    // }
 
     // Relationships (fixed to use 'id' as local key for FKs)
     public function userType()
@@ -127,9 +135,9 @@ class User extends Authenticatable
     {
         static::saved(function ($user) {
             if ($user->userType) {
-                $roleName = $user->userType->name;  // e.g., "Student"
-            if (!$user->hasRole($roleName)) {
-                $user->assignRole($roleName);  // Assign Spatie role
+                $roleName = $user->userType->name;
+                if (!$user->hasRole($roleName) && Role::where('name', $roleName)->exists()) {  // Use 'Role' instead of full namespace
+                    $user->assignRole($roleName);
                 }
             }
         });

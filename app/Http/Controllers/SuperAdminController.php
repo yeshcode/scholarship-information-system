@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Models\Section; 
 use App\Models\YearLevel;
@@ -324,9 +325,6 @@ public function deleteCourse($id)
     return view('super-admin.courses-delete', compact('course'));
 }
 
-
-
-
 // Semesters CRUD Methods
 public function createSemester()
 {
@@ -522,7 +520,11 @@ public function createUser()
     $colleges = College::all();
     $yearLevels = YearLevel::all();
     $sections = Section::with('course', 'yearLevel')->get();
-    return view('super-admin.users-create', compact('userTypes', 'colleges', 'yearLevels', 'sections'));
+    
+    $studentUserType = UserType::where('name', 'Student')->first();
+    $studentUserTypeId = $studentUserType ? $studentUserType->id : null;
+    
+    return view('super-admin.users-create', compact('userTypes', 'colleges', 'yearLevels', 'sections', 'studentUserTypeId'));
 }
 
 public function editUser($id)
@@ -537,39 +539,82 @@ public function editUser($id)
 
 public function storeUser(Request $request)
 {
-    $request->validate([
+    // Dynamically get the "Student" user type
+    $studentUserType = \App\Models\UserType::where('name', 'Student')->first();
+    $studentUserTypeId = $studentUserType ? $studentUserType->id : null;
+    
+    $isStudent = $request->user_type_id == $studentUserTypeId;
+    
+    // Validation rules (conditional for students)
+    $rules = [
         'user_id' => 'required|string|unique:users,user_id',
         'bisu_email' => 'required|email|unique:users,bisu_email',
         'firstname' => 'required|string|max:255',
         'lastname' => 'required|string|max:255',
+        'middlename' => 'nullable|string|max:255',
         'contact_no' => 'required|string|max:255',
-        'student_id' => 'nullable|string|max:255',
+        'student_id' => $isStudent ? 'required|string|max:255' : 'nullable|string|max:255',  // Required for students (for password)
         'user_type_id' => 'required|exists:user_types,id',
-        'college_id' => 'nullable|exists:colleges,id',
-        'year_level_id' => 'nullable|exists:year_levels,id',
-        'section_id' => 'nullable|exists:sections,id',
-        'password' => 'required|string|min:8',
-    ]);
+        'college_id' => $isStudent ? 'required|exists:colleges,id' : 'nullable|exists:colleges,id',
+        'year_level_id' => $isStudent ? 'required|exists:year_levels,id' : 'nullable|exists:year_levels,id',
+        'section_id' => $isStudent ? 'required|exists:sections,id' : 'nullable|exists:sections,id',
+        'password' => $isStudent ? 'nullable|string|min:8' : 'required|string|min:8',  // Ignored for students
+    ];
     
-    $user = User::create([
-        'user_id' => $request->user_id,
-        'bisu_email' => $request->bisu_email,
-        'firstname' => $request->firstname,
-        'lastname' => $request->lastname,
-        'contact_no' => $request->contact_no,
-        'student_id' => $request->student_id,
-        'user_type_id' => $request->user_type_id,
-        'college_id' => $request->college_id,
-        'year_level_id' => $request->year_level_id,
-        'section_id' => $request->section_id,
-        'password' => bcrypt($request->password),
-        'status' => 'active',
-    ]);
+    $request->validate($rules);
     
-    // NEW: Assign Spatie role based on user_type (e.g., "Student")
-    $user->assignRole($user->userType->name);
+    // NEW: Ensure student_id is provided for students (prevents empty password)
+    if ($isStudent && empty($request->student_id)) {
+        return redirect()->back()->with('error', 'Student ID is required for students.');
+    }
     
-    return redirect()->route('admin.dashboard', ['page' => 'manage-users'])->with('success', 'User added successfully!');
+    try {
+        // UPDATED: For students, ALWAYS use student_id as password (no fallback). For others, use manual password.
+        $password = $isStudent ? $request->student_id : $request->password;
+        
+        if (!$password) {
+            return redirect()->back()->with('error', 'Password is required. For students, ensure Student ID is provided.');
+        }
+
+        // Temporary debug: Uncomment to check values (remove after testing)
+//         dd([
+//             'isStudent' => $isStudent,
+//             'request->password' => $request->password,
+//             'request->student_id' => $request->student_id,
+//             'final password' => $password,
+//         ]);
+        
+        $user = User::create([
+            'user_id' => $request->user_id,
+            'bisu_email' => $request->bisu_email,
+            'firstname' => $request->firstname,
+            'lastname' => $request->lastname,
+            'middlename' => $request->middlename,
+            'contact_no' => $request->contact_no,
+            'student_id' => $request->student_id,
+            'user_type_id' => $request->user_type_id,
+            'college_id' => $request->college_id,
+            'year_level_id' => $request->year_level_id,
+            'section_id' => $request->section_id,
+            'password' => bcrypt($password),  // Hash it (student_id for students)
+            'status' => 'active',
+        ]);
+        
+        // Assign role
+        if ($user->userType) {
+            $roleName = $user->userType->name;
+            if (\Spatie\Permission\Models\Role::where('name', $roleName)->exists()) {
+                $user->assignRole($roleName);
+            } else {
+                Log::warning("Role '$roleName' does not exist for user {$user->id}");
+            }
+        }
+        
+        return redirect()->route('admin.dashboard', ['page' => 'manage-users'])->with('success', 'User added successfully!');
+    } catch (\Exception $e) {
+        Log::error('User creation failed: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'Failed to add user: ' . $e->getMessage());
+    }
 }
 
 public function updateUser(Request $request, $id)

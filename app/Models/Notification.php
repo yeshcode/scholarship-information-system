@@ -15,7 +15,7 @@ class Notification extends Model
         'related_type',
         'related_id',
         'is_read',
-        'date',
+        'sent_at',
     ];
 
     // Relationships

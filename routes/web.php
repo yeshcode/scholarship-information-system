@@ -169,6 +169,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/manage-announcements', [CoordinatorController::class, 'manageAnnouncements'])->name('coordinator.manage-announcements');
         Route::get('/manage-announcements/create', [CoordinatorController::class, 'createAnnouncement'])->name('coordinator.announcements.create');
         Route::post('/manage-announcements', [CoordinatorController::class, 'storeAnnouncement'])->name('coordinator.announcements.store');
+        Route::get('/manage-announcements', [CoordinatorController::class, 'manageAnnouncements'])->name('coordinator.manage-announcements');
+        Route::get('/manage-announcements/create', [CoordinatorController::class, 'createAnnouncement'])->name('coordinator.announcements.create');
+        Route::post('/manage-announcements', [CoordinatorController::class, 'storeAnnouncement'])->name('coordinator.announcements.store');
     // Add notify route later: Route::post('/manage-announcements/notify', [CoordinatorController::class, 'notifyAnnouncement'])->name('coordinator.announcements.notify');
 // });
     });
