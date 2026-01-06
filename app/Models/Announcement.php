@@ -11,6 +11,12 @@ class Announcement extends Model
         'title',
         'description',  // Fixed typo
         'posted_at',
+        'audience',
+    ];
+
+    // Add this: Cast 'posted_at' to a datetime for automatic Carbon handling
+    protected $casts = [
+        'posted_at' => 'datetime',  // Treats it as a Carbon instance
     ];
 
     // Relationships
