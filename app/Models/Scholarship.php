@@ -33,4 +33,10 @@ class Scholarship extends Model
     {
         return $this->hasMany(ScholarshipBatch::class, 'scholarship_id', 'id');  // FK in scholarship_batches: scholarship_id, local PK: id
     }
+
+    // NEW: hasMany: Scholarship has many scholars (direct, via scholarship_id in scholars table)
+    public function scholars()
+    {
+        return $this->hasMany(Scholar::class, 'scholarship_id', 'id');  // FK in scholars: scholarship_id, local PK: id
+    }
 }

@@ -9,8 +9,9 @@ class Enrollment extends Model
     protected $fillable = [
         'user_id',       // FK to users table (matches migration and User model)
         'semester_id',   // FK to semesters table
-        'section_id',    // FK to sections table
-        'status',        // e.g., 'active', 'inactive'
+        'section_id',
+        'course_id',    // FK to sections table
+        'status',       // e.g., 'active', 'inactive'
     ];
 
     // Relationships
@@ -31,4 +32,9 @@ class Enrollment extends Model
     {
         return $this->belongsTo(Section::class, 'section_id', 'id');
     }
+
+    public function course()
+{
+    return $this->belongsTo(Course::class, 'course_id', 'id');
+}
 }

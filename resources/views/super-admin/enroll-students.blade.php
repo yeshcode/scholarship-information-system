@@ -69,7 +69,7 @@
         <a href="{{ route('admin.dashboard', ['page' => 'enrollments']) }}" class="ml-4 text-gray-500 hover:text-gray-700">Back to Enrollments</a>
     </form>
 
-    <!-- Confirmation Modal (Unchanged) -->
+    <!-- Confirmation Modal (Updated with Course Selection) -->
     <div id="confirmation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
         <div class="bg-white p-6 rounded shadow-lg w-1/2">
             <h2 class="text-xl font-bold mb-4">Confirm Selected Students</h2>
@@ -92,6 +92,15 @@
                         <option value="">Select New Section</option>
                         @foreach($sections as $section)
                             <option value="{{ $section->id }}">{{ $section->section_name }} ({{ $section->course->course_name ?? 'N/A' }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-4">  {{-- Add this new div for course selection --}}
+                    <label for="course_id" class="block text-sm font-medium">Update to New Course</label>
+                    <select name="course_id" id="course_id" class="border p-2 w-full" required>
+                        <option value="">Select New Course</option>
+                        @foreach($courses as $course)
+                            <option value="{{ $course->id }}">{{ $course->course_name }}</option>
                         @endforeach
                     </select>
                 </div>

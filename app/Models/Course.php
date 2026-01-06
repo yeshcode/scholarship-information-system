@@ -24,4 +24,9 @@ class Course extends Model
     {
         return $this->hasMany(Section::class, 'course_id', 'id');  // FK in sections: course_id, local PK: id
     }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class, 'course_id', 'id');
+    }
 }

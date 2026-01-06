@@ -12,6 +12,10 @@ use App\Models\User;
 use App\Models\Semester;  // Add if needed for FKs
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\ScholarOcrService;
+
+
+
 
 class CoordinatorController extends Controller
 {
@@ -22,10 +26,17 @@ class CoordinatorController extends Controller
 
     // Manage Scholars
     public function manageScholars()
-    {
-        $scholars = Scholar::with('user', 'scholarshipBatch')->paginate(10);
-        return view('coordinator.manage-scholars', compact('scholars'));
-    }
+{
+    // Eager load relationships: user (with section and course), scholarshipBatch (with semester), and direct scholarship
+    $scholars = Scholar::with([
+        'user.section.course',  // For Section and Course
+        'user.yearLevel',       // If needed for future use
+        'scholarshipBatch.semester',  // For Batch No. and Semester
+        'scholarship'           // NEW: Direct scholarship for Scholarship Name
+    ])->paginate(10);  // Adjust pagination as needed
+    
+    return view('coordinator.manage-scholars', compact('scholars'));
+}
 
     public function createScholar()
     {
@@ -53,6 +64,95 @@ class CoordinatorController extends Controller
 
         return redirect()->route('coordinator.manage-scholars')->with('success', 'Scholar added successfully.');
     }
+
+    // Show OCR upload form
+public function uploadOcr()
+{
+    return view('coordinator.ocr-upload-scholar');
+}
+
+
+// Process OCR and add scholars
+public function processOcr(Request $request)
+{
+    $request->validate([
+        'file' => 'required|mimes:pdf,xlsx,xls,jpg,jpeg,png,gif,bmp,tiff|max:10240',
+    ]);
+
+    $file = $request->file('file');
+    $extension = strtolower($file->getClientOriginalExtension());  // Get file type (e.g., 'png', 'xlsx')
+
+    $service = new ScholarOcrService();
+    $results = $service->processFileWithOcr($file);
+    $extractedData = $service->getExtractedData();
+
+    return redirect()->route('coordinator.scholars.ocr-upload')
+        ->with('results', $results)
+        ->with('extracted_data', $extractedData)
+        ->with('file_type', $extension)  // NEW: Pass file type to session
+        ->with('success', 'File processed. Review matches below.');
+}
+
+// Add this new method
+public function addSelectedOcrScholars(Request $request)
+{
+    $request->validate([
+        'selected_ids' => 'array',
+        'results' => 'required|string',  // JSON string
+    ]);
+
+    $selectedIds = $request->input('selected_ids', []);
+    $results = json_decode($request->input('results'), true);
+
+    // Filter only the selected results
+    $selectedResults = [];
+    foreach ($selectedIds as $index) {
+        if (isset($results[$index])) {
+            $selectedResults[] = $results[$index];
+        }
+    }
+
+    // Redirect to confirmation page with selected results
+    return redirect()->route('coordinator.scholars.confirm-add-ocr')->with('selectedResults', $selectedResults);
+}
+
+public function confirmAddOcrScholars(Request $request)
+{
+    $request->validate([
+        'batch_id' => 'required|exists:scholarship_batches,id',
+        'selected_results' => 'required|string',  // JSON string
+    ]);
+
+    $batchId = $request->input('batch_id');
+    $selectedResults = json_decode($request->input('selected_results'), true);
+
+    $service = new ScholarOcrService();
+    $added = [];
+    foreach ($selectedResults as $result) {
+        if ($result['user'] && $result['is_enrolled'] && !$result['is_scholar']) {
+            Scholar::create([
+                'student_id' => $result['user']->id,
+                'batch_id' => $batchId,  // Use selected batch
+                'updated_by' => Auth::id(),
+                'date_added' => now()->toDateString(),
+                'status' => 'active',
+                'enrollment_status' => $result['data']['enrollment_status'] ?? 'enrolled',
+            ]);
+            $added[] = $result['user']->firstname . ' ' . $result['user']->lastname;
+        }
+    }
+
+    $message = count($added) > 0 ? 'Added scholars: ' . implode(', ', $added) : 'No scholars added.';
+    return redirect()->route('coordinator.manage-scholars')->with('success', $message);
+}
+
+public function showConfirmAddOcr()
+{
+    $batches = ScholarshipBatch::with('semester')->get();  // Existing
+    $scholarships = Scholarship::all();  // NEW: Load all scholarships for the dropdown
+    return view('coordinator.confirm-add-ocr', compact('batches', 'scholarships'));  // Note: View path as per your earlier correction
+}
+
 
     // View All Enrolled Users
     public function viewEnrolledUsers()
