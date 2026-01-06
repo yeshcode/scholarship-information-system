@@ -27,7 +27,22 @@
             <option value="{{ $section->id }}" {{ $enrollment->section_id == $section->id ? 'selected' : '' }}>{{ $section->section_name }} ({{ $section->course->course_name ?? 'N/A' }} - {{ $section->yearLevel->year_level_name ?? 'N/A' }})</option>
         @endforeach
     </select>
-    <input type="text" name="status" value="{{ $enrollment->status }}" class="border p-2 w-full mb-4" required>
+    <select name="course_id" class="border p-2 w-full mb-4" required>
+        <option value="">Select Course</option>
+        @foreach($courses as $course)
+            <option value="{{ $course->id }}" {{ $enrollment->course_id == $course->id ? 'selected' : '' }}>{{ $course->course_name }}</option>
+        @endforeach
+    </select>
+    
+    <!-- Updated Status Dropdown (replaces the text input) -->
+    <label for="status" class="block text-gray-700 mb-2">Status</label>
+    <select name="status" id="status" class="border p-2 w-full mb-4" required>
+        <option value="">Select Status</option>
+        <option value="enrolled" {{ $enrollment->status == 'enrolled' ? 'selected' : '' }}>Enrolled</option>
+        <option value="graduated" {{ $enrollment->status == 'graduated' ? 'selected' : '' }}>Graduated</option>
+        <option value="not_enrolled" {{ $enrollment->status == 'not_enrolled' ? 'selected' : '' }}>Not Enrolled</option>
+    </select>
+    
     <button type="submit" class="bg-yellow-500 text-white px-4 py-2 rounded">Update Enrollment</button>
     <a href="{{ route('admin.dashboard', ['page' => 'enrollments']) }}" class="ml-4 text-gray-500">Cancel</a>
 </form>

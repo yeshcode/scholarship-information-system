@@ -17,6 +17,7 @@ class User extends Authenticatable
         'user_type_id',
         'firstname',
         'lastname',
+        'middlename', 
         'student_id',        // For students
         'status',
         'contact_no',

@@ -113,11 +113,16 @@ Route::middleware(['auth'])->group(function () {
     // Scholarship Coordinator routes (only Coordinators can access)
     Route::middleware('role:Scholarship Coordinator')->prefix('coordinator')->group(function () {
         Route::get('/dashboard', [CoordinatorController::class, 'dashboard'])->name('coordinator.dashboard');
-        // Add more Coordinator features here later
-        // Manage Scholars (list, manual add, OCR button)
+        
+        // Manage Scholars
         Route::get('/manage-scholars', [CoordinatorController::class, 'manageScholars'])->name('coordinator.manage-scholars');
         Route::get('/manage-scholars/create', [CoordinatorController::class, 'createScholar'])->name('coordinator.scholars.create');
         Route::post('/manage-scholars', [CoordinatorController::class, 'storeScholar'])->name('coordinator.scholars.store');
+        Route::get('/manage-scholars/ocr-upload', [CoordinatorController::class, 'uploadOcr'])->name('coordinator.scholars.ocr-upload');
+        Route::post('/manage-scholars/ocr-process', [CoordinatorController::class, 'processOcr'])->name('coordinator.scholars.ocr-process');
+        Route::post('/manage-scholars/add-selected-ocr', [CoordinatorController::class, 'addSelectedOcrScholars'])->name('coordinator.scholars.add-selected-ocr');
+        Route::get('/manage-scholars/confirm-add-ocr', [CoordinatorController::class, 'showConfirmAddOcr'])->name('coordinator.scholars.confirm-add-ocr');
+        Route::post('/manage-scholars/confirm-add-ocr', [CoordinatorController::class, 'confirmAddOcrScholars'])->name('coordinator.scholars.confirm-add-ocr.post');
         // Add OCR route later: Route::post('/manage-scholars/ocr', [CoordinatorController::class, 'ocrVerify'])->name('coordinator.scholars.ocr');
     
         // View All Enrolled Users (read-only + manual add)

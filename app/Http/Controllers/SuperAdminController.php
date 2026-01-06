@@ -387,7 +387,8 @@ public function createEnrollment()
     $users = User::all();
     $semesters = Semester::all();
     $sections = Section::with('course', 'yearLevel')->get();
-    return view('super-admin.enrollments-create', compact('users', 'semesters', 'sections'));
+    $courses = Course::all();  // Add this line to load courses
+    return view('super-admin.enrollments-create', compact('users', 'semesters', 'sections', 'courses'));  // Add 'courses' to compact
 }
 
 public function editEnrollment($id)
@@ -396,7 +397,8 @@ public function editEnrollment($id)
     $users = User::all();
     $semesters = Semester::all();
     $sections = Section::with('course', 'yearLevel')->get();
-    return view('super-admin.enrollments-edit', compact('enrollment', 'users', 'semesters', 'sections'));
+    $courses = Course::all();  // Add this line
+    return view('super-admin.enrollments-edit', compact('enrollment', 'users', 'semesters', 'sections', 'courses'));  // Add 'courses' to compact
 }
 
 public function storeEnrollment(Request $request)
@@ -405,10 +407,17 @@ public function storeEnrollment(Request $request)
         'user_id' => 'required|exists:users,id',
         'semester_id' => 'required|exists:semesters,id',
         'section_id' => 'required|exists:sections,id',
-        'status' => 'required|string|max:255',
+        'course_id' => 'required|exists:courses,id', 
+        'status' => 'required|in:enrolled,graduated,not_enrolled',  // Restrict to valid enum values (adjust if different)
     ]);
     
-    Enrollment::create($request->only(['user_id', 'semester_id', 'section_id', 'status']));
+    Enrollment::create([
+        'user_id' => $request->user_id,
+        'semester_id' => $request->semester_id,
+        'section_id' => $request->section_id,
+        'course_id' => $request->course_id,
+        'status' => strtolower($request->status),  // Ensure lowercase for enum
+    ]);
     return redirect()->route('admin.dashboard', ['page' => 'enrollments'])->with('success', 'Enrollment added successfully!');
 }
 
@@ -418,11 +427,18 @@ public function updateEnrollment(Request $request, $id)
         'user_id' => 'required|exists:users,id',
         'semester_id' => 'required|exists:semesters,id',
         'section_id' => 'required|exists:sections,id',
-        'status' => 'required|string|max:255',
+        'course_id' => 'required|exists:courses,id', 
+        'status' => 'required|in:enrolled,graduated,not_enrolled',
     ]);
     
     $enrollment = Enrollment::findOrFail($id);
-    $enrollment->update($request->only(['user_id', 'semester_id', 'section_id', 'status']));
+    $enrollment->update([
+        'user_id' => $request->user_id,
+        'semester_id' => $request->semester_id,
+        'section_id' => $request->section_id,
+        'course_id' => $request->course_id,
+        'status' => strtolower($request->status),
+    ]);
     return redirect()->route('admin.dashboard', ['page' => 'enrollments'])->with('success', 'Enrollment updated successfully!');
 }
 
@@ -470,19 +486,21 @@ public function storeEnrollStudents(Request $request)
     $request->validate([
         'selected_users' => 'required|array|min:1',
         'semester_id' => 'required|exists:semesters,id',
-        'section_id' => 'nullable|exists:sections,id',  // Optional
+        'section_id' => 'nullable|exists:sections,id',
+        'course_id' => 'required|exists:courses,id',
     ]);
 
     $selectedUserIds = $request->selected_users;
     $semesterId = $request->semester_id;
     $sectionId = $request->section_id;
+    $courseId = $request->course_id;
 
     $enrolledCount = 0;
     foreach ($selectedUserIds as $userId) {
         // Update or create enrollment: If student is already enrolled in this semester, update; else create
         Enrollment::updateOrCreate(
             ['user_id' => $userId, 'semester_id' => $semesterId],
-            ['section_id' => $sectionId, 'status' => 'active']
+            ['section_id' => $sectionId, 'course_id' => $courseId, 'status' => 'enrolled']  // Changed from 'active' to 'enrolled'
         );
         $enrolledCount++;
     }
