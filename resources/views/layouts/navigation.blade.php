@@ -59,10 +59,10 @@
     <div class="flex justify-center flex-1 space-x-8">  <!-- Centered with flex-1 for balance -->
         @auth
             @if(auth()->user()->hasRole('Super Admin'))
+                <!-- Super Admin links (unchanged) -->
                 <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard') && !request('page')" class="nav-link nav-text">
                     {{ __('SMIS') }}
                 </x-nav-link>
-                <!-- Super Admin Section Links -->
                 <x-nav-link :href="route('admin.dashboard', ['page' => 'manage-users'])" :active="request('page') === 'manage-users'" class="nav-link nav-text">
                     {{ __('Manage Users') }}
                 </x-nav-link>
@@ -87,9 +87,8 @@
                 <x-nav-link :href="route('admin.dashboard', ['page' => 'user-type'])" :active="request('page') === 'user-type'" class="nav-link nav-text">
                     {{ __('User Type') }}
                 </x-nav-link>
-
-                <!-- Scholarship Coordinator Section Links -->
             @elseif(auth()->user()->hasRole('Scholarship Coordinator'))
+                <!-- Coordinator links (unchanged) -->
                 <x-nav-link :href="route('coordinator.dashboard')" :active="request()->routeIs('coordinator.dashboard')" class="nav-link nav-text">
                     {{ __('Dashboard') }}
                 </x-nav-link>
@@ -114,18 +113,30 @@
                 <x-nav-link :href="route('coordinator.manage-announcements')" :active="request()->routeIs('coordinator.manage-announcements') || request()->routeIs('coordinator.announcements.*')" class="nav-link nav-text">
                     {{ __('Manage Announcements') }}
                 </x-nav-link>
-
-                <!-- Student Section Links -->
             @elseif(auth()->user()->hasRole('Student'))
+                <!-- Student links (updated) -->
                 <x-nav-link :href="route('student.dashboard')" :active="request()->routeIs('student.dashboard')" class="nav-link nav-text">
                     {{ __('Dashboard') }}
                 </x-nav-link>
-                <!-- Future: Add more Student links here -->
+                <x-nav-link :href="route('student.announcements')" :active="request()->routeIs('student.announcements')" class="nav-link nav-text">
+                    {{ __('Announcements') }}
+                </x-nav-link>
+                <x-nav-link :href="route('student.scholarships')" :active="request()->routeIs('student.scholarships')" class="nav-link nav-text">
+                    {{ __('Scholarships') }}
+                </x-nav-link>
+                @if(\App\Models\Scholar::where('student_id', auth()->id())->exists())  <!-- Check if user is a scholar -->
+                    <x-nav-link :href="route('student.stipend-history')" :active="request()->routeIs('student.stipend-history')" class="nav-link nav-text">
+                        {{ __('Stipend History') }}
+                    </x-nav-link>
+                @endif
+                <x-nav-link :href="route('student.notifications')" :active="request()->routeIs('student.notifications')" class="nav-link nav-text">
+                    {{ __('Notifications') }}
+                </x-nav-link>
             @endif
         @endauth
     </div>
 
-    <!-- Right Side of Links Row: User Dropdown -->
+    <!-- Right Side of Links Row: User Dropdown (unchanged) -->
     <div class="flex items-center">
         @auth
             <div class="relative">

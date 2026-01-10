@@ -18,6 +18,12 @@ class Notification extends Model
         'sent_at',
     ];
 
+    protected $casts = [
+        'sent_at' => 'datetime',  // Add this line to cast sent_at to Carbon
+        'is_read' => 'boolean',
+        // Add other casts if needed
+    ];
+
     // Relationships
     public function recipient()
     {

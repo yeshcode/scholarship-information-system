@@ -179,6 +179,9 @@ Route::middleware(['auth'])->group(function () {
     // Student routes (only Students can access)
     Route::middleware('role:Student')->prefix('student')->group(function () {
         Route::get('/dashboard', [StudentController::class, 'dashboard'])->name('student.dashboard');
-        // Add more Student features here later
+        Route::get('/announcements', [StudentController::class, 'announcements'])->name('student.announcements');
+        Route::get('/scholarships', [StudentController::class, 'scholarships'])->name('student.scholarships');
+        Route::get('/stipend-history', [StudentController::class, 'stipendHistory'])->name('student.stipend-history');
+        Route::get('/notifications', [StudentController::class, 'notifications'])->name('student.notifications');
     });
 });
