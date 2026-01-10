@@ -14,22 +14,24 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-sans antialiased bg-blue-50">
-    <div class="min-h-screen bg-gray-100">
+<body class="font-sans antialiased bg-[#f0f4f8]">  {{-- Changed to light blue background for consistency --}}
+    <div class="min-h-screen bg-[#f0f4f8]">  {{-- Changed to light blue background --}}
         @include('layouts.navigation')
 
-        <!-- Page Heading -->
+        <!-- Page Heading (Now with Blue Background) -->
         @isset($header)
-            <header class="bg-white shadow">
-                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    {{ $header }}
+            <header class="bg-[#003366] shadow border-b border-[#007bff]">  {{-- Dark blue header with subtle border --}}
+                <div class="max-w-7xl mx-auto py-6 px-6 sm:px-6 lg:px-8">  {{-- Added padding for margins --}}
+                    <div class="text-white">  {{-- White text for contrast on dark blue --}}
+                        {{ $header }}
+                    </div>
                 </div>
             </header>
         @endisset
 
-        <!-- Page Content -->
+        <!-- Page Content (Wider with Margins) -->
         <main class="py-6">
-            <div class="{{ isset($fullWidth) ? 'w-full px-4' : 'max-w-7xl mx-auto sm:px-6 lg:px-8' }}">  {{-- Changed px-0 to px-4 for margins --}}
+            <div class="{{ isset($fullWidth) ? 'w-full px-4' : 'max-w-7xl mx-auto px-6 sm:px-6 lg:px-8' }}">  {{-- Adjusted for wider fit with margins: fullWidth keeps px-4, others use px-6 for balanced spacing --}}
                 <div class="{{ isset($fullWidth) ? 'bg-white overflow-hidden shadow-sm sm:rounded-lg' : 'bg-white overflow-hidden shadow-sm sm:rounded-lg p-6' }}">
                     @isset($slot)
                         {{ $slot }}
