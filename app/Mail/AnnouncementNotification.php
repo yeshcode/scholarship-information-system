@@ -13,15 +13,20 @@ class AnnouncementNotification extends Mailable
     use Queueable, SerializesModels;
 
     public $announcement;
+    public $coordinatorEmail;
 
-    public function __construct($announcement)
+    public function __construct($announcement, $coordinatorEmail)  // Ensure both parameters are here
     {
         $this->announcement = $announcement;
+        $this->coordinatorEmail = $coordinatorEmail;  // Assign the variable
     }
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'New Scholarship Announcement: ' . $this->announcement['title']);
+        return new Envelope(
+            subject: 'New Scholarship Announcement: ' . $this->announcement['title'],
+            from: $this->coordinatorEmail,  // Use the dynamic email
+        );
     }
 
     public function content(): Content

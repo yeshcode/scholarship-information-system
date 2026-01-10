@@ -57,9 +57,13 @@ class CoordinatorController extends Controller
             'status' => 'required|in:active,inactive,graduated',
         ]);
 
+        // Fetch the batch to get the scholarship_id
+        $batch = ScholarshipBatch::find($request->batch_id);
+
         Scholar::create([
             'student_id' => $request->student_id,
             'batch_id' => $request->batch_id,
+            'scholarship_id' => $batch->scholarship_id, 
             'updated_by' => Auth::id(),
             'date_added' => $request->date_added,
             'status' => $request->status,
@@ -188,6 +192,8 @@ public function showConfirmAddOcr()
     }
 
     public function createScholarshipBatch()
+
+
     {
         $scholarships = \App\Models\Scholarship::all();
         $semesters = Semester::all();
@@ -407,33 +413,33 @@ public function confirmDeleteStipendRelease($id)
              'title' => 'required|string|max:255',
              'description' => 'required|string',
              'audience' => 'required|in:all_students,specific_scholars',
-             'selected_scholars' => 'nullable|array',  // For specific scholars
-             'posted_at' => 'nullable|date',  // Keep your existing field
+             'selected_scholars' => 'nullable|array',
+             'posted_at' => 'nullable|date',
          ]);
  
          // Create announcement
          $announcement = Announcement::create([
-            'created_by' => Auth::id(),
-            'title' => $request->title,
-            'description' => $request->description,
-            'audience' => $request->audience,
-            'posted_at' => $request->posted_at ?: now(),  // Use now() if null
-        ]);
+             'created_by' => Auth::id(),
+             'title' => $request->title,
+             'description' => $request->description,
+             'audience' => $request->audience,
+             'posted_at' => $request->posted_at ?: now(),
+         ]);
  
-         // Determine recipients
+         // Get recipients
          $recipients = collect();
          if ($request->audience === 'all_students') {
-             $recipients = User::where('user_type', 'student')->get();  // All students (adjust 'user_type' if your field differs)
+             $recipients = User::whereHas('userType', function ($q) { $q->where('name', 'Student'); })->get();
          } elseif ($request->audience === 'specific_scholars') {
              $recipients = Scholar::whereIn('id', $request->selected_scholars ?? [])->with('user')->get()->pluck('user');
          }
  
+         // Get coordinator's email (fallback if bisu_email is missing)
+         $coordinatorEmail = Auth::user()->bisu_email ?? 'default@bisu.edu.ph';  // Use fallback if field is empty
+ 
          // Send emails and create notifications
          foreach ($recipients as $user) {
-             // Send email (queue for bulk if needed)
-             Mail::to($user->bisu_email)->send(new AnnouncementNotification($announcement->toArray()));
- 
-             // Create notification record
+             Mail::to($user->bisu_email)->send(new AnnouncementNotification($announcement->toArray(), $coordinatorEmail));
              Notification::create([
                  'recipient_user_id' => $user->id,
                  'created_by' => Auth::id(),
@@ -442,6 +448,7 @@ public function confirmDeleteStipendRelease($id)
                  'message' => $announcement->description,
                  'related_type' => Announcement::class,
                  'related_id' => $announcement->id,
+                 'is_read' => false, 
                  'sent_at' => now(),
              ]);
          }
