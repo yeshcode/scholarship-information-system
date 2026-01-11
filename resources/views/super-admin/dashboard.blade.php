@@ -21,6 +21,5 @@
 @else
     <!-- Default Dashboard Content -->
     <h1 class="text-2xl font-bold mb-4">Welcome to Super Admin Dashboard</h1>
-    <p class="mb-6">This is your dashboard. Use the navigation above to access different sections.</p>
 @endif
 @endsection
