@@ -27,7 +27,6 @@
 <div class="bg-[#f0f4f8] min-h-screen">  {{-- Removed p-4 sm:p-6 to let table fit screen with layout's margins --}}
     <div class="w-full">  {{-- Removed mx-auto for full stretching without centering --}}
         <h1 class="text-xl sm:text-2xl font-bold mb-4 text-[#003366]">Manage Users</h1>  {{-- Dark blue title --}}
-        <p class="mb-6 text-[#003366]">Manage users here. Data is loaded from your Supabase database.</p>
 
         @if(session('success'))
             <div class="bg-[#007bff] text-[#003366] p-4 mb-4 rounded-lg shadow-sm border border-[#003366]">{{ session('success') }}</div>
