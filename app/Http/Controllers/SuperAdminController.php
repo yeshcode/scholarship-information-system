@@ -52,9 +52,28 @@ class SuperAdminController extends Controller
 
         // Update the 'enrollments' section in dashboard() to load more data
         elseif ($page === 'enrollments') {
-            $data['enrollments'] = Enrollment::with('user', 'semester', 'section')->get();  // Load related data
+            // Get the selected semester ID from the request (for filtering)
+            $selectedSemesterId = request('semester_id');
+        
+            // Fetch all semesters for the dropdown (order by academic year descending for usability)
+            $data['semesters'] = Semester::orderBy('academic_year', 'desc')->get();
+        
+            // Build the enrollments query with relationships
+            $query = Enrollment::with('user', 'semester', 'section.course', 'course');
+        
+            // Apply semester filter if selected
+            if ($selectedSemesterId) {
+                $query->where('semester_id', $selectedSemesterId);
+            }
+        
+            // Paginate the results (15 per page; adjust as needed)
+            $data['enrollments'] = $query->paginate(15);
+        
+            // Pass the selected semester ID to the view (for pre-selecting the dropdown)
+            $data['selectedSemesterId'] = $selectedSemesterId;
+        
+            // Existing data for other parts of the page (e.g., dropdowns in create/edit forms)
             $data['users'] = User::all();  // For user dropdown
-            $data['semesters'] = Semester::all();  // For semester dropdown
             $data['sections'] = Section::with('course', 'yearLevel')->get();  // For section dropdown, with related data
             $data['courses'] = Course::all();  // Added for filters on enroll students page
             $data['yearLevels'] = YearLevel::all();  // Added for filters on enroll students page
@@ -62,16 +81,15 @@ class SuperAdminController extends Controller
 
         elseif ($page === 'manage-users') {
             try {
-                $data['users'] = User::with('userType', 'college', 'yearLevel', 'section')->get();
-                // dd($data['users']);
+                // Paginate users (15 per page) for performance
+                $data['users'] = User::with('userType', 'college', 'yearLevel', 'section')->paginate(15);
                 $data['userTypes'] = UserType::all();
                 $data['colleges'] = College::all();
                 $data['yearLevels'] = YearLevel::all();
                 $data['sections'] = Section::with('course', 'yearLevel')->get();
             } catch (\Exception $e) {
-                $data['error'] = 'Database error: ' . $e->getMessage();  // For debugging
+                $data['error'] = 'Database error: ' . $e->getMessage();
             }
-            
         }
         // Add for other pages later
         
@@ -380,6 +398,35 @@ public function deleteSemester($id)
 
 
 // Enrollments CRUD Methods
+
+public function enrollments(Request $request)
+{
+    // Get the selected semester ID from the request (for filtering)
+    $selectedSemesterId = $request->input('semester_id');
+
+    // Fetch all semesters for the dropdown (order by academic year descending for usability)
+    $semesters = Semester::orderBy('academic_year', 'desc')->get();
+
+    // Build the enrollments query with relationships
+    $query = Enrollment::with('user', 'semester', 'section.course', 'course');
+
+    // Apply semester filter if selected
+    if ($selectedSemesterId) {
+        $query->where('semester_id', $selectedSemesterId);
+    }
+
+    // Paginate the results (15 per page; adjust as needed)
+    $enrollments = $query->paginate(15);
+
+    // Existing data for other parts of the page (e.g., dropdowns in create/edit forms)
+    $users = User::all();  // For user dropdown
+    $sections = Section::with('course', 'yearLevel')->get();  // For section dropdown, with related data
+    $courses = Course::all();  // Added for filters on enroll students page
+    $yearLevels = YearLevel::all();  // Added for filters on enroll students page
+
+    // Return the view with all data
+    return view('super-admin.enrollments', compact('enrollments', 'semesters', 'selectedSemesterId', 'users', 'sections', 'courses', 'yearLevels'));
+}
 public function createEnrollment()
 {
     $users = User::all();

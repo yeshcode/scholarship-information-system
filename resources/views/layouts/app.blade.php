@@ -31,7 +31,7 @@
 
         <!-- Page Content (Wider with Margins) -->
         <main class="py-6">
-            <div class="{{ isset($fullWidth) ? 'w-full px-4' : 'max-w-7xl mx-auto px-6 sm:px-6 lg:px-8' }}">  {{-- Adjusted for wider fit with margins: fullWidth keeps px-4, others use px-6 for balanced spacing --}}
+            <div class="{{ isset($fullWidth) ? 'w-full px-4' : 'mx-auto px-3 sm:px-6 lg:px-8' }}">  {{-- Adjusted for wider fit with margins: fullWidth keeps px-4, others use px-6 for balanced spacing --}}
                 <div class="{{ isset($fullWidth) ? 'bg-white overflow-hidden shadow-sm sm:rounded-lg' : 'bg-white overflow-hidden shadow-sm sm:rounded-lg p-6' }}">
                     @isset($slot)
                         {{ $slot }}
