@@ -3,9 +3,12 @@
 <div class="p-4">
 
     {{-- PAGE TITLE --}}
-    <h1 class="fw-bold mb-4" style="font-size: 2rem; color: #0d6efd;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title-blue">
         Manage System Users
     </h1>
+</div>
+
 
     {{-- Success/Error Messages --}}
     @if(session('success'))
@@ -23,13 +26,13 @@
     {{-- ACTION BUTTONS --}}
     <div class="flex justify-end mb-6 space-x-4">
         <a href="{{ route('admin.users.create') }}" 
-            class="inline-flex items-center bg-blue-600 text-white hover:bg-blue-700 
+            class="inline-flex items-center btn-bisu-primary text-white hover:bg-blue-700 
                    font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
             + Add User
         </a>
 
         <a href="{{ route('admin.users.bulk-upload-form') }}" 
-            class="inline-flex items-center bg-blue-500 text-white hover:bg-blue-600 
+            class="inline-flex items-center btn-bisu-primary text-white hover:bg-blue-600 
                    font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
             📤 Bulk Upload Students
         </a>
@@ -119,55 +122,62 @@
 
     </form>
 
+  
     {{-- USERS TABLE --}}
-    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-        <table class="table-auto w-full text-center">
-            <thead class="bg-blue-600 text-white">
-                <tr>
-                    <th class="px-3 py-2">Last Name</th>
-                    <th class="px-3 py-2">First Name</th>
-                    <th class="px-3 py-2">Email</th>
-                    <th class="px-3 py-2">College</th>
-                    <th class="px-3 py-2">Course</th>
-                    <th class="px-3 py-2">Year Level</th>
-                    <th class="px-3 py-2">Status</th>
-                    <th class="px-3 py-2">Actions</th>
+<div class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+    <table class="table-auto w-full text-center border-collapse">
+        <thead>
+            <tr class="bg-[#003366] text-white text-sm uppercase tracking-wide">
+                <th class="px-4 py-3 border border-gray-300">Last Name</th>
+                <th class="px-4 py-3 border border-gray-300">First Name</th>
+                <th class="px-4 py-3 border border-gray-300">Email</th>
+                <th class="px-4 py-3 border border-gray-300">College</th>
+                <th class="px-4 py-3 border border-gray-300">Course</th>
+                <th class="px-4 py-3 border border-gray-300">Year Level</th>
+                <th class="px-4 py-3 border border-gray-300">Status</th>
+                <th class="px-4 py-3 border border-gray-300">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody class="text-gray-700 text-sm">
+            @forelse($users as $user)
+                <tr class="hover:bg-gray-100 transition even:bg-gray-50">
+                    <td class="px-4 py-3 border border-gray-200">{{ $user->lastname }}</td>
+                    <td class="px-4 py-3 border border-gray-200">{{ $user->firstname }}</td>
+                    <td class="px-4 py-3 border border-gray-200">{{ $user->bisu_email }}</td>
+                    <td class="px-4 py-3 border border-gray-200">{{ $user->college->college_name ?? 'N/A' }}</td>
+                    <td class="px-4 py-3 border border-gray-200">{{ $user->course->course_name ?? 'N/A' }}</td>
+                    <td class="px-4 py-3 border border-gray-200">{{ $user->yearLevel->year_level_name ?? 'N/A' }}</td>
+                    <td class="px-4 py-3 border border-gray-200">{{ $user->status }}</td>
+
+                    <td class="px-4 py-3 border border-gray-200 space-x-2">
+                        <a href="{{ route('admin.users.edit', $user->id) }}" 
+                           class="btn btn-sm btn-primary text-white px-3 py-1 rounded shadow-sm"
+                           style="background-color:#003366;">
+                            Edit
+                        </a>
+
+                        <a href="{{ route('admin.users.delete', $user->id) }}" 
+                           class="btn btn-sm btn-danger text-white px-3 py-1 rounded shadow-sm">
+                            Delete
+                        </a>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @forelse($users as $user)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-3 py-2">{{ $user->lastname }}</td>
-                        <td class="px-3 py-2">{{ $user->firstname }}</td>
-                        <td class="px-3 py-2">{{ $user->bisu_email }}</td>
-                        <td class="px-3 py-2">{{ $user->college->college_name ?? 'N/A' }}</td>
-                        <td class="px-3 py-2">{{ $user->course->course_name ?? 'N/A' }}</td>
-                        <td class="px-3 py-2">{{ $user->yearLevel->year_level_name ?? 'N/A' }}</td>
-                        <td class="px-3 py-2">{{ $user->status }}</td>
-                        <td class="px-3 py-2">
-                            <a href="{{ route('admin.users.edit', $user->id) }}" 
-                               class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
-                                Edit
-                            </a>
-                            <a href="{{ route('admin.users.delete', $user->id) }}" 
-                               class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
-                                Delete
-                            </a>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="px-3 py-4 text-gray-500">
-                            No users found.
-                            <a href="{{ route('admin.users.create') }}" class="text-blue-500 underline hover:text-blue-700">
-                                Add one now
-                            </a>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+            @empty
+                <tr>
+                    <td colspan="8" class="px-4 py-5 text-gray-500 text-center">
+                        No users found.
+                        <a href="{{ route('admin.users.create') }}" 
+                           class="text-blue-600 underline hover:text-blue-800">
+                            Add one now
+                        </a>
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
+
 
    
 

@@ -11,6 +11,47 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+    <style>
+    :root {
+        --bs-primary: #003366;
+        --bs-primary-rgb: 0, 51, 102;
+    }
+
+    /* Reusable title style */
+    .page-title-blue {
+        color: #003366;
+        font-weight: 700;
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Reusable BISU primary button */
+    .btn-bisu-primary {
+        background-color: #003366;
+        color: #ffffff;
+        border: none;
+        font-weight: 600;
+    }
+    .btn-bisu-primary:hover {
+        background-color: #002244;
+        color: #ffffff;
+    }
+
+    /* Optional: subtle gray secondary button */
+    .btn-bisu-secondary {
+        background-color: #f1f1f1;
+        color: #333333;
+        border: 1px solid #d0d0d0;
+        font-weight: 500;
+    }
+    .btn-bisu-secondary:hover {
+        background-color: #e0e0e0;
+        color: #222222;
+    }
+</style>
+
+
+
     <!-- Bootstrap (local) -->
     <link rel="stylesheet" href="<?php echo e(asset('bootstrap/css/bootstrap.min.css')); ?>">
 
