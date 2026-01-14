@@ -12,16 +12,130 @@ use App\Models\Semester;
 use App\Models\Enrollment;
 use App\Models\User;
 use App\Models\UserType;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Response;
+
  // Add your model imports (e.g., YearLevel, etc.)
 
 class SuperAdminController extends Controller
 {
+    private function buildDashboardData(): array
+{
+    $data = [];
+
+    // 1) Students added per year (created_at year, "Student" user type)
+    $studentsByYear = User::whereHas('userType', function ($q) {
+            $q->where('name', 'Student');
+        })
+        ->select(
+            DB::raw("EXTRACT(YEAR FROM created_at) as year"),
+            DB::raw("COUNT(*) as total")
+        )
+        ->groupBy(DB::raw("EXTRACT(YEAR FROM created_at)"))
+        ->orderBy('year')
+        ->get();
+
+    $data['studentYearLabels'] = $studentsByYear->pluck('year');   // e.g. [2019, 2020, 2021]
+    $data['studentYearCounts'] = $studentsByYear->pluck('total');  // counts per year
+
+    // 2) Enrollments per course (for pie chart)
+    $enrollmentByCourse = Enrollment::select('course_id', DB::raw('COUNT(*) as total'))
+        ->with('course') // assumes Enrollment has course()
+        ->groupBy('course_id')
+        ->get();
+
+    $data['coursePieLabels'] = $enrollmentByCourse->map(function ($row) {
+        return $row->course ? $row->course->course_name : 'Unknown Course';
+    });
+
+    $data['coursePieCounts'] = $enrollmentByCourse->pluck('total');
+
+    // 3) Enrollments per course per semester (for stacked bar)
+    $enrollmentBySemesterCourse = Enrollment::select(
+            'semester_id',
+            'course_id',
+            DB::raw('COUNT(*) as total')
+        )
+        ->with(['semester', 'course'])
+        ->groupBy('semester_id', 'course_id')
+        ->get();
+
+    // Build maps: semester_id -> label, course_id -> name
+    $semesterMap = [];
+    $courseMap = [];
+
+    foreach ($enrollmentBySemesterCourse as $row) {
+        if (!isset($semesterMap[$row->semester_id])) {
+            if ($row->semester) {
+                $semesterMap[$row->semester_id] = $row->semester->term . ' ' . $row->semester->academic_year;
+            } else {
+                $semesterMap[$row->semester_id] = 'Unknown Semester';
+            }
+        }
+
+        if (!isset($courseMap[$row->course_id])) {
+            $courseMap[$row->course_id] = $row->course ? $row->course->course_name : 'Unknown Course';
+        }
+    }
+
+    // Sort semesters and courses by label for stable order
+    $semesterIds = array_keys($semesterMap);
+    $courseIds   = array_keys($courseMap);
+
+    usort($semesterIds, function ($a, $b) use ($semesterMap) {
+        return strcmp($semesterMap[$a], $semesterMap[$b]);
+    });
+
+    usort($courseIds, function ($a, $b) use ($courseMap) {
+        return strcmp($courseMap[$a], $courseMap[$b]);
+    });
+
+    // Build lookup [course_id][semester_id] = total
+    $lookup = [];
+    foreach ($enrollmentBySemesterCourse as $row) {
+        $lookup[$row->course_id][$row->semester_id] = $row->total;
+    }
+
+    // Build matrix: for each course → array of counts per semester
+    $matrix = [];
+    foreach ($courseIds as $courseId) {
+        $rowData = [];
+        foreach ($semesterIds as $semesterId) {
+            $rowData[] = $lookup[$courseId][$semesterId] ?? 0;
+        }
+        $matrix[] = $rowData;
+    }
+
+    $data['semCourseLabels']      = array_map(fn($id) => $semesterMap[$id], $semesterIds);  // x-axis labels
+    $data['semCourseCourseNames'] = array_map(fn($id) => $courseMap[$id], $courseIds);      // dataset labels
+    $data['semCourseMatrix']      = $matrix;                                                // [courseIndex][semIndex]
+
+    return $data;
+}
+
+public function dashboardData()
+{
+    // You can add auth/permission checks if needed, but route is already in Super Admin group
+    $data = $this->buildDashboardData();
+    return response()->json($data);
+}
+
+
     public function dashboard()
     {
        
 
         $data = [];
         $page = request('page');
+
+            
+        // MAIN DASHBOARD (no ?page parameter)
+    if (!$page) {
+        // get dashboard-only data
+        $dashboardData = $this->buildDashboardData();
+        $data = array_merge($data, $dashboardData);
+    }
+
         
         if ($page === 'sections') {
             $data['sections'] = Section::with('course', 'yearLevel')->get();  // Load related data
@@ -79,18 +193,82 @@ class SuperAdminController extends Controller
             $data['yearLevels'] = YearLevel::all();  // Added for filters on enroll students page
         }
 
-        elseif ($page === 'manage-users') {
-            try {
-                // Paginate users (15 per page) for performance
-                $data['users'] = User::with('userType', 'college', 'yearLevel', 'section')->paginate(15);
-                $data['userTypes'] = UserType::all();
-                $data['colleges'] = College::all();
-                $data['yearLevels'] = YearLevel::all();
-                $data['sections'] = Section::with('course', 'yearLevel')->get();
-            } catch (\Exception $e) {
-                $data['error'] = 'Database error: ' . $e->getMessage();
-            }
+       elseif ($page === 'manage-users') {
+    try {
+        $search       = request('search');        // keyword
+        $collegeId    = request('college_id');    // filter: college
+        $yearLevelId  = request('year_level_id'); // filter: year level
+        $courseId     = request('course_id');     // filter: course (via section->course)
+
+        // Base query with relationships
+        $query = User::with('userType', 'college', 'yearLevel', 'section.course');
+
+        // TEXT SEARCH (Name, email, status, college, year level, course)
+        if ($search) {
+            $search = trim($search);
+
+            $query->where(function ($q) use ($search) {
+                $q->where('firstname', 'like', "%{$search}%")
+                  ->orWhere('lastname', 'like', "%{$search}%")
+                  ->orWhere('bisu_email', 'like', "%{$search}%")
+                  ->orWhere('status', 'like', "%{$search}%")
+                  // College name
+                  ->orWhereHas('college', function ($sub) use ($search) {
+                      $sub->where('college_name', 'like', "%{$search}%");
+                  })
+                  // Year level name
+                  ->orWhereHas('yearLevel', function ($sub) use ($search) {
+                      $sub->where('year_level_name', 'like', "%{$search}%");
+                  })
+                  // Course name through section -> course
+                  ->orWhereHas('section.course', function ($sub) use ($search) {
+                      $sub->where('course_name', 'like', "%{$search}%");
+                  });
+            });
         }
+
+        // DROPDOWN FILTER: COLLEGE
+        if (!empty($collegeId)) {
+            $query->where('college_id', $collegeId);
+        }
+
+        // DROPDOWN FILTER: YEAR LEVEL
+        if (!empty($yearLevelId)) {
+            $query->where('year_level_id', $yearLevelId);
+        }
+
+        // DROPDOWN FILTER: COURSE (via section->course)
+        if (!empty($courseId)) {
+            $query->whereHas('section.course', function ($q) use ($courseId) {
+                $q->where('id', $courseId);
+            });
+        }
+
+        // Paginate with custom page name so it doesn't conflict with ?page=manage-users
+        $data['users'] = $query
+            ->orderBy('lastname')
+            ->orderBy('firstname')
+            ->paginate(15, ['*'], 'users_page');
+
+        // For dropdown options
+        $data['userTypes'] = UserType::all();
+        $data['colleges']  = College::all();
+        $data['yearLevels'] = YearLevel::all();
+        $data['sections']  = Section::with('course', 'yearLevel')->get();
+        $data['courses']   = Course::all(); // <-- make sure Course is imported at top
+
+        // Pass selected IDs (optional, but nice if you want them in the view)
+        $data['selectedCollegeId']   = $collegeId;
+        $data['selectedYearLevelId'] = $yearLevelId;
+        $data['selectedCourseId']    = $courseId;
+
+    } catch (\Exception $e) {
+        $data['error'] = 'Database error: ' . $e->getMessage();
+    }
+}
+
+
+
         // Add for other pages later
         
         return view('super-admin.dashboard', $data);

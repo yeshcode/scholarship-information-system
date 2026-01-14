@@ -28,6 +28,7 @@ class User extends Authenticatable
         'college_id',        // Added for students
         'year_level_id',     // Added for students
         'section_id',        // Added for students
+        'course_id',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -61,6 +62,11 @@ class User extends Authenticatable
     public function section()
     {
         return $this->belongsTo(Section::class, 'section_id', 'id');
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id', 'id');
     }
 
     public function enrollments()

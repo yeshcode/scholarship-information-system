@@ -29,6 +29,8 @@ Route::middleware(['auth'])->group(function () {
     // Super Admin routes (only Super Admins can access)
     Route::middleware('role:Super Admin')->prefix('admin')->group(function () {
         Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/dashboard-data', [SuperAdminController::class, 'dashboardData'])->name('admin.dashboard-data');
+
         // New routes for Super Admin pages
         Route::get('/sections', [SuperAdminController::class, 'sections'])->name('admin.sections');
         Route::get('/year-levels', [SuperAdminController::class, 'yearLevels'])->name('admin.year-levels');

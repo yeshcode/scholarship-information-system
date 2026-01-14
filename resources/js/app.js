@@ -1,4 +1,5 @@
 import './bootstrap';
+import 'bootstrap';     // <-- add this line
 
 import Alpine from 'alpinejs';
 
