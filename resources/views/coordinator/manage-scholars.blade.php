@@ -9,7 +9,7 @@
     <a href="{{ route('coordinator.scholars.create') }}" class="bg-blue-500 text-black px-4 py-2 rounded mr-2">Add Scholar (Manual)</a>
     <a href="{{ route('coordinator.scholars.ocr-upload') }}" class="bg-green-500 text-black px-4 py-2 rounded">Add OCR (OCR)</a>
 </div>
-<table class="min-w-full bg-white border border-gray-200">
+<table class="w-full bg-white border border-gray-200">
     <thead>
         <tr class="bg-gray-100">
             <th class="px-4 py-2">Student Name</th>

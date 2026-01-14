@@ -22,6 +22,21 @@
         </a>
     </div>
 
+    <!-- Semester Filter (New: Added above search) -->
+    <div class="mb-6">
+        <form method="GET" action="{{ route('admin.enrollments') }}" class="flex items-center space-x-4">  {{-- Updated action --}}
+            <label for="semesterSelect" class="font-bold text-gray-700">Filter by Semester:</label>
+            <select name="semester_id" id="semesterSelect" class="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="this.form.submit()">
+                <option value="">All Semesters</option>
+                @foreach($semesters ?? [] as $semester)
+                    <option value="{{ $semester->id }}" {{ ($selectedSemesterId ?? '') == $semester->id ? 'selected' : '' }}>
+                        {{ $semester->term }} {{ $semester->academic_year }}
+                    </option>
+                @endforeach
+            </select>
+        </form>
+    </div>
+
     <!-- Search Bar (Filter by User, Semester, Section, or Status) -->
     <div class="mb-6">
         <input type="text" id="searchInput" placeholder="Search by Last Name, First Name, Middle Name, Semester, Section, Course, or Status..." class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">

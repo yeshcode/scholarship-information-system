@@ -11,6 +11,10 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+    <!-- Bootstrap (local) -->
+    <link rel="stylesheet" href="{{ asset('bootstrap/css/bootstrap.min.css') }}">
+
+
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -31,7 +35,7 @@
 
         <!-- Page Content (Wider with Margins) -->
         <main class="py-6">
-            <div class="{{ isset($fullWidth) ? 'w-full px-4' : 'max-w-7xl mx-auto px-6 sm:px-6 lg:px-8' }}">  {{-- Adjusted for wider fit with margins: fullWidth keeps px-4, others use px-6 for balanced spacing --}}
+            <div class="{{ isset($fullWidth) ? 'w-full px-4' : 'mx-auto px-3 sm:px-6 lg:px-8' }}">  {{-- Adjusted for wider fit with margins: fullWidth keeps px-4, others use px-6 for balanced spacing --}}
                 <div class="{{ isset($fullWidth) ? 'bg-white overflow-hidden shadow-sm sm:rounded-lg' : 'bg-white overflow-hidden shadow-sm sm:rounded-lg p-6' }}">
                     @isset($slot)
                         {{ $slot }}
@@ -41,5 +45,8 @@
             </div>
         </main>
     </div>
+
+    <script src="{{ asset('bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
 </body>
 </html>

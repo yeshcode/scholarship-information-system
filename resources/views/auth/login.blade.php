@@ -80,7 +80,7 @@
         </div>
         <!-- Student Login Heading -->
         <div class="student-login">
-            Student Login:
+            Login:
         </div>
 
         <!-- Session Status (from Breeze, kept for success messages) -->
