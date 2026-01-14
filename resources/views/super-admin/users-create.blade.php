@@ -208,7 +208,7 @@
                     Cancel
                 </a>
                 <button type="submit"
-                        class="px-5 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded shadow-sm">
+                        class="px-5 py-2 btn-bisu-primary hover:bg-blue-700  text-white text-sm font-semibold rounded shadow-sm">
                     Add User
                 </button>
             </div>

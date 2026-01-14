@@ -1,15 +1,15 @@
-@extends('layouts.app')
 
-@section('content')
+
+<?php $__env->startSection('content'); ?>
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
 
-            {{-- CARD --}}
+            
             <div class="card shadow-sm border-0">
                 <div class="card-body">
 
-                    {{-- TITLE --}}
+                    
                     <h2 class="page-title-blue" style="font-size: 1.6rem;">
                         Add User Type
                     </h2>
@@ -17,30 +17,31 @@
                         Define a new role that can be used in the system.
                     </p>
 
-                    {{-- SUCCESS MESSAGE --}}
-                    @if(session('success'))
+                    
+                    <?php if(session('success')): ?>
                         <div class="alert alert-success alert-dismissible fade show">
-                            {{ session('success') }}
+                            <?php echo e(session('success')); ?>
+
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
-                    {{-- VALIDATION ERRORS --}}
-                    @if($errors->any())
+                    
+                    <?php if($errors->any()): ?>
                         <div class="alert alert-danger">
                             <ul class="mb-0">
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
+                                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <li><?php echo e($error); ?></li>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </ul>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
-                    {{-- FORM --}}
-                    <form method="POST" action="{{ route('admin.user-types.store') }}">
-                        @csrf
+                    
+                    <form method="POST" action="<?php echo e(route('admin.user-types.store')); ?>">
+                        <?php echo csrf_field(); ?>
 
-                        {{-- NAME --}}
+                        
                         <div class="mb-3">
                             <label for="name" class="form-label fw-semibold">
                                 Name
@@ -50,11 +51,11 @@
                                    id="name"
                                    class="form-control"
                                    placeholder="e.g. Scholarship Coordinator"
-                                   value="{{ old('name') }}"
+                                   value="<?php echo e(old('name')); ?>"
                                    required>
                         </div>
 
-                        {{-- DESCRIPTION --}}
+                        
                         <div class="mb-3">
                             <label for="description" class="form-label fw-semibold">
                                 Description
@@ -63,10 +64,10 @@
                                       id="description"
                                       class="form-control"
                                       rows="3"
-                                      placeholder="Short description (optional)">{{ old('description') }}</textarea>
+                                      placeholder="Short description (optional)"><?php echo e(old('description')); ?></textarea>
                         </div>
 
-                        {{-- DASHBOARD URL --}}
+                        
                         <div class="mb-4">
                             <label for="dashboard_url" class="form-label fw-semibold">
                                 Dashboard URL
@@ -76,19 +77,19 @@
                                    id="dashboard_url"
                                    class="form-control"
                                    placeholder="/coordinator/dashboard"
-                                   value="{{ old('dashboard_url') }}">
+                                   value="<?php echo e(old('dashboard_url')); ?>">
                             <small class="text-muted">
                                 Optional. This is where the user type will be redirected after login.
                             </small>
                         </div>
 
-                        {{-- BUTTONS --}}
+                        
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <button type="submit" class="btn btn-success px-4">
                                     ✅ Add User Type
                                 </button>
-                                <a href="{{ route('admin.dashboard', ['page' => 'user-type']) }}"
+                                <a href="<?php echo e(route('admin.dashboard', ['page' => 'user-type'])); ?>"
                                    class="btn btn-outline-secondary ms-2">
                                     ❌ Cancel
                                 </a>
@@ -103,4 +104,6 @@
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/user-types-create.blade.php ENDPATH**/ ?>

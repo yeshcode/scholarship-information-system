@@ -164,34 +164,31 @@ public function dashboardData()
             $data['semesters'] = Semester::all();  // No relationships needed yet
         }
 
-        // Update the 'enrollments' section in dashboard() to load more data
+               // ENROLLMENTS PAGE (inside dashboard: ?page=enrollments)
         elseif ($page === 'enrollments') {
-            // Get the selected semester ID from the request (for filtering)
-            $selectedSemesterId = request('semester_id');
-        
-            // Fetch all semesters for the dropdown (order by academic year descending for usability)
-            $data['semesters'] = Semester::orderBy('academic_year', 'desc')->get();
-        
-            // Build the enrollments query with relationships
-            $query = Enrollment::with('user', 'semester', 'section.course', 'course');
-        
-            // Apply semester filter if selected
-            if ($selectedSemesterId) {
-                $query->where('semester_id', $selectedSemesterId);
-            }
-        
-            // Paginate the results (15 per page; adjust as needed)
-            $data['enrollments'] = $query->paginate(15);
-        
-            // Pass the selected semester ID to the view (for pre-selecting the dropdown)
-            $data['selectedSemesterId'] = $selectedSemesterId;
-        
-            // Existing data for other parts of the page (e.g., dropdowns in create/edit forms)
-            $data['users'] = User::all();  // For user dropdown
-            $data['sections'] = Section::with('course', 'yearLevel')->get();  // For section dropdown, with related data
-            $data['courses'] = Course::all();  // Added for filters on enroll students page
-            $data['yearLevels'] = YearLevel::all();  // Added for filters on enroll students page
-        }
+    $selectedSemesterId = request('semester_id');
+
+    $data['semesters'] = Semester::orderBy('academic_year', 'desc')->get();
+
+    $query = Enrollment::with('user', 'semester', 'section.course', 'course');
+
+    if ($selectedSemesterId) {
+        $query->where('semester_id', $selectedSemesterId);
+    }
+
+    $data['enrollments'] = $query
+        ->orderByDesc('id')
+        ->paginate(15, ['*'], 'enrollments_page');
+
+    $data['selectedSemesterId'] = $selectedSemesterId;
+
+    $data['users']      = User::all();
+    $data['sections']   = Section::with('course', 'yearLevel')->get();
+    $data['courses']    = Course::all();
+    $data['yearLevels'] = YearLevel::all();
+}
+
+
 
        elseif ($page === 'manage-users') {
     try {
