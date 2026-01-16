@@ -734,6 +734,34 @@ public function deleteEnrollment($id)
     return view('super-admin.enrollments-delete', compact('enrollment'));
 }
 
+// --- ENROLLMENT RECORDS (BY ACADEMIC YEAR) ---
+
+public function enrollmentRecords()
+{
+    // Get distinct academic years from semesters table
+    $academicYears = Semester::select('academic_year')
+        ->distinct()
+        ->orderBy('academic_year', 'desc')
+        ->get()
+        ->pluck('academic_year');
+
+    return view('super-admin.enrollment-records', compact('academicYears'));
+}
+
+public function enrollmentRecordsByYear($academicYear)
+{
+    // Get all enrollments where the semester has this academic year
+    $enrollments = Enrollment::with('user', 'semester', 'section.course', 'course')
+        ->whereHas('semester', function ($q) use ($academicYear) {
+            $q->where('academic_year', $academicYear);
+        })
+        ->orderByDesc('id')
+        ->paginate(15);
+
+    return view('super-admin.enrollment-records-year', compact('enrollments', 'academicYear'));
+}
+
+
 
 // Users CRUD Methods
 public function createUser()

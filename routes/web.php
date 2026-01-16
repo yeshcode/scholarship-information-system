@@ -7,6 +7,8 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\QuestionClusterController;
 
 // Public routes
 Route::get('/', function () { return redirect('/login'); });
@@ -101,6 +103,11 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/enrollments/{id}', [SuperAdminController::class, 'destroyEnrollment'])->name('admin.enrollments.destroy');
         Route::get('/enrollments/{id}/delete', [SuperAdminController::class, 'deleteEnrollment'])->name('admin.enrollments.delete');  // For confirmation
 
+        // Enrollment Records (by Academic Year)
+        Route::get('/enrollments/records', [SuperAdminController::class, 'enrollmentRecords'])->name('admin.enrollments.records');
+        Route::get('/enrollments/records/{academicYear}', [SuperAdminController::class, 'enrollmentRecordsByYear'])->name('admin.enrollments.records.year');
+
+
         // Users CRUD
         Route::get('/users/bulk-upload', [SuperAdminController::class, 'showBulkUploadForm'])->name('admin.users.bulk-upload-form');
         Route::get('/users/create', [SuperAdminController::class, 'createUser'])->name('admin.users.create');
@@ -174,6 +181,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/manage-announcements', [CoordinatorController::class, 'manageAnnouncements'])->name('coordinator.manage-announcements');
         Route::get('/manage-announcements/create', [CoordinatorController::class, 'createAnnouncement'])->name('coordinator.announcements.create');
         Route::post('/manage-announcements', [CoordinatorController::class, 'storeAnnouncement'])->name('coordinator.announcements.store');
+
+        //Questions and Clusters
+        Route::get('/clusters', [QuestionClusterController::class, 'index'])->name('clusters.index');
+        Route::get('/clusters/{cluster}', [QuestionClusterController::class, 'show'])->name('clusters.show');
+        Route::post('/clusters/{cluster}/answer', [QuestionClusterController::class, 'answer'])->name('clusters.answer');
     // Add notify route later: Route::post('/manage-announcements/notify', [CoordinatorController::class, 'notifyAnnouncement'])->name('coordinator.announcements.notify');
 // });
     });
@@ -185,5 +197,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/scholarships', [StudentController::class, 'scholarships'])->name('student.scholarships');
         Route::get('/stipend-history', [StudentController::class, 'stipendHistory'])->name('student.stipend-history');
         Route::get('/notifications', [StudentController::class, 'notifications'])->name('student.notifications');
+        
+        //Questions
+        Route::get('/ask', [QuestionController::class, 'create'])->name('questions.create');
+        Route::get('/my-questions', [QuestionController::class, 'myQuestions'])->name('questions.my');
+        Route::post('/ask', [QuestionController::class, 'store'])->name('questions.store');
     });
 });

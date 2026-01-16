@@ -15,12 +15,16 @@
             <option value="{{ $user->id }}" {{ $enrollment->user_id == $user->id ? 'selected' : '' }}>{{ $user->firstname }} {{ $user->lastname }} ({{ $user->user_id }})</option>
         @endforeach
     </select>
-    <select name="semester_id" class="border p-2 w-full mb-4" required>
-        <option value="">Select Semester</option>
-        @foreach($semesters as $semester)
-            <option value="{{ $semester->id }}" {{ $enrollment->semester_id == $semester->id ? 'selected' : '' }}>{{ $semester->term }} {{ $semester->academic_year }}</option>
-        @endforeach
-    </select>
+    {{-- Show semester as text (cannot be changed) --}}
+<label class="block text-gray-700 mb-2">Semester</label>
+<p class="border p-2 w-full mb-4 bg-gray-100">
+    {{ $enrollment->semester->term ?? 'N/A' }}
+    {{ $enrollment->semester->academic_year ?? '' }}
+</p>
+
+{{-- Keep the same semester_id as hidden so it still submits --}}
+<input type="hidden" name="semester_id" value="{{ $enrollment->semester_id }}">
+
     <select name="section_id" class="border p-2 w-full mb-4" required>
         <option value="">Select Section</option>
         @foreach($sections as $section)
