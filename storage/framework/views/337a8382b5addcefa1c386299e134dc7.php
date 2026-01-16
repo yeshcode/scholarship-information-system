@@ -393,6 +393,29 @@
 <?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
 <?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
 <?php endif; ?>
+                        
+                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('clusters.index'),'active' => request()->routeIs('clusters.*'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('nav-link'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('clusters.index')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('clusters.*')),'class' => 'nav-pill nav-text']); ?>
+                            <?php echo e(__('Student Queries')); ?>
+
+                         <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
+<?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
+<?php unset($__attributesOriginalc295f12dca9d42f28a259237a5724830); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc295f12dca9d42f28a259237a5724830)): ?>
+<?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
+<?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
+<?php endif; ?>
 
                     
                     <?php elseif(auth()->user()->hasRole('Student')): ?>
@@ -497,6 +520,52 @@
 <?php endif; ?>
 <?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('student.notifications')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('student.notifications')),'class' => 'nav-pill nav-text']); ?>
                             <?php echo e(__('Notifications')); ?>
+
+                         <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
+<?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
+<?php unset($__attributesOriginalc295f12dca9d42f28a259237a5724830); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc295f12dca9d42f28a259237a5724830)): ?>
+<?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
+<?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
+<?php endif; ?>
+                         
+                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('questions.create'),'active' => request()->routeIs('questions.create'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('nav-link'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('questions.create')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('questions.create')),'class' => 'nav-pill nav-text']); ?>
+                            <?php echo e(__('Ask Question')); ?>
+
+                         <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
+<?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
+<?php unset($__attributesOriginalc295f12dca9d42f28a259237a5724830); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc295f12dca9d42f28a259237a5724830)): ?>
+<?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
+<?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
+<?php endif; ?>
+                        
+                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('questions.my'),'active' => request()->routeIs('questions.my'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('nav-link'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('questions.my')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('questions.my')),'class' => 'nav-pill nav-text']); ?>
+                            <?php echo e(__('My Questions')); ?>
 
                          <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>

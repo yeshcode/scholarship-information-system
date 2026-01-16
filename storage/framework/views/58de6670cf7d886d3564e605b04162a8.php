@@ -15,12 +15,18 @@
             <option value="<?php echo e($user->id); ?>" <?php echo e($enrollment->user_id == $user->id ? 'selected' : ''); ?>><?php echo e($user->firstname); ?> <?php echo e($user->lastname); ?> (<?php echo e($user->user_id); ?>)</option>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </select>
-    <select name="semester_id" class="border p-2 w-full mb-4" required>
-        <option value="">Select Semester</option>
-        <?php $__currentLoopData = $semesters; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $semester): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-            <option value="<?php echo e($semester->id); ?>" <?php echo e($enrollment->semester_id == $semester->id ? 'selected' : ''); ?>><?php echo e($semester->term); ?> <?php echo e($semester->academic_year); ?></option>
-        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-    </select>
+    
+<label class="block text-gray-700 mb-2">Semester</label>
+<p class="border p-2 w-full mb-4 bg-gray-100">
+    <?php echo e($enrollment->semester->term ?? 'N/A'); ?>
+
+    <?php echo e($enrollment->semester->academic_year ?? ''); ?>
+
+</p>
+
+
+<input type="hidden" name="semester_id" value="<?php echo e($enrollment->semester_id); ?>">
+
     <select name="section_id" class="border p-2 w-full mb-4" required>
         <option value="">Select Section</option>
         <?php $__currentLoopData = $sections; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $section): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>

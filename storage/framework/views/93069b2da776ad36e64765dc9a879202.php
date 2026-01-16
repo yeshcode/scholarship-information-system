@@ -1,5 +1,7 @@
 
 
+
+<?php $__env->startSection('content'); ?>
 <div class="min-h-screen bg-gray-100 py-8">
     <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-lg p-6">
 
@@ -161,5 +163,6 @@
         }
     });
 </script>
+<?php $__env->stopSection(); ?>
 
-<?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/users-bulk-upload.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/users-bulk-upload.blade.php ENDPATH**/ ?>

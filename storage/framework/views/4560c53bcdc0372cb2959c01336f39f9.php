@@ -129,17 +129,24 @@
     <?php endif; ?>
 
     
-    <div class="d-flex justify-content-end mb-3 gap-2">
-        <a href="<?php echo e(route('admin.enrollments.create')); ?>"
-           class="btn btn-bisu-primary shadow-sm">
-            + Add Enrollment
-        </a>
+<div class="d-flex justify-content-end mb-3 gap-2">
+    <a href="<?php echo e(route('admin.enrollments.create')); ?>"
+       class="btn btn-bisu-primary shadow-sm">
+        + Add Enrollment
+    </a>
 
-        <a href="<?php echo e(route('admin.enrollments.enroll-students')); ?>"
-           class="btn btn-bisu-secondary shadow-sm">
-            📚 Enroll Students
-        </a>
-    </div>
+    <a href="<?php echo e(route('admin.enrollments.enroll-students')); ?>"
+       class="btn btn-bisu-secondary shadow-sm">
+        📚 Enroll Students
+    </a>
+
+    
+    <a href="<?php echo e(route('admin.enrollments.records')); ?>"
+       class="btn btn-outline-secondary shadow-sm">
+        📂 Records
+    </a>
+</div>
+
 
     
     <form method="GET" action="<?php echo e(route('admin.dashboard')); ?>" class="mb-3">

@@ -245,6 +245,12 @@
                                     class="nav-pill nav-text">
                             {{ __('Manage Announcements') }}
                         </x-nav-link>
+                        {{-- ⭐ NEW: Student Queries (clustered questions) --}}
+                        <x-nav-link :href="route('clusters.index')"
+                                    :active="request()->routeIs('clusters.*')"
+                                    class="nav-pill nav-text">
+                            {{ __('Student Queries') }}
+                        </x-nav-link>
 
                     {{-- STUDENT NAVIGATION (unchanged) --}}
                     @elseif(auth()->user()->hasRole('Student'))
@@ -274,6 +280,18 @@
                                     :active="request()->routeIs('student.notifications')"
                                     class="nav-pill nav-text">
                             {{ __('Notifications') }}
+                        </x-nav-link>
+                         {{-- ⭐ NEW: Ask Question --}}
+                        <x-nav-link :href="route('questions.create')"
+                                    :active="request()->routeIs('questions.create')"
+                                    class="nav-pill nav-text">
+                            {{ __('Ask Question') }}
+                        </x-nav-link>
+                        {{-- ⭐ NEW: My Questions --}}
+                        <x-nav-link :href="route('questions.my')"
+                                    :active="request()->routeIs('questions.my')"
+                                    class="nav-pill nav-text">
+                            {{ __('My Questions') }}
                         </x-nav-link>
                     @endif
                 @endauth

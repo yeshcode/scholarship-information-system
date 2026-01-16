@@ -127,17 +127,24 @@
     @endif
 
     {{-- ACTION BUTTONS --}}
-    <div class="d-flex justify-content-end mb-3 gap-2">
-        <a href="{{ route('admin.enrollments.create') }}"
-           class="btn btn-bisu-primary shadow-sm">
-            + Add Enrollment
-        </a>
+<div class="d-flex justify-content-end mb-3 gap-2">
+    <a href="{{ route('admin.enrollments.create') }}"
+       class="btn btn-bisu-primary shadow-sm">
+        + Add Enrollment
+    </a>
 
-        <a href="{{ route('admin.enrollments.enroll-students') }}"
-           class="btn btn-bisu-secondary shadow-sm">
-            📚 Enroll Students
-        </a>
-    </div>
+    <a href="{{ route('admin.enrollments.enroll-students') }}"
+       class="btn btn-bisu-secondary shadow-sm">
+        📚 Enroll Students
+    </a>
+
+    {{-- NEW: Records button --}}
+    <a href="{{ route('admin.enrollments.records') }}"
+       class="btn btn-outline-secondary shadow-sm">
+        📂 Records
+    </a>
+</div>
+
 
     {{-- FILTERS --}}
     <form method="GET" action="{{ route('admin.dashboard') }}" class="mb-3">
