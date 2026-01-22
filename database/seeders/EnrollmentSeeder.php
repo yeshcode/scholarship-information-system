@@ -10,7 +10,7 @@ class EnrollmentSeeder extends Seeder
         Enrollment::firstOrCreate([
             'user_id' => 1,       // Assumes User ID 1 exists
             'semester_id' => 1,   // Assumes Semester ID 1 exists
-            'section_id' => 1,    // Assumes Section ID 1 exists
+            'course_id' => 1,     // Assumes Course ID 1 exists
             'status' => 'active',
         ]);
     }

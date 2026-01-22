@@ -45,16 +45,16 @@
             </div>
 
             <div>
-                <label class="text-sm font-medium">Section</label>
-                <select name="section_id" class="w-full border rounded px-3 py-2 text-sm">
-                    <option value="">Select section</option>
-                    @foreach($sections as $sec)
-                        <option value="{{ $sec->id }}">
-                            {{ $sec->section_name }} — {{ $sec->course->course_name ?? 'No course' }}
+                <label class="text-sm font-medium">Course</label>
+                <select name="course_id" class="w-full border rounded px-3 py-2 text-sm">
+                    <option value="">Select course</option>
+                    @foreach($courses as $course)
+                        <option value="{{ $course->id }}">
+                            {{ $course->course_name }}
                         </option>
                     @endforeach
                 </select>
-                @error('section_id') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
+                @error('course_id') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div>
@@ -83,7 +83,6 @@
                     <th class="px-4 py-3 text-left">Student</th>
                     <th class="px-4 py-3 text-left">Student ID</th>
                     <th class="px-4 py-3 text-left">Course</th>
-                    <th class="px-4 py-3 text-left">Section</th>
                     <th class="px-4 py-3 text-left">Semester</th>
                     <th class="px-4 py-3 text-left">Status</th>
                 </tr>
@@ -95,8 +94,7 @@
                             {{ $en->user->lastname ?? 'N/A' }}, {{ $en->user->firstname ?? 'N/A' }}
                         </td>
                         <td class="px-4 py-3">{{ $en->user->student_id ?? 'N/A' }}</td>
-                        <td class="px-4 py-3">{{ $en->section->course->course_name ?? 'N/A' }}</td>
-                        <td class="px-4 py-3">{{ $en->section->section_name ?? 'N/A' }}</td>
+                        <td class="px-4 py-3">{{ $en->course->course_name ?? 'N/A' }}</td>
                         <td class="px-4 py-3">{{ $en->semester->semester_name ?? 'N/A' }}</td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 rounded bg-gray-100 text-gray-700">

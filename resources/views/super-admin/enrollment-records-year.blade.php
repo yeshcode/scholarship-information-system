@@ -72,7 +72,6 @@
                         <th>First Name</th>
                         <th>Middle Name</th>
                         <th>Semester</th>
-                        <th>Section</th>
                         <th>Course</th>
                         <th>Status</th>
                     </tr>
@@ -86,10 +85,6 @@
                             <td>
                                 {{ $enrollment->semester->term ?? 'N/A' }}
                                 {{ $enrollment->semester->academic_year ?? '' }}
-                            </td>
-                            <td>
-                                {{ $enrollment->section->section_name ?? 'N/A' }}
-                                ({{ $enrollment->section->course->course_name ?? '' }})
                             </td>
                             <td>{{ $enrollment->course->course_name ?? 'N/A' }}</td>
                             <td>

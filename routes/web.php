@@ -47,7 +47,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard-data', [SuperAdminController::class, 'dashboardData'])->name('admin.dashboard-data');
 
         // New routes for Super Admin pages
-        Route::get('/sections', [SuperAdminController::class, 'sections'])->name('admin.sections');
         Route::get('/year-levels', [SuperAdminController::class, 'yearLevels'])->name('admin.year-levels');
         Route::get('/colleges', [SuperAdminController::class, 'colleges'])->name('admin.colleges');
         Route::get('/courses', [SuperAdminController::class, 'courses'])->name('admin.courses');
@@ -56,14 +55,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/manage-users', [SuperAdminController::class, 'manageUsers'])->name('admin.manage-users');
         Route::get('/user-type', [SuperAdminController::class, 'usertype'])->name('admin.user-types');
         // Add more Super Admin features here later (e.g., Route::get('/users', ...);)
-
-        //sections CRUD
-        Route::get('/sections/create', [SuperAdminController::class, 'createSection'])->name('admin.sections.create');
-        Route::get('/sections/{id}/edit', [SuperAdminController::class, 'editSection'])->name('admin.sections.edit');
-        Route::post('/sections', [SuperAdminController::class, 'storeSection'])->name('admin.sections.store');
-        Route::put('/sections/{id}', [SuperAdminController::class, 'updateSection'])->name('admin.sections.update');
-        Route::get('/sections/{id}/delete', [SuperAdminController::class, 'delete'])->name('admin.sections.delete');  // For confirmation page
-        Route::delete('/sections/{id}', [SuperAdminController::class, 'destroySection'])->name('admin.sections.destroy');  // For actual deletion
 
 
         // Colleges CRUD

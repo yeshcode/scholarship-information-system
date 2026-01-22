@@ -1,7 +1,7 @@
-{{-- resources/views/super-admin/users-bulk-upload.blade.php --}}
-@extends('layouts.app')
 
-@section('content')
+
+
+<?php $__env->startSection('content'); ?>
 <div class="min-h-screen bg-gray-100 py-8">
     <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-lg p-6">
 
@@ -12,7 +12,7 @@
                     Upload a CSV file to register multiple students at once.
                 </p>
             </div>
-            <a href="{{ route('admin.dashboard', ['page' => 'manage-users']) }}"
+            <a href="<?php echo e(route('admin.dashboard', ['page' => 'manage-users'])); ?>"
                class="text-sm text-blue-600 hover:text-blue-800 underline">
                 ← Back to Users
             </a>
@@ -26,32 +26,34 @@
             Extra columns will be ignored.
         </p>
 
-        @if(session('success'))
+        <?php if(session('success')): ?>
             <div class="bg-green-100 text-green-800 p-3 mb-4 rounded border border-green-200 text-sm">
-                {{ session('success') }}
-            </div>
-        @endif
+                <?php echo e(session('success')); ?>
 
-        @if(session('error'))
+            </div>
+        <?php endif; ?>
+
+        <?php if(session('error')): ?>
             <div class="bg-red-100 text-red-800 p-3 mb-4 rounded border border-red-200 text-sm">
-                {{ session('error') }}
-            </div>
-        @endif
+                <?php echo e(session('error')); ?>
 
-        @if($errors->any())
+            </div>
+        <?php endif; ?>
+
+        <?php if($errors->any()): ?>
             <div class="bg-red-50 border border-red-200 text-red-700 p-3 rounded mb-4 text-sm">
                 <ul class="list-disc list-inside">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
+                    <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <li><?php echo e($error); ?></li>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </ul>
             </div>
-        @endif
+        <?php endif; ?>
 
-        <form method="POST" action="{{ route('admin.users.bulk-upload') }}"
+        <form method="POST" action="<?php echo e(route('admin.users.bulk-upload')); ?>"
               enctype="multipart/form-data"
               class="space-y-5">
-            @csrf
+            <?php echo csrf_field(); ?>
 
             <div>
                 <label for="csv_file" class="block text-sm font-medium text-gray-700">CSV File</label>
@@ -73,11 +75,12 @@
                                 class="mt-1 border rounded w-full p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required>
                             <option value="">Select College</option>
-                            @foreach($colleges as $college)
-                                <option value="{{ $college->id }}" {{ old('college_id') == $college->id ? 'selected' : '' }}>
-                                    {{ $college->college_name }}
+                            <?php $__currentLoopData = $colleges; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $college): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($college->id); ?>" <?php echo e(old('college_id') == $college->id ? 'selected' : ''); ?>>
+                                    <?php echo e($college->college_name); ?>
+
                                 </option>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
 
@@ -87,11 +90,12 @@
                                 class="mt-1 border rounded w-full p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required>
                             <option value="">Select Year Level</option>
-                            @foreach($yearLevels as $level)
-                                <option value="{{ $level->id }}" {{ old('year_level_id') == $level->id ? 'selected' : '' }}>
-                                    {{ $level->year_level_name }}
+                            <?php $__currentLoopData = $yearLevels; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $level): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($level->id); ?>" <?php echo e(old('year_level_id') == $level->id ? 'selected' : ''); ?>>
+                                    <?php echo e($level->year_level_name); ?>
+
                                 </option>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
 
@@ -101,19 +105,20 @@
                                 class="mt-1 border rounded w-full p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required>
                             <option value="">Select Course</option>
-                            @foreach($courses as $course)
-                                <option value="{{ $course->id }}"
-                                        {{ old('course_id') == $course->id ? 'selected' : '' }}>
-                                    {{ $course->course_name }}
+                            <?php $__currentLoopData = $courses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $course): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($course->id); ?>"
+                                        <?php echo e(old('course_id') == $course->id ? 'selected' : ''); ?>>
+                                    <?php echo e($course->course_name); ?>
+
                                 </option>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
                 </div>
             </div>
 
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 mt-4">
-                <a href="{{ route('admin.dashboard', ['page' => 'manage-users']) }}"
+                <a href="<?php echo e(route('admin.dashboard', ['page' => 'manage-users'])); ?>"
                    class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
                     Cancel
                 </a>
@@ -129,4 +134,6 @@
 <script>
     // No JavaScript needed since course is selected directly
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/users-bulk-upload.blade.php ENDPATH**/ ?>

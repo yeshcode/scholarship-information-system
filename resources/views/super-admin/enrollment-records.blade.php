@@ -41,12 +41,12 @@
         </div>
 
         <div>
-            <label class="text-sm font-semibold text-gray-700">Section</label>
-            <select name="section_id" class="w-full border rounded px-3 py-2" required>
-                <option value="">Select section</option>
-                @foreach($sections as $sec)
-                    <option value="{{ $sec->id }}">
-                        {{ $sec->section_name }} ({{ $sec->course->course_name ?? 'No Course' }})
+            <label class="text-sm font-semibold text-gray-700">Course</label>
+            <select name="course_id" class="w-full border rounded px-3 py-2" required>
+                <option value="">Select course</option>
+                @foreach($courses as $course)
+                    <option value="{{ $course->id }}">
+                        {{ $course->course_name }}
                     </option>
                 @endforeach
             </select>
@@ -79,7 +79,6 @@
                 <th class="px-4 py-2 text-left">Student</th>
                 <th class="px-4 py-2 text-left">Student ID</th>
                 <th class="px-4 py-2 text-left">Course</th>
-                <th class="px-4 py-2 text-left">Section</th>
                 <th class="px-4 py-2 text-left">Semester</th>
                 <th class="px-4 py-2 text-left">Status</th>
             </tr>
@@ -92,14 +91,13 @@
                         {{ $e->user->firstname ?? 'N/A' }} {{ $e->user->lastname ?? '' }}
                     </td>
                     <td class="px-4 py-2">{{ $e->user->student_id ?? 'N/A' }}</td>
-                    <td class="px-4 py-2">{{ $e->section->course->course_name ?? 'N/A' }}</td>
-                    <td class="px-4 py-2">{{ $e->section->section_name ?? 'N/A' }}</td>
+                    <td class="px-4 py-2">{{ $e->course->course_name ?? 'N/A' }}</td>
                     <td class="px-4 py-2">{{ $e->semester->semester_name ?? 'N/A' }}</td>
                     <td class="px-4 py-2">{{ $e->status ?? 'N/A' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="px-4 py-6 text-center text-gray-600">
+                    <td colspan="5" class="px-4 py-6 text-center text-gray-600">
                         No enrollment records found.
                     </td>
                 </tr>

@@ -140,29 +140,17 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Section</label>
-                        <select name="section_id" id="section_id"
+                        <label class="block text-sm font-medium text-gray-700">Course</label>
+                        <select name="course_id" id="course_id"
                                 class="mt-1 border rounded w-full p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select Section</option>
-                            @foreach($sections as $section)
-                                <option value="{{ $section->id }}"
-                                        data-course="{{ $section->course->course_name ?? 'N/A' }}"
-                                        {{ old('section_id', $user->section_id) == $section->id ? 'selected' : '' }}>
-                                    {{ $section->section_name }}
-                                    @if($section->course)
-                                        ({{ $section->course->course_name }})
-                                    @endif
+                            <option value="">Select Course</option>
+                            @foreach($courses as $course)
+                                <option value="{{ $course->id }}"
+                                        {{ old('course_id', $user->course_id) == $course->id ? 'selected' : '' }}>
+                                    {{ $course->course_name }}
                                 </option>
                             @endforeach
                         </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Course (based on Section)</label>
-                        <div id="coursePreview"
-                             class="mt-1 w-full p-2 text-sm border rounded bg-gray-50 text-gray-700">
-                            {{ $user->section->course->course_name ?? 'N/A' }}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -184,20 +172,6 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const sectionSelect = document.getElementById('section_id');
-        const coursePreview = document.getElementById('coursePreview');
-
-        if (sectionSelect && coursePreview) {
-            const updateCourse = () => {
-                const sel = sectionSelect.options[sectionSelect.selectedIndex];
-                const courseName = sel ? sel.getAttribute('data-course') : 'N/A';
-                coursePreview.textContent = courseName || 'N/A';
-            };
-
-            sectionSelect.addEventListener('change', updateCourse);
-            updateCourse();
-        }
-    });
+    // No JavaScript needed since course is selected directly
 </script>
 @endsection

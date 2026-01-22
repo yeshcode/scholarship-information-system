@@ -100,7 +100,6 @@
             <tr class="bg-gray-50 text-sm">
                 <th class="px-4 py-2 text-left">Student Name</th>
                 <th class="px-4 py-2 text-left">Student ID</th>
-                <th class="px-4 py-2 text-left">Section</th>
                 <th class="px-4 py-2 text-left">Course</th>
                 <th class="px-4 py-2 text-left">Scholarship</th>
                 <th class="px-4 py-2 text-left">Batch No.</th>
@@ -116,8 +115,7 @@
                         {{ $scholar->user->firstname ?? 'N/A' }} {{ $scholar->user->lastname ?? 'N/A' }}
                     </td>
                     <td class="px-4 py-2">{{ $scholar->user->student_id ?? 'N/A' }}</td>
-                    <td class="px-4 py-2">{{ $scholar->user->section->section_name ?? 'N/A' }}</td>
-                    <td class="px-4 py-2">{{ $scholar->user->section->course->course_name ?? 'N/A' }}</td>
+                    <td class="px-4 py-2">{{ $scholar->user->course->course_name ?? 'N/A' }}</td>
                     <td class="px-4 py-2">{{ $scholar->scholarship->scholarship_name ?? 'N/A' }}</td>
 
                     {{-- Batch only meaningful for TDP/TES, otherwise show — --}}
