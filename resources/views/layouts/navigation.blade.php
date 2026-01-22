@@ -462,11 +462,12 @@
                             {{ __('Announcements') }}
                         </x-nav-link>
 
-                        <x-nav-link :href="route('student.scholarships')"
-                                    :active="request()->routeIs('student.scholarships')"
-                                    class="student-pill {{ request()->routeIs('student.scholarships') ? 'student-pill-active' : '' }}">
+                        <x-nav-link :href="route('student.scholarships.index')"
+                                    :active="request()->routeIs('student.scholarships.*')"
+                                    class="student-pill {{ request()->routeIs('student.scholarships.*') ? 'student-pill-active' : '' }}">
                             {{ __('Scholarships') }}
                         </x-nav-link>
+
 
                         @if(\App\Models\Scholar::where('student_id', auth()->id())->exists())
                             <x-nav-link :href="route('student.stipend-history')"
@@ -487,14 +488,7 @@
                                     class="student-pill {{ request()->routeIs('questions.create') ? 'student-pill-active' : '' }}">
                             {{ __('Ask') }}
                         </x-nav-link>
-
-                        <x-nav-link :href="route('questions.my')"
-                                    :active="request()->routeIs('questions.my')"
-                                    class="student-pill {{ request()->routeIs('questions.my') ? 'student-pill-active' : '' }}">
-                            {{ __('My Questions') }}
-                        </x-nav-link>
                     @endif
-
                 @endauth
             </div>
         </div>

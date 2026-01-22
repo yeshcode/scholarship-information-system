@@ -11,6 +11,9 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+     <!-- Bootstrap (local) -->
+    <link rel="stylesheet" href="<?php echo e(asset('bootstrap/css/bootstrap.min.css')); ?>">
+
     <style>
     :root {
         --bs-primary: #003366;
@@ -49,11 +52,6 @@
         color: #222222;
     }
 </style>
-
-
-
-    <!-- Bootstrap (local) -->
-    <link rel="stylesheet" href="<?php echo e(asset('bootstrap/css/bootstrap.min.css')); ?>">
 
 
     <!-- Scripts -->

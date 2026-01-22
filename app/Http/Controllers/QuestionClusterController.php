@@ -9,15 +9,45 @@ use Illuminate\Http\Request;
 
 class QuestionClusterController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Show clusters with question count
-        $clusters = QuestionCluster::withCount('questions')
-            ->orderByDesc('questions_count')
-            ->get();
+        $status = $request->query('status'); // answered | unanswered | null
+        $q = trim((string) $request->query('q')); // search keyword
 
-        return view('coordinator.clusters.index', compact('clusters'));
+        $clustersQuery = \App\Models\QuestionCluster::query()
+            ->withCount('questions')
+            ->orderByDesc('id');
+
+        // ✅ filter answered/unanswered
+        // ✅ filter answered/unanswered (NULL + empty string safe)
+        if ($status === 'answered') {
+            $clustersQuery->whereNotNull('cluster_answer')
+                        ->where('cluster_answer', '<>', '');
+        } elseif ($status === 'unanswered') {
+            $clustersQuery->where(function ($q) {
+                $q->whereNull('cluster_answer')
+                ->orWhere('cluster_answer', '=', '');
+            });
+        }
+
+
+
+        // ✅ search by label OR representative_question OR any question inside the cluster
+        if ($q !== '') {
+            $clustersQuery->where(function ($sub) use ($q) {
+                $sub->where('label', 'ILIKE', "%{$q}%")
+                    ->orWhere('representative_question', 'ILIKE', "%{$q}%")
+                    ->orWhereHas('questions', function ($qq) use ($q) {
+                        $qq->where('question_text', 'ILIKE', "%{$q}%");
+                    });
+            });
+        }
+
+        $clusters = $clustersQuery->paginate(10)->withQueryString();
+
+        return view('coordinator.clusters.index', compact('clusters', 'status', 'q'));
     }
+
 
     public function show(QuestionCluster $cluster)
     {
@@ -44,5 +74,21 @@ class QuestionClusterController extends Controller
         return redirect()->route('clusters.show', $cluster->id)
             ->with('success', 'Answer sent to all students in this cluster.');
     }
+
+    public function answerOne(Request $request, \App\Models\Question $question)
+    {
+        $request->validate([
+            'answer' => 'required|string|max:2000',
+        ]);
+
+        $question->update([
+            'answer' => $request->answer,
+            'answered_at' => now(),
+            'answered_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Answer saved for this specific question.');
+    }
+
 }
 

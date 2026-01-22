@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Log;
 
 
 
+
 class CoordinatorController extends Controller
 {
     public function dashboard()

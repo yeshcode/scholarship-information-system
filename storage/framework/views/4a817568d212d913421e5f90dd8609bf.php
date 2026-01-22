@@ -1,7 +1,7 @@
-@extends('layouts.app')
 
-@section('content')
-@php
+
+<?php $__env->startSection('content'); ?>
+<?php
     use Carbon\Carbon;
 
     // ✅ IMPORTANT: Group the paginator's collection, not the paginator object itself
@@ -20,7 +20,7 @@
 
         return $dt->format('M d, Y');
     });
-@endphp
+?>
 
 <div class="mx-auto" style="max-width: 720px;">
     <div class="d-flex align-items-center justify-content-between mb-3">
@@ -30,17 +30,18 @@
         </div>
     </div>
 
-    @forelse($grouped as $label => $list)
+    <?php $__empty_1 = true; $__currentLoopData = $grouped; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $label => $list): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
         <div class="d-flex align-items-center my-3">
             <div class="flex-grow-1 border-top"></div>
             <span class="px-3 text-muted fw-semibold" style="font-size: .9rem;">
-                {{ $label }}
+                <?php echo e($label); ?>
+
             </span>
             <div class="flex-grow-1 border-top"></div>
         </div>
 
-        @foreach($list as $announcement)
-            @php
+        <?php $__currentLoopData = $list; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $announcement): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <?php
                 $dt = !empty($announcement->posted_at)
                     ? ($announcement->posted_at instanceof Carbon ? $announcement->posted_at : Carbon::parse($announcement->posted_at))
                     : null;
@@ -50,7 +51,7 @@
                         ? $dt->format('h:i A')
                         : $dt->format('M d') . ' at ' . $dt->format('h:i A'))
                     : 'N/A';
-            @endphp
+            ?>
 
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body p-3 p-md-4">
@@ -68,40 +69,46 @@
                                         Scholarship Office
                                     </div>
                                     <div class="text-muted" style="font-size:.85rem;">
-                                        {{ $timeLabel }}
+                                        <?php echo e($timeLabel); ?>
+
                                     </div>
                                 </div>
 
-                                @if($dt && $dt->gt(now()->subDays(3)))
+                                <?php if($dt && $dt->gt(now()->subDays(3))): ?>
                                     <span class="badge bg-success align-self-start">New</span>
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
 
                     <h5 class="fw-semibold mb-2" style="color:#1c1e21;">
-                        {{ $announcement->title }}
+                        <?php echo e($announcement->title); ?>
+
                     </h5>
 
                     <div class="text-muted" style="white-space: pre-line; font-size: .98rem;">
-                        {{ $announcement->description }}
+                        <?php echo e($announcement->description); ?>
+
                     </div>
                 </div>
             </div>
-        @endforeach
-    @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <div class="text-center py-5">
             <div class="mb-2" style="font-size: 2rem;">📢</div>
             <h5 class="fw-semibold mb-1" style="color:#003366;">No announcements yet</h5>
             <p class="text-muted mb-0">Please check again later.</p>
         </div>
-    @endforelse
+    <?php endif; ?>
 
-    {{-- ✅ Pagination still works --}}
-    @if(method_exists($announcements, 'links'))
+    
+    <?php if(method_exists($announcements, 'links')): ?>
         <div class="d-flex justify-content-center mt-4">
-            {{ $announcements->links() }}
+            <?php echo e($announcements->links()); ?>
+
         </div>
-    @endif
+    <?php endif; ?>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/student/announcements.blade.php ENDPATH**/ ?>

@@ -61,18 +61,16 @@ class QuestionController extends Controller
             'cluster_id'    => $clusterId,
         ]);
 
-        return redirect()->route('questions.my')
-            ->with('success', 'Your question has been submitted.');
+        return redirect()->route('questions.my')->with('success', 'Your question has been submitted.');
     }
 
     public function myQuestions()
     {
-        $questions = Question::with('cluster')
-            ->where('user_id', auth()->id())
-            ->latest()
-            ->get();
+        $myQuestions = Question::where('user_id', auth()->id())
+            ->orderByDesc('id')
+            ->paginate(10);
 
-        return view('student.my-questions', compact('questions'));
+        return view('student.my-questions', compact('myQuestions'));
     }
 }
 
