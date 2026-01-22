@@ -67,4 +67,44 @@ class StudentController extends Controller
         $notifications = Notification::where('recipient_user_id', Auth::id())->latest()->paginate(10);  // Use Auth::id()
         return view('student.notifications', compact('notifications'));
     }
+
+   public function announcementShow($id)
+{
+    $announcement = Announcement::where('id', $id)
+        ->where(function ($query) {
+            $query->where('audience', 'all_students')
+                ->orWhere(function($q) {
+                    $q->where('audience', 'specific_scholars')
+                      ->whereHas('notifications', function($n) {
+                          $n->where('recipient_user_id', Auth::id());
+                      });
+                });
+        })
+        ->firstOrFail();
+
+    return view('student.announcement-show', compact('announcement'));
+}
+
+
+    public function open($id)
+{
+    $notification = Notification::where('id', $id)
+        ->where('recipient_user_id', Auth::id()) // ✅ correct
+        ->firstOrFail();
+
+    // ✅ mark as read (highlight gone, notification still displayed)
+    if (!$notification->is_read) {
+        $notification->update(['is_read' => true]);
+    }
+
+    // ✅ go to the specific announcement
+    if ($notification->related_type === Announcement::class && $notification->related_id) {
+        return redirect()->route('student.announcements.show', $notification->related_id);
+    }
+
+    // fallback
+    return redirect()->route('student.announcements');
+}
+
+
 }

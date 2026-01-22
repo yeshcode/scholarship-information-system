@@ -199,19 +199,27 @@ Route::middleware(['auth'])->group(function () {
 
     // Reports
     Route::get('/reports', [CoordinatorController::class, 'reports'])->name('coordinator.reports');
-});
+    });
 
 
     // Student routes (only Students can access)
     Route::middleware('role:Student')->prefix('student')->group(function () {
         Route::get('/dashboard', [StudentController::class, 'dashboard'])->name('student.dashboard');
         Route::get('/announcements', [StudentController::class, 'announcements'])->name('student.announcements');
+        Route::get('/announcements/{announcement}', [StudentController::class, 'announcementShow'])->name('student.announcements.show');
+
         Route::get('/scholarships', [StudentController::class, 'index'])->name('student.scholarships.index');
-        Route::get('/student/scholarships', [StudentController::class, 'index'])->name('student.scholarships');
+        Route::get('/student/scholarships', [StudentController::class, 'index'])->name('student.scholarships'); // (optional old alias)
         Route::get('/scholarships/{id}', [StudentController::class, 'show'])->name('student.scholarships.show');
+
         Route::get('/stipend-history', [StudentController::class, 'stipendHistory'])->name('student.stipend-history');
         Route::get('/notifications', [StudentController::class, 'notifications'])->name('student.notifications');
-        
+
+        Route::get('/notifications/{id}/open', [StudentController::class, 'open'])->name('student.notifications.open');
+
+    
+
+
         //Questions
         Route::get('/ask', [QuestionController::class, 'create'])->name('questions.create');
         Route::get('/my-questions', [QuestionController::class, 'myQuestions'])->name('questions.my');

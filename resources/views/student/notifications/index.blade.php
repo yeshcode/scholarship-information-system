@@ -11,16 +11,23 @@
 
     @forelse($notifications as $notification)
         @php
-            // ✅ highlight ONLY if unread
-            $isUnread = (isset($notification->is_read) ? !$notification->is_read : false);
+            $isUnread = !$notification->is_read;
 
-            // ✅ clickable card should go to an "open" route that marks it as read
-            $openUrl = route('student.notifications.open', $notification->id);
+            // Default redirect (Announcements page)
+            $redirectUrl = route('student.announcements.index');
+
+            // If later you add per-announcement linking:
+            // if($notification->announcement_id) {
+            //     $redirectUrl = route('student.announcements.show', $notification->announcement_id);
+            // }
         @endphp
 
-        {{-- ✅ Clickable card wrapper --}}
-        <a href="{{ $openUrl }}" class="text-decoration-none text-dark d-block">
-            <div class="card border-0 shadow-sm mb-2 {{ $isUnread ? 'border-start border-4 border-primary bg-light' : '' }}">
+        <a href="{{ $redirectUrl }}"
+           class="text-decoration-none text-dark">
+
+            <div class="card border-0 shadow-sm mb-2
+                {{ $isUnread ? 'border-start border-4 border-primary bg-light' : '' }}">
+
                 <div class="card-body p-3 p-md-4">
                     <div class="d-flex align-items-start gap-3">
 
@@ -36,7 +43,7 @@
                                     {{ $notification->title }}
                                 </h6>
 
-                                {{-- ✅ show badge only when unread --}}
+                                {{-- Unread dot --}}
                                 @if($isUnread)
                                     <span class="badge bg-primary">New</span>
                                 @endif
@@ -52,7 +59,6 @@
                                     : 'N/A' }}
                             </small>
                         </div>
-
                     </div>
                 </div>
             </div>
