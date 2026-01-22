@@ -17,7 +17,6 @@ use Illuminate\Support\Facades\Mail;  // Add this for emails
 use App\Mail\AnnouncementNotification;  // Add this for the Mailable
 use App\Services\ScholarOcrService;
 use Illuminate\Support\Str;
-use App\Models\Section;
 use App\Jobs\SendAnnouncementNotifications;
 use Illuminate\Support\Facades\Log;
 
@@ -46,7 +45,7 @@ class CoordinatorController extends Controller
 
         // Default: show nothing yet until they click a scholarship
         $scholars = Scholar::with([
-            'user.section.course',
+            'user.course',
             'scholarshipBatch.semester',
             'scholarship'
         ])->latest()->paginate(10);
@@ -64,7 +63,7 @@ class CoordinatorController extends Controller
         $scholarships = Scholarship::withCount('scholars')->orderBy('scholarship_name')->get();
 
         $scholars = Scholar::with([
-            'user.section.course',
+            'user.course',
             'scholarshipBatch.semester',
             'scholarship'
         ])->where('scholarship_id', $scholarship->id)
@@ -101,7 +100,7 @@ class CoordinatorController extends Controller
         $scholarships = Scholarship::withCount('scholars')->orderBy('scholarship_name')->get();
 
         $scholars = Scholar::with([
-            'user.section.course',
+            'user.course',
             'scholarshipBatch.semester',
             'scholarship'
         ])->where('batch_id', $batch->id)
@@ -240,16 +239,16 @@ public function showConfirmAddOcr()
     //new/from superadmin
     public function enrollmentRecords()
     {
-        $enrolledUsers = Enrollment::with(['user', 'semester', 'section.course'])
+        $enrolledUsers = Enrollment::with(['user', 'semester', 'course'])
             ->latest()
             ->paginate(10);
 
         // For "Add Enrollment" form
         $users = User::whereHas('userType', fn($q) => $q->where('name', 'Student'))->orderBy('lastname')->get();
         $semesters = Semester::orderBy('created_at', 'desc')->get();
-        $sections = Section::with('course')->orderBy('section_name')->get();
+        $courses = \App\Models\Course::orderBy('course_name')->get();
 
-        return view('coordinator.enrollment-records', compact('enrolledUsers', 'users', 'semesters', 'sections'));
+        return view('coordinator.enrollment-records', compact('enrolledUsers', 'users', 'semesters', 'courses'));
     }
 
     public function addEnrollmentRecord(Request $request)
@@ -257,7 +256,7 @@ public function showConfirmAddOcr()
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'semester_id' => 'required|exists:semesters,id',
-            'section_id' => 'required|exists:sections,id',
+            'course_id' => 'required|exists:courses,id',
             'status' => 'required|string',
         ]);
 
@@ -274,7 +273,7 @@ public function showConfirmAddOcr()
         Enrollment::create([
             'user_id' => $request->user_id,
             'semester_id' => $request->semester_id,
-            'section_id' => $request->section_id,
+            'course_id' => $request->course_id,
             'status' => $request->status,
         ]);
 

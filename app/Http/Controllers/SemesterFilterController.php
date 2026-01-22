@@ -49,4 +49,3 @@ class SemesterFilterController extends Controller
         return redirect()->back()->with('success', 'Semester filter cleared.');
     }
 }
-    

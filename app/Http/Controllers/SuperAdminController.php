@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
-use App\Models\Section; 
 use App\Models\YearLevel;
 use App\Models\College;
 use App\Models\Course;
@@ -136,13 +135,6 @@ public function dashboardData()
         $data = array_merge($data, $dashboardData);
     }
 
-        
-        if ($page === 'sections') {
-            $data['sections'] = Section::with('course', 'yearLevel')->get();  // Load related data
-            $data['courses'] = Course::all();  // For dropdowns
-            $data['yearLevels'] = YearLevel::all();  // For dropdowns
-        }
-
         elseif ($page === 'colleges') {
             $data['colleges'] = College::all();  // No relationships needed
         }
@@ -164,168 +156,103 @@ public function dashboardData()
             $data['semesters'] = Semester::all();  // No relationships needed yet
         }
 
-               // ENROLLMENTS PAGE (inside dashboard: ?page=enrollments)
+        // ENROLLMENTS PAGE (inside dashboard: ?page=enrollments)
         elseif ($page === 'enrollments') {
-    $selectedSemesterId = request('semester_id');
+            $selectedSemesterId = request('semester_id');
 
-    $data['semesters'] = Semester::orderBy('academic_year', 'desc')->get();
+            $data['semesters'] = Semester::orderBy('academic_year', 'desc')->get();
 
-    $query = Enrollment::with('user', 'semester', 'section.course', 'course');
+            // ✅ NO section.course anymore
+            $query = Enrollment::with(['user', 'semester', 'course']);
 
-    if ($selectedSemesterId) {
-        $query->where('semester_id', $selectedSemesterId);
-    }
+            if ($selectedSemesterId) {
+                $query->where('semester_id', $selectedSemesterId);
+            }
 
-    $data['enrollments'] = $query
-        ->orderByDesc('id')
-        ->paginate(15, ['*'], 'enrollments_page');
+            $data['enrollments'] = $query
+                ->orderByDesc('id')
+                ->paginate(15, ['*'], 'enrollments_page');
 
-    $data['selectedSemesterId'] = $selectedSemesterId;
+            $data['selectedSemesterId'] = $selectedSemesterId;
 
-    $data['users']      = User::all();
-    $data['sections']   = Section::with('course', 'yearLevel')->get();
-    $data['courses']    = Course::all();
-    $data['yearLevels'] = YearLevel::all();
-}
-
-
+            // ✅ dropdowns
+            $data['users']      = User::all();
+            $data['courses']    = Course::all();
+            $data['yearLevels'] = YearLevel::all(); // keep if you need in UI
+        }
 
        elseif ($page === 'manage-users') {
-    try {
-        $search       = request('search');        // keyword
-        $collegeId    = request('college_id');    // filter: college
-        $yearLevelId  = request('year_level_id'); // filter: year level
-        $courseId     = request('course_id');     // filter: course (via section->course)
+            try {
+                $search       = request('search');
+                $collegeId    = request('college_id');
+                $yearLevelId  = request('year_level_id');
+                $courseId     = request('course_id'); // ✅ direct course_id now
 
-        // Base query with relationships
-        $query = User::with('userType', 'college', 'yearLevel', 'section.course');
+                // ✅ Base query (no section)
+                $query = User::with('userType', 'college', 'yearLevel', 'course');
 
-        // TEXT SEARCH (Name, email, status, college, year level, course)
-        if ($search) {
-            $search = trim($search);
+                // ✅ TEXT SEARCH
+                if ($search) {
+                    $search = trim($search);
 
-            $query->where(function ($q) use ($search) {
-                $q->where('firstname', 'like', "%{$search}%")
-                  ->orWhere('lastname', 'like', "%{$search}%")
-                  ->orWhere('bisu_email', 'like', "%{$search}%")
-                  ->orWhere('status', 'like', "%{$search}%")
-                  // College name
-                  ->orWhereHas('college', function ($sub) use ($search) {
-                      $sub->where('college_name', 'like', "%{$search}%");
-                  })
-                  // Year level name
-                  ->orWhereHas('yearLevel', function ($sub) use ($search) {
-                      $sub->where('year_level_name', 'like', "%{$search}%");
-                  })
-                  // Course name through section -> course
-                  ->orWhereHas('section.course', function ($sub) use ($search) {
-                      $sub->where('course_name', 'like', "%{$search}%");
-                  });
-            });
+                    $query->where(function ($q) use ($search) {
+                        $q->where('firstname', 'like', "%{$search}%")
+                        ->orWhere('lastname', 'like', "%{$search}%")
+                        ->orWhere('bisu_email', 'like', "%{$search}%")
+                        ->orWhere('status', 'like', "%{$search}%")
+
+                        ->orWhereHas('college', function ($sub) use ($search) {
+                            $sub->where('college_name', 'like', "%{$search}%");
+                        })
+
+                        ->orWhereHas('yearLevel', function ($sub) use ($search) {
+                            $sub->where('year_level_name', 'like', "%{$search}%");
+                        })
+
+                        // ✅ course direct
+                        ->orWhereHas('course', function ($sub) use ($search) {
+                            $sub->where('course_name', 'like', "%{$search}%");
+                        });
+                    });
+                }
+
+                if (!empty($collegeId)) {
+                    $query->where('college_id', $collegeId);
+                }
+
+                if (!empty($yearLevelId)) {
+                    $query->where('year_level_id', $yearLevelId);
+                }
+
+                // ✅ course filter direct
+                if (!empty($courseId)) {
+                    $query->where('course_id', $courseId);
+                }
+
+                $data['users'] = $query
+                    ->orderBy('lastname')
+                    ->orderBy('firstname')
+                    ->paginate(15, ['*'], 'users_page');
+
+                $data['userTypes']  = UserType::all();
+                $data['colleges']   = College::all();
+                $data['yearLevels'] = YearLevel::all();
+                $data['courses']    = Course::all();
+
+                $data['selectedCollegeId']   = $collegeId;
+                $data['selectedYearLevelId'] = $yearLevelId;
+                $data['selectedCourseId']    = $courseId;
+
+            } catch (\Exception $e) {
+                $data['error'] = 'Database error: ' . $e->getMessage();
+            }
         }
-
-        // DROPDOWN FILTER: COLLEGE
-        if (!empty($collegeId)) {
-            $query->where('college_id', $collegeId);
-        }
-
-        // DROPDOWN FILTER: YEAR LEVEL
-        if (!empty($yearLevelId)) {
-            $query->where('year_level_id', $yearLevelId);
-        }
-
-        // DROPDOWN FILTER: COURSE (via section->course)
-        if (!empty($courseId)) {
-            $query->whereHas('section.course', function ($q) use ($courseId) {
-                $q->where('id', $courseId);
-            });
-        }
-
-        // Paginate with custom page name so it doesn't conflict with ?page=manage-users
-        $data['users'] = $query
-            ->orderBy('lastname')
-            ->orderBy('firstname')
-            ->paginate(15, ['*'], 'users_page');
-
-        // For dropdown options
-        $data['userTypes'] = UserType::all();
-        $data['colleges']  = College::all();
-        $data['yearLevels'] = YearLevel::all();
-        $data['sections']  = Section::with('course', 'yearLevel')->get();
-        $data['courses']   = Course::all(); // <-- make sure Course is imported at top
-
-        // Pass selected IDs (optional, but nice if you want them in the view)
-        $data['selectedCollegeId']   = $collegeId;
-        $data['selectedYearLevelId'] = $yearLevelId;
-        $data['selectedCourseId']    = $courseId;
-
-    } catch (\Exception $e) {
-        $data['error'] = 'Database error: ' . $e->getMessage();
-    }
-}
-
-
 
         // Add for other pages later
         
         return view('super-admin.dashboard', $data);
     }
 
-    
-    
-    // Section CRUD Methods
-    public function createSection()
-    {
-        $courses = Course::all();
-        $yearLevels = YearLevel::all();
-        return view('super-admin.sections-create', compact('courses', 'yearLevels'));
-    }
-
-    public function editSection($id)
-    {
-        $section = Section::findOrFail($id);
-        $courses = Course::all();  // For dropdown
-        $yearLevels = YearLevel::all();  // For dropdown
-        return view('super-admin.sections-edit', compact('section', 'courses', 'yearLevels'));
-    }
-
-    public function storeSection(Request $request)
-    {
-        $request->validate([
-            'course_id' => 'required|exists:courses,id',
-            'year_level_id' => 'required|exists:year_levels,id',
-            'section_name' => 'required|string|max:255',
-        ]);
-        
-        Section::create($request->only(['course_id', 'year_level_id', 'section_name']));
-        return redirect()->route('admin.dashboard', ['page' => 'sections'])->with('success', 'Section added successfully!');
-    }
-    
-    public function updateSection(Request $request, $id)
-    {
-        $request->validate([
-            'course_id' => 'required|exists:courses,id',
-            'year_level_id' => 'required|exists:year_levels,id',
-            'section_name' => 'required|string|max:255',
-        ]);
-        
-        $section = Section::findOrFail($id);
-        $section->update($request->only(['course_id', 'year_level_id', 'section_name']));
-        return redirect()->route('admin.dashboard', ['page' => 'sections'])->with('success', 'Section updated successfully!');
-    }
-    
-    public function destroySection($id)
-    {
-        Section::findOrFail($id)->delete();
-        return redirect()->route('admin.dashboard', ['page' => 'sections'])->with('success', 'Section deleted successfully!');
-    }
-
-    // In app/Http/Controllers/SectionController.php
-    public function delete($id)
-    {
-        $section = Section::findOrFail($id);  // Assuming Section model
-        return view('super-admin.sections-delete', compact('section'));
-    }
 
     // Colleges CRUD
 public function createCollege()
@@ -583,7 +510,7 @@ public function enrollments(Request $request)
     $semesters = Semester::orderBy('academic_year', 'desc')->get();
 
     // Build the enrollments query with relationships
-    $query = Enrollment::with('user', 'semester', 'section.course', 'course');
+    $query = Enrollment::with('user', 'semester', 'course');
 
     // Apply semester filter if selected
     if ($selectedSemesterId) {
@@ -595,7 +522,6 @@ public function enrollments(Request $request)
 
     // Existing data for other parts of the page (e.g., dropdowns in create/edit forms)
     $users = User::all();  // For user dropdown
-    $sections = Section::with('course', 'yearLevel')->get();  // For section dropdown, with related data
     $courses = Course::all();  // Added for filters on enroll students page
     $yearLevels = YearLevel::all();  // Added for filters on enroll students page
 
@@ -606,9 +532,8 @@ public function createEnrollment()
 {
     $users = User::all();
     $semesters = Semester::all();
-    $sections = Section::with('course', 'yearLevel')->get();
-    $courses = Course::all();  // Add this line to load courses
-    return view('super-admin.enrollments-create', compact('users', 'semesters', 'sections', 'courses'));  // Add 'courses' to compact
+    $courses = Course::all();
+    return view('super-admin.enrollments-create', compact('users', 'semesters', 'courses'));
 }
 
 public function editEnrollment($id)
@@ -616,9 +541,8 @@ public function editEnrollment($id)
     $enrollment = Enrollment::findOrFail($id);
     $users = User::all();
     $semesters = Semester::all();
-    $sections = Section::with('course', 'yearLevel')->get();
-    $courses = Course::all();  // Add this line
-    return view('super-admin.enrollments-edit', compact('enrollment', 'users', 'semesters', 'sections', 'courses'));  // Add 'courses' to compact
+    $courses = Course::all();
+    return view('super-admin.enrollments-create', compact('users', 'semesters', 'courses'));
 }
 
 public function storeEnrollment(Request $request)
@@ -626,18 +550,17 @@ public function storeEnrollment(Request $request)
     $request->validate([
         'user_id' => 'required|exists:users,id',
         'semester_id' => 'required|exists:semesters,id',
-        'section_id' => 'required|exists:sections,id',
-        'course_id' => 'required|exists:courses,id', 
-        'status' => 'required|in:enrolled,graduated,not_enrolled',  // Restrict to valid enum values (adjust if different)
+        'course_id' => 'required|exists:courses,id',
+        'status' => 'required|in:enrolled,graduated,not_enrolled',
     ]);
-    
+
     Enrollment::create([
         'user_id' => $request->user_id,
         'semester_id' => $request->semester_id,
-        'section_id' => $request->section_id,
         'course_id' => $request->course_id,
-        'status' => strtolower($request->status),  // Ensure lowercase for enum
+        'status' => strtolower($request->status),
     ]);
+
     return redirect()->route('admin.dashboard', ['page' => 'enrollments'])->with('success', 'Enrollment added successfully!');
 }
 
@@ -646,8 +569,7 @@ public function updateEnrollment(Request $request, $id)
     $request->validate([
         'user_id' => 'required|exists:users,id',
         'semester_id' => 'required|exists:semesters,id',
-        'section_id' => 'required|exists:sections,id',
-        'course_id' => 'required|exists:courses,id', 
+        'course_id' => 'required|exists:courses,id',
         'status' => 'required|in:enrolled,graduated,not_enrolled',
     ]);
     
@@ -655,7 +577,6 @@ public function updateEnrollment(Request $request, $id)
     $enrollment->update([
         'user_id' => $request->user_id,
         'semester_id' => $request->semester_id,
-        'section_id' => $request->section_id,
         'course_id' => $request->course_id,
         'status' => strtolower($request->status),
     ]);
@@ -674,30 +595,29 @@ public function enrollStudents(Request $request)
     $search = $request->get('search');  // Get the search term
 
     $query = User::where('user_type_id', 3)  // Assuming 3 is Student; adjust if needed
-        ->with('college', 'yearLevel', 'section.course');
+        ->with('college', 'yearLevel', 'course');
 
     if ($search) {
-        // Search across section name, course name, or year level name
-        $query->where(function ($q) use ($search) {
-            $q->whereHas('section', function ($subQ) use ($search) {
-                $subQ->where('section_name', 'LIKE', '%' . $search . '%')
-                     ->orWhereHas('course', function ($courseQ) use ($search) {
-                         $courseQ->where('course_name', 'LIKE', '%' . $search . '%');
-                     });
-            })
-            ->orWhereHas('yearLevel', function ($yearQ) use ($search) {
-                $yearQ->where('year_level_name', 'LIKE', '%' . $search . '%');
-            });
-        });
-    }
+    $query->where(function ($q) use ($search) {
+        $q->whereHas('course', function ($courseQ) use ($search) {
+            $courseQ->where('course_name', 'LIKE', '%' . $search . '%');
+        })
+        ->orWhereHas('yearLevel', function ($yearQ) use ($search) {
+            $yearQ->where('year_level_name', 'LIKE', '%' . $search . '%');
+        })
+        ->orWhere('firstname', 'LIKE', '%' . $search . '%')
+        ->orWhere('lastname', 'LIKE', '%' . $search . '%')
+        ->orWhere('bisu_email', 'LIKE', '%' . $search . '%');
+    });
+}
+
 
     $students = $query->paginate(10);  // 10 per page
     $semesters = Semester::all();
-    $sections = Section::with('course', 'yearLevel')->get();
     $courses = Course::all();
     $yearLevels = YearLevel::all();
 
-    return view('super-admin.enroll-students', compact('students', 'semesters', 'sections', 'courses', 'yearLevels', 'request'));
+    return view('super-admin.enroll-students', compact('students', 'semesters', 'courses', 'yearLevels', 'request'));
 }
 
 // Add this method right after enrollStudents
@@ -706,13 +626,11 @@ public function storeEnrollStudents(Request $request)
     $request->validate([
         'selected_users' => 'required|array|min:1',
         'semester_id' => 'required|exists:semesters,id',
-        'section_id' => 'nullable|exists:sections,id',
         'course_id' => 'required|exists:courses,id',
     ]);
 
     $selectedUserIds = $request->selected_users;
     $semesterId = $request->semester_id;
-    $sectionId = $request->section_id;
     $courseId = $request->course_id;
 
     $enrolledCount = 0;
@@ -720,7 +638,7 @@ public function storeEnrollStudents(Request $request)
         // Update or create enrollment: If student is already enrolled in this semester, update; else create
         Enrollment::updateOrCreate(
             ['user_id' => $userId, 'semester_id' => $semesterId],
-            ['section_id' => $sectionId, 'course_id' => $courseId, 'status' => 'enrolled']  // Changed from 'active' to 'enrolled'
+            ['course_id' => $courseId, 'status' => 'enrolled']
         );
         $enrolledCount++;
     }
@@ -751,7 +669,7 @@ public function enrollmentRecords()
 public function enrollmentRecordsByYear($academicYear)
 {
     // Get all enrollments where the semester has this academic year
-    $enrollments = Enrollment::with('user', 'semester', 'section.course', 'course')
+    $enrollments = Enrollment::with('user', 'semester', 'course')
         ->whereHas('semester', function ($q) use ($academicYear) {
             $q->where('academic_year', $academicYear);
         })
@@ -769,12 +687,12 @@ public function createUser()
     $userTypes = UserType::all();
     $colleges = College::all();
     $yearLevels = YearLevel::all();
-    $sections = Section::with('course', 'yearLevel')->get();
-    
+    $courses = Course::all();
+
     $studentUserType = UserType::where('name', 'Student')->first();
     $studentUserTypeId = $studentUserType ? $studentUserType->id : null;
     
-    return view('super-admin.users-create', compact('userTypes', 'colleges', 'yearLevels', 'sections', 'studentUserTypeId'));
+    return view('super-admin.users-create', compact('userTypes', 'colleges', 'yearLevels', 'courses', 'studentUserTypeId'));
 }
 
 public function editUser($id)
@@ -783,8 +701,8 @@ public function editUser($id)
     $userTypes = UserType::all();
     $colleges = College::all();
     $yearLevels = YearLevel::all();
-    $sections = Section::with('course', 'yearLevel')->get();
-    return view('super-admin.users-edit', compact('user', 'userTypes', 'colleges', 'yearLevels', 'sections'));
+    $courses = Course::all();
+    return view('super-admin.users-edit', compact('user', 'userTypes', 'colleges', 'yearLevels', 'courses'));
 }
 
 public function storeUser(Request $request)
@@ -807,7 +725,7 @@ public function storeUser(Request $request)
         'user_type_id' => 'required|exists:user_types,id',
         'college_id' => $isStudent ? 'required|exists:colleges,id' : 'nullable|exists:colleges,id',
         'year_level_id' => $isStudent ? 'required|exists:year_levels,id' : 'nullable|exists:year_levels,id',
-        'section_id' => $isStudent ? 'required|exists:sections,id' : 'nullable|exists:sections,id',
+        'course_id' => $isStudent ? 'required|exists:courses,id' : 'nullable|exists:courses,id',
         'password' => $isStudent ? 'nullable|string|min:8' : 'required|string|min:8',  // Ignored for students
     ];
     
@@ -845,7 +763,7 @@ public function storeUser(Request $request)
             'user_type_id' => $request->user_type_id,
             'college_id' => $request->college_id,
             'year_level_id' => $request->year_level_id,
-            'section_id' => $request->section_id,
+            'course_id' => $request->course_id,
             'password' => bcrypt($password),  // Hash it (student_id for students)
             'status' => 'active',
         ]);
@@ -879,7 +797,7 @@ public function updateUser(Request $request, $id)
         'user_type_id' => 'required|exists:user_types,id',
         'college_id' => 'nullable|exists:colleges,id',
         'year_level_id' => 'nullable|exists:year_levels,id',
-        'section_id' => 'nullable|exists:sections,id',
+        'course_id' => 'nullable|exists:courses,id',
     ]);
     
     $user = User::findOrFail($id);
@@ -897,8 +815,8 @@ public function showBulkUploadForm()
 {
     $colleges = College::all();
     $yearLevels = YearLevel::all();
-    $sections = Section::with('course', 'yearLevel')->get();
-    return view('super-admin.users-bulk-upload', compact('colleges', 'yearLevels', 'sections'));
+    $courses = Course::all();
+    return view('super-admin.users-bulk-upload', compact('colleges', 'yearLevels', 'courses'));
 }
 
 // Bulk Upload for Students (Updated for Dynamic CSV)
@@ -908,7 +826,7 @@ public function bulkUploadUsers(Request $request)
         'csv_file' => 'required|file|mimes:csv,txt',
         'college_id' => 'required|exists:colleges,id',
         'year_level_id' => 'required|exists:year_levels,id',
-        'section_id' => 'required|exists:sections,id',
+        'course_id' => $request->course_id,
     ]);
 
     $file = $request->file('csv_file');
@@ -928,7 +846,7 @@ public function bulkUploadUsers(Request $request)
             'user_type_id' => $studentTypeId,
             'college_id' => $request->college_id,
             'year_level_id' => $request->year_level_id,
-            'section_id' => $request->section_id,
+            'course_id' => $request->course_id,
             // Remove the default password here; we'll set it conditionally below
             'status' => 'active',
         ];

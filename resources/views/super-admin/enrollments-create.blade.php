@@ -21,12 +21,6 @@
             <option value="{{ $semester->id }}">{{ $semester->term }} {{ $semester->academic_year }}</option>
         @endforeach
     </select>
-    <select name="section_id" class="border p-2 w-full mb-4" required>
-        <option value="">Select Section</option>
-        @foreach($sections as $section)
-            <option value="{{ $section->id }}">{{ $section->section_name }} ({{ $section->course->course_name ?? 'N/A' }} - {{ $section->yearLevel->year_level_name ?? 'N/A' }})</option>
-        @endforeach
-    </select>
     <select name="course_id" class="border p-2 w-full mb-4" required>
         <option value="">Select Course</option>
         @foreach($courses as $course)

@@ -140,7 +140,7 @@
     $page = request('page');
 
     $usersGroupActive = in_array($page, ['manage-users', 'user-type']);
-    $academicGroupActive = in_array($page, ['colleges', 'courses', 'year-levels', 'sections', 'semesters']);
+    $academicGroupActive = in_array($page, ['colleges', 'courses', 'year-levels', 'semesters']);
     $enrollmentGroupActive = $page === 'enrollments';
 
     $allSemesters = \App\Models\Semester::orderByDesc('created_at')->get();
@@ -325,10 +325,6 @@
                                 <a href="<?php echo e(route('admin.dashboard', ['page' => 'year-levels'])); ?>"
                                    class="dropdown-square <?php echo e($page === 'year-levels' ? 'dropdown-square-active' : ''); ?>">
                                     Year Levels
-                                </a>
-                                <a href="<?php echo e(route('admin.dashboard', ['page' => 'sections'])); ?>"
-                                   class="dropdown-square <?php echo e($page === 'sections' ? 'dropdown-square-active' : ''); ?>">
-                                    Sections
                                 </a>
                                 <a href="<?php echo e(route('admin.dashboard', ['page' => 'semesters'])); ?>"
                                    class="dropdown-square <?php echo e($page === 'semesters' ? 'dropdown-square-active' : ''); ?>">

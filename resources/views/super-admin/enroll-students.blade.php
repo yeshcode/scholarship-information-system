@@ -87,17 +87,14 @@
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label for="section_id" class="block text-sm font-medium">Update to New Section (Optional)</label>
-                    <select name="section_id" id="section_id" class="border p-2 w-full">
-                        <option value="">Select New Section</option>
-                        @foreach($sections as $section)
-                            <option value="{{ $section->id }}">{{ $section->section_name }} ({{ $section->course->course_name ?? 'N/A' }})</option>
+                    <label for="course_id" class="block text-sm font-medium">Update to New Course</label>
+                    <select name="course_id" id="course_id" class="border p-2 w-full" required>
+                        <option value="">Select New Course</option>
+                        @foreach($courses as $course)
+                            <option value="{{ $course->id }}">{{ $course->course_name }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="mb-4">  {{-- Add this new div for course selection --}}
-                    <label for="course_id" class="block text-sm font-medium">Update to New Course</label>
-                    <select name="course_id" id="course_id" class="border p-2 w-full" required>
                         <option value="">Select New Course</option>
                         @foreach($courses as $course)
                             <option value="{{ $course->id }}">{{ $course->course_name }}</option>

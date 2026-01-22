@@ -26,8 +26,7 @@ class User extends Authenticatable
         'contact_no',
         'password',
         'college_id',        // Added for students
-        'year_level_id',     // Added for students
-        'section_id',        // Added for students
+        'year_level_id', 
         'course_id',
     ];
 
@@ -37,13 +36,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
-
-    // public function getAuthIdentifierName()
-    // {
-    //     return 'bisu_email';
-    // }
-
-    // Relationships (fixed to use 'id' as local key for FKs)
+    
     public function userType()
     {
         return $this->belongsTo(UserType::class, 'user_type_id', 'id');
@@ -57,11 +50,6 @@ class User extends Authenticatable
     public function yearLevel()
     {
         return $this->belongsTo(YearLevel::class, 'year_level_id', 'id');
-    }
-
-    public function section()
-    {
-        return $this->belongsTo(Section::class, 'section_id', 'id');
     }
 
     public function course()
