@@ -488,14 +488,7 @@
                                     class="student-pill {{ request()->routeIs('questions.create') ? 'student-pill-active' : '' }}">
                             {{ __('Ask') }}
                         </x-nav-link>
-
-                        <x-nav-link :href="route('questions.my')"
-                                    :active="request()->routeIs('questions.my')"
-                                    class="student-pill {{ request()->routeIs('questions.my') ? 'student-pill-active' : '' }}">
-                            {{ __('My Questions') }}
-                        </x-nav-link>
                     @endif
-
                 @endauth
             </div>
         </div>
