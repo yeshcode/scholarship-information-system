@@ -1,85 +1,114 @@
-{{-- resources/views/super-admin/enrollment-records.blade.php --}}
-@extends('layouts.app')
+@extends('layouts.coordinator')
 
-@section('content')
-
-<style>
-    .page-title-blue {
-        font-weight: 700;
-        font-size: 1.9rem;
-        color: #003366;
-    }
-    .table-card {
-        background: #ffffff;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid #e5e7eb;
-    }
-    .modern-table thead {
-        background-color: #003366;
-        color: #ffffff;
-    }
-    .modern-table th,
-    .modern-table td {
-        border: 1px solid #e5e7eb;
-        padding: 10px 12px;
-        font-size: 0.9rem;
-        vertical-align: middle;
-        text-align: center;
-    }
-    .modern-table tbody tr:nth-child(even) {
-        background-color: #f9fafb;
-    }
-    .modern-table tbody tr:hover {
-        background-color: #e8f1ff;
-        transition: 0.15s ease-in-out;
-    }
-</style>
-
-<div class="container-fluid py-3">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="page-title-blue mb-0">
-            Enrollment Records by Academic Year
-        </h2>
+@section('page-content')
+@if(session('success'))
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        {{ session('success') }}
     </div>
+@endif
 
-    <a href="{{ route('admin.enrollments') }}" class="btn btn-bisu-outline-primary mb-3">
-        ← Back to Manage Enrollments
-    </a>
-
-    @if($academicYears->isEmpty())
-        <div class="alert alert-info">
-            No academic years found yet. Please add semesters first.
-        </div>
-    @else
-        <div class="table-card shadow-sm">
-            <div class="table-responsive">
-                <table class="table modern-table mb-0">
-                    <thead>
-                        <tr>
-                            <th>Academic Year</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($academicYears as $year)
-                            <tr>
-                                <td>{{ $year }}</td>
-                                <td>
-                                    <a href="{{ route('admin.enrollments.records.year', $year) }}"
-                                       class="btn btn-bisu-primary btn-sm">
-                                        View Records
-                                    </a>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    @endif
-
+<div class="flex items-center justify-between mb-4">
+    <h2 class="text-2xl font-bold">Enrollment Records</h2>
 </div>
 
+{{-- Add Enrollment Form --}}
+<div class="bg-white border border-gray-200 rounded p-4 mb-4">
+    <div class="font-semibold text-[#003366] mb-3">Add Student Enrollment</div>
+
+    <form action="{{ route('coordinator.enrollment-records.add') }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        @csrf
+
+        <div>
+            <label class="text-sm font-semibold text-gray-700">Student</label>
+            <select name="user_id" class="w-full border rounded px-3 py-2" required>
+                <option value="">Select student</option>
+                @foreach($users as $u)
+                    <option value="{{ $u->id }}">
+                        {{ $u->lastname }}, {{ $u->firstname }} ({{ $u->student_id ?? 'No ID' }})
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div>
+            <label class="text-sm font-semibold text-gray-700">Semester</label>
+            <select name="semester_id" class="w-full border rounded px-3 py-2" required>
+                <option value="">Select semester</option>
+                @foreach($semesters as $sem)
+                    <option value="{{ $sem->id }}">{{ $sem->semester_name ?? ('Semester #' . $sem->id) }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div>
+            <label class="text-sm font-semibold text-gray-700">Section</label>
+            <select name="section_id" class="w-full border rounded px-3 py-2" required>
+                <option value="">Select section</option>
+                @foreach($sections as $sec)
+                    <option value="{{ $sec->id }}">
+                        {{ $sec->section_name }} ({{ $sec->course->course_name ?? 'No Course' }})
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div>
+            <label class="text-sm font-semibold text-gray-700">Status</label>
+            <select name="status" class="w-full border rounded px-3 py-2" required>
+                <option value="enrolled">Enrolled</option>
+                <option value="dropped">Dropped</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
+
+        <div class="md:col-span-4 flex justify-end">
+            <button class="bg-[#003366] hover:opacity-90 text-white px-4 py-2 rounded font-semibold">
+                Add Record
+            </button>
+        </div>
+    </form>
+</div>
+
+{{-- Records Table --}}
+<div class="bg-white border border-gray-200 rounded overflow-hidden">
+    <div class="px-4 py-3 border-b font-semibold text-[#003366]">Enrollment List</div>
+
+    <table class="w-full">
+        <thead>
+            <tr class="bg-gray-50 text-sm">
+                <th class="px-4 py-2 text-left">Student</th>
+                <th class="px-4 py-2 text-left">Student ID</th>
+                <th class="px-4 py-2 text-left">Course</th>
+                <th class="px-4 py-2 text-left">Section</th>
+                <th class="px-4 py-2 text-left">Semester</th>
+                <th class="px-4 py-2 text-left">Status</th>
+            </tr>
+        </thead>
+
+        <tbody class="text-sm">
+            @forelse($enrolledUsers as $e)
+                <tr class="border-t">
+                    <td class="px-4 py-2">
+                        {{ $e->user->firstname ?? 'N/A' }} {{ $e->user->lastname ?? '' }}
+                    </td>
+                    <td class="px-4 py-2">{{ $e->user->student_id ?? 'N/A' }}</td>
+                    <td class="px-4 py-2">{{ $e->section->course->course_name ?? 'N/A' }}</td>
+                    <td class="px-4 py-2">{{ $e->section->section_name ?? 'N/A' }}</td>
+                    <td class="px-4 py-2">{{ $e->semester->semester_name ?? 'N/A' }}</td>
+                    <td class="px-4 py-2">{{ $e->status ?? 'N/A' }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="6" class="px-4 py-6 text-center text-gray-600">
+                        No enrollment records found.
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4">
+    {{ $enrolledUsers->links() }}
+</div>
 @endsection

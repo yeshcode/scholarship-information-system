@@ -4,7 +4,7 @@
 <h1>Scholarship Coordinator Dashboard</h1>
 <p>Welcome! Manage your scholarship system here.</p>
 <a href="<?php echo e(route('coordinator.manage-scholars')); ?>">Manage Scholars</a> |
-<a href="<?php echo e(route('coordinator.enrolled-users')); ?>">View All Enrolled Users</a> |
+<a href="<?php echo e(route('coordinator.enrollment-records')); ?>">Enrollment Records</a>|
 <a href="<?php echo e(route('coordinator.manage-scholarships')); ?>">Manage Scholarships</a> |  <!-- Added this -->
 <a href="<?php echo e(route('coordinator.scholarship-batches')); ?>">Manage Scholarship Batches</a> |
 <a href="<?php echo e(route('coordinator.manage-stipends')); ?>">Manage Stipend</a> |

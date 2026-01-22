@@ -54,23 +54,85 @@
 
     /* NEW: square items inside dropdowns */
     .dropdown-square {
-        display: block;
-        padding: 0.35rem 0.75rem;
-        margin: 0.2rem 0.5rem;
-        border-radius: 0.375rem;
-        border: 1px solid #003366;
-        background-color: #ffffff;
-        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+
+        width: 100%;
+        box-sizing: border-box;
+
+        padding: 0.4rem 0.7rem;   /* compact but readable */
+        margin: 0;               /* ❗ remove margins */
+        
+        border-radius: 0.35rem;
+        border: none;            /* cleaner look */
+        background-color: transparent;
+
+        font-size: 0.8rem;
+        font-weight: 600;
         color: #003366;
         text-align: left;
+        cursor: pointer;
     }
+
     .dropdown-square:hover {
         background-color: #e2e8f0;
     }
+
+
+
     .dropdown-square-active {
         background-color: #003366;
         color: #ffffff;
     }
+
+    /* STUDENT: chip style (different from admin/coordinator boxes) */
+    .student-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.95rem;
+        border-radius: 9999px; /* fully rounded */
+        background: #eaf2ff;   /* light blue */
+        color: #0b3a75;
+        font-weight: 700;
+        font-size: 0.9rem;
+        border: 1px solid #cfe0ff;
+        transition: 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .student-pill:hover {
+        background: #d9e9ff;
+        transform: translateY(-1px);
+    }
+
+    .student-pill-active {
+        background: #0b3a75;
+        color: #ffffff;
+        border-color: #0b3a75;
+        box-shadow: 0 6px 14px rgba(11, 58, 117, 0.18);
+    }
+
+    /* COORDINATOR: uniform square buttons *//* COORDINATOR: compact modern nav buttons */
+    .coord-pill {
+        width: auto;                 /* no fixed width */
+        min-width: unset;
+        height: 36px;                /* slim height */
+        padding: 0.25rem 0.7rem;     /* compact padding */
+        font-size: 0.8rem;           /* readable but small */
+        font-weight: 600;
+        white-space: nowrap;         /* single line */
+        border-radius: 6px;          /* subtle rounding */
+    }
+
+    /* smaller dropdown arrow */
+    .coord-pill svg {
+        width: 12px;
+        height: 12px;
+    }
+
+
+
 </style>
 
 <?php
@@ -80,6 +142,39 @@
     $usersGroupActive = in_array($page, ['manage-users', 'user-type']);
     $academicGroupActive = in_array($page, ['colleges', 'courses', 'year-levels', 'sections', 'semesters']);
     $enrollmentGroupActive = $page === 'enrollments';
+
+    $allSemesters = \App\Models\Semester::orderByDesc('created_at')->get();
+    $activeSemesterId = session('active_semester_id');
+    $activeSemester = $allSemesters->firstWhere('id', $activeSemesterId);
+    $activeSemesterName = $activeSemester
+            ? ($activeSemester->term . ' ' . $activeSemester->academic_year)
+            : 'All Semesters';
+
+
+
+     $coordScholarsGroupActive =
+        request()->routeIs('coordinator.manage-scholars')
+        || request()->routeIs('coordinator.scholars.*')
+        || request()->routeIs('coordinator.enrolled-users')
+        || request()->routeIs('coordinator.manage-scholarships')
+        || request()->routeIs('coordinator.scholarships.*');
+
+    $coordStipendsGroupActive =
+        request()->routeIs('coordinator.manage-stipends')
+        || request()->routeIs('coordinator.stipends.*')
+        || request()->routeIs('coordinator.manage-stipend-releases')
+        || request()->routeIs('coordinator.stipend-releases.*');
+
+    $coordAnnouncementsGroupActive =
+        request()->routeIs('coordinator.manage-announcements')
+        || request()->routeIs('coordinator.announcements.*')
+        || request()->routeIs('clusters.*');
+
+    // Optional: set this once your reports route exists
+    $coordReportsActive =
+        request()->routeIs('coordinator.reports')
+        || request()->routeIs('coordinator.reports.*');
+
 ?>
 
 <!-- SINGLE TOP BAR: logo + title + nav links + user menu -->
@@ -103,7 +198,56 @@
 
         
         <div class="flex-1 flex justify-center">
-            <div class="flex space-x-4 items-center">
+            <div class="flex space-x-2 items-center flex-nowrap">
+                
+                <?php if(auth()->guard()->check()): ?>
+                    <?php if(auth()->user()->hasRole('Scholarship Coordinator') || auth()->user()->hasRole('Super Admin')): ?>
+                        
+                        <div class="relative">
+                            <button type="button"
+                                    id="semester-menu-button"
+                                    class="nav-pill coord-pill <?php echo e($activeSemesterId ? 'nav-pill-active' : ''); ?>">
+                                <?php echo e($activeSemesterName); ?>
+
+                                <svg class="ml-1 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+
+                            <div id="semester-menu"
+                                class="hidden absolute left-0 mt-2 w-64 dropdown-bg rounded-md shadow-lg py-2 z-50">
+
+                                
+                                <form method="POST" action="<?php echo e(route('semester.filter.clear')); ?>">
+                                    <?php echo csrf_field(); ?>
+                                    <button type="submit"
+                                            class="dropdown-square w-full <?php echo e(!$activeSemesterId ? 'dropdown-square-active' : ''); ?>">
+                                        All Semesters
+                                    </button>
+                                </form>
+
+                                <div class="my-1 border-t border-gray-200"></div>
+
+                                
+                                <?php $__currentLoopData = $allSemesters; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sem): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <form method="POST" action="<?php echo e(route('semester.filter.set')); ?>">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="semester_id" value="<?php echo e($sem->id); ?>">
+                                        <button type="submit"
+                                                class="dropdown-square w-full <?php echo e($activeSemesterId == $sem->id ? 'dropdown-square-active' : ''); ?>">
+                                            <?php echo e($sem->term); ?> <?php echo e($sem->academic_year); ?>
+
+                                        </button>
+                                    </form>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+
                 <?php if(auth()->guard()->check()): ?>
                     
                     <?php if(auth()->user()->hasRole('Super Admin')): ?>
@@ -216,20 +360,22 @@
                         </div>
 
                     
-                    <?php elseif(auth()->user()->hasRole('Scholarship Coordinator')): ?>
-                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
+                        <?php elseif(auth()->user()->hasRole('Scholarship Coordinator')): ?>
+
+                            
+                            <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('coordinator.dashboard'),'active' => request()->routeIs('coordinator.dashboard'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('coordinator.dashboard'),'active' => request()->routeIs('coordinator.dashboard'),'class' => 'nav-pill coord-pill '.e(request()->routeIs('coordinator.dashboard') ? 'nav-pill-active' : '').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('nav-link'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('coordinator.dashboard')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('coordinator.dashboard')),'class' => 'nav-pill nav-text']); ?>
-                            <?php echo e(__('Dashboard')); ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('coordinator.dashboard')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('coordinator.dashboard')),'class' => 'nav-pill coord-pill '.e(request()->routeIs('coordinator.dashboard') ? 'nav-pill-active' : '').'']); ?>
+                                <?php echo e(__('Dashboard')); ?>
 
-                         <?php echo $__env->renderComponent(); ?>
+                             <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
 <?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
@@ -239,19 +385,107 @@
 <?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
 <?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
 <?php endif; ?>
-                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
+
+                            
+                            <div class="relative">
+                                <button type="button"
+                                        id="coord-scholars-menu-button"
+                                        class="nav-pill coord-pill<?php echo e($coordScholarsGroupActive ? 'nav-pill-active' : ''); ?>">
+                                    Student Services
+                                    <svg class="ml-1 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+
+                                <div id="coord-scholars-menu"
+                                    class="hidden absolute left-0 mt-2 w-64 dropdown-bg rounded-md shadow-lg py-2 z-50">
+                                    <a href="<?php echo e(route('coordinator.manage-scholars')); ?>"
+                                    class="dropdown-square <?php echo e((request()->routeIs('coordinator.manage-scholars') || request()->routeIs('coordinator.scholars.*')) ? 'dropdown-square-active' : ''); ?>">
+                                        Scholars
+                                    </a>
+
+                                    <a href="<?php echo e(route('coordinator.enrollment-records')); ?>"
+                                    class="dropdown-square <?php echo e(request()->routeIs('coordinator.enrollment-records') ? 'dropdown-square-active' : ''); ?>">
+                                        Students Record
+                                    </a>
+
+                                    <a href="<?php echo e(route('coordinator.manage-scholarships')); ?>"
+                                    class="dropdown-square <?php echo e((request()->routeIs('coordinator.manage-scholarships') || request()->routeIs('coordinator.scholarships.*')) ? 'dropdown-square-active' : ''); ?>">
+                                        Scholarships
+                                    </a>
+                                </div>
+                            </div>
+
+                            
+                            <div class="relative">
+                                <button type="button"
+                                        id="coord-stipends-menu-button"
+                                        class="nav-pill coord-pill <?php echo e($coordStipendsGroupActive ? 'nav-pill-active' : ''); ?>">
+                                    Stipends
+                                    <svg class="ml-1 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+
+                                <div id="coord-stipends-menu"
+                                    class="hidden absolute left-0 mt-2 w-64 dropdown-bg rounded-md shadow-lg py-2 z-50">
+                                    <a href="<?php echo e(route('coordinator.manage-stipends')); ?>"
+                                    class="dropdown-square <?php echo e((request()->routeIs('coordinator.manage-stipends') || request()->routeIs('coordinator.stipends.*')) ? 'dropdown-square-active' : ''); ?>">
+                                        Stipend Details
+                                    </a>
+
+                                    <a href="<?php echo e(route('coordinator.manage-stipend-releases')); ?>"
+                                    class="dropdown-square <?php echo e((request()->routeIs('coordinator.manage-stipend-releases') || request()->routeIs('coordinator.stipend-releases.*')) ? 'dropdown-square-active' : ''); ?>">
+                                        Stipend Release Schedule
+                                    </a>
+                                </div>
+                            </div>
+
+                            
+                            <div class="relative">
+                                <button type="button"
+                                        id="coord-announcements-menu-button"
+                                        class="nav-pill coord-pill <?php echo e($coordAnnouncementsGroupActive ? 'nav-pill-active' : ''); ?>">
+                                    Announcements
+                                    <svg class="ml-1 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+
+                                <div id="coord-announcements-menu"
+                                    class="hidden absolute left-0 mt-2 w-64 dropdown-bg rounded-md shadow-lg py-2 z-50">
+                                    <a href="<?php echo e(route('coordinator.manage-announcements')); ?>"
+                                    class="dropdown-square <?php echo e((request()->routeIs('coordinator.manage-announcements') || request()->routeIs('coordinator.announcements.*')) ? 'dropdown-square-active' : ''); ?>">
+                                        Post Announcements
+                                    </a>
+
+                                    <a href="<?php echo e(route('clusters.index')); ?>"
+                                    class="dropdown-square <?php echo e(request()->routeIs('clusters.*') ? 'dropdown-square-active' : ''); ?>">
+                                       Student Inquiries
+                                    </a>
+                                </div>
+                            </div>
+
+                            
+                            <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('coordinator.manage-scholars'),'active' => request()->routeIs('coordinator.manage-scholars') || request()->routeIs('coordinator.scholars.*'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('coordinator.reports'),'active' => $coordReportsActive,'class' => 'nav-pill coord-pill '.e($coordReportsActive ? 'nav-pill-active' : '').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('nav-link'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('coordinator.manage-scholars')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('coordinator.manage-scholars') || request()->routeIs('coordinator.scholars.*')),'class' => 'nav-pill nav-text']); ?>
-                            <?php echo e(__('Manage Scholars')); ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('coordinator.reports')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($coordReportsActive),'class' => 'nav-pill coord-pill '.e($coordReportsActive ? 'nav-pill-active' : '').'']); ?>
+                                <?php echo e(__('Reports')); ?>
 
-                         <?php echo $__env->renderComponent(); ?>
+                             <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
 <?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
@@ -261,175 +495,24 @@
 <?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
 <?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
 <?php endif; ?>
-                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('coordinator.enrolled-users'),'active' => request()->routeIs('coordinator.enrolled-users'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('nav-link'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('coordinator.enrolled-users')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('coordinator.enrolled-users')),'class' => 'nav-pill nav-text']); ?>
-                            <?php echo e(__('Enrolled Users')); ?>
 
-                         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__attributesOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('coordinator.manage-scholarships'),'active' => request()->routeIs('coordinator.manage-scholarships') || request()->routeIs('coordinator.scholarships.*'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('nav-link'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('coordinator.manage-scholarships')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('coordinator.manage-scholarships') || request()->routeIs('coordinator.scholarships.*')),'class' => 'nav-pill nav-text']); ?>
-                            <?php echo e(__('Manage Scholarships')); ?>
 
-                         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__attributesOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('coordinator.scholarship-batches'),'active' => request()->routeIs('coordinator.scholarship-batches') || request()->routeIs('coordinator.scholarship-batches.*'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('nav-link'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('coordinator.scholarship-batches')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('coordinator.scholarship-batches') || request()->routeIs('coordinator.scholarship-batches.*')),'class' => 'nav-pill nav-text']); ?>
-                            <?php echo e(__('Scholarship Batches')); ?>
 
-                         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__attributesOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('coordinator.manage-stipends'),'active' => request()->routeIs('coordinator.manage-stipends') || request()->routeIs('coordinator.stipends.*'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('nav-link'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('coordinator.manage-stipends')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('coordinator.manage-stipends') || request()->routeIs('coordinator.stipends.*')),'class' => 'nav-pill nav-text']); ?>
-                            <?php echo e(__('Manage Stipends')); ?>
 
-                         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__attributesOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('coordinator.manage-stipend-releases'),'active' => request()->routeIs('coordinator.manage-stipend-releases') || request()->routeIs('coordinator.stipend-releases.*'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('nav-link'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('coordinator.manage-stipend-releases')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('coordinator.manage-stipend-releases') || request()->routeIs('coordinator.stipend-releases.*')),'class' => 'nav-pill nav-text']); ?>
-                            <?php echo e(__('Stipend Releases')); ?>
 
-                         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__attributesOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('coordinator.manage-announcements'),'active' => request()->routeIs('coordinator.manage-announcements') || request()->routeIs('coordinator.announcements.*'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('nav-link'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('coordinator.manage-announcements')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('coordinator.manage-announcements') || request()->routeIs('coordinator.announcements.*')),'class' => 'nav-pill nav-text']); ?>
-                            <?php echo e(__('Manage Announcements')); ?>
-
-                         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__attributesOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
                         
-                        <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('clusters.index'),'active' => request()->routeIs('clusters.*'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('nav-link'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('clusters.index')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('clusters.*')),'class' => 'nav-pill nav-text']); ?>
-                            <?php echo e(__('Student Queries')); ?>
-
-                         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $attributes = $__attributesOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__attributesOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc295f12dca9d42f28a259237a5724830)): ?>
-<?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
-<?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
-<?php endif; ?>
-
-                    
                     <?php elseif(auth()->user()->hasRole('Student')): ?>
                         <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('student.dashboard'),'active' => request()->routeIs('student.dashboard'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('student.dashboard'),'active' => request()->routeIs('student.dashboard'),'class' => 'student-pill '.e(request()->routeIs('student.dashboard') ? 'student-pill-active' : '').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('nav-link'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('student.dashboard')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('student.dashboard')),'class' => 'nav-pill nav-text']); ?>
-                            <?php echo e(__('Dashboard')); ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('student.dashboard')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('student.dashboard')),'class' => 'student-pill '.e(request()->routeIs('student.dashboard') ? 'student-pill-active' : '').'']); ?>
+                            <?php echo e(__('Home')); ?>
 
                          <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
@@ -441,16 +524,17 @@
 <?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
 <?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
 <?php endif; ?>
+
                         <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('student.announcements'),'active' => request()->routeIs('student.announcements'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('student.announcements'),'active' => request()->routeIs('student.announcements'),'class' => 'student-pill '.e(request()->routeIs('student.announcements') ? 'student-pill-active' : '').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('nav-link'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('student.announcements')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('student.announcements')),'class' => 'nav-pill nav-text']); ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('student.announcements')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('student.announcements')),'class' => 'student-pill '.e(request()->routeIs('student.announcements') ? 'student-pill-active' : '').'']); ?>
                             <?php echo e(__('Announcements')); ?>
 
                          <?php echo $__env->renderComponent(); ?>
@@ -463,16 +547,17 @@
 <?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
 <?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
 <?php endif; ?>
+
                         <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('student.scholarships'),'active' => request()->routeIs('student.scholarships'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('student.scholarships'),'active' => request()->routeIs('student.scholarships'),'class' => 'student-pill '.e(request()->routeIs('student.scholarships') ? 'student-pill-active' : '').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('nav-link'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('student.scholarships')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('student.scholarships')),'class' => 'nav-pill nav-text']); ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('student.scholarships')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('student.scholarships')),'class' => 'student-pill '.e(request()->routeIs('student.scholarships') ? 'student-pill-active' : '').'']); ?>
                             <?php echo e(__('Scholarships')); ?>
 
                          <?php echo $__env->renderComponent(); ?>
@@ -485,18 +570,19 @@
 <?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
 <?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
 <?php endif; ?>
+
                         <?php if(\App\Models\Scholar::where('student_id', auth()->id())->exists()): ?>
                             <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('student.stipend-history'),'active' => request()->routeIs('student.stipend-history'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('student.stipend-history'),'active' => request()->routeIs('student.stipend-history'),'class' => 'student-pill '.e(request()->routeIs('student.stipend-history') ? 'student-pill-active' : '').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('nav-link'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('student.stipend-history')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('student.stipend-history')),'class' => 'nav-pill nav-text']); ?>
-                                <?php echo e(__('Stipend History')); ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('student.stipend-history')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('student.stipend-history')),'class' => 'student-pill '.e(request()->routeIs('student.stipend-history') ? 'student-pill-active' : '').'']); ?>
+                                <?php echo e(__('Stipends')); ?>
 
                              <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
@@ -509,16 +595,17 @@
 <?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
 <?php endif; ?>
                         <?php endif; ?>
+
                         <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('student.notifications'),'active' => request()->routeIs('student.notifications'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('student.notifications'),'active' => request()->routeIs('student.notifications'),'class' => 'student-pill '.e(request()->routeIs('student.notifications') ? 'student-pill-active' : '').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('nav-link'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('student.notifications')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('student.notifications')),'class' => 'nav-pill nav-text']); ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('student.notifications')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('student.notifications')),'class' => 'student-pill '.e(request()->routeIs('student.notifications') ? 'student-pill-active' : '').'']); ?>
                             <?php echo e(__('Notifications')); ?>
 
                          <?php echo $__env->renderComponent(); ?>
@@ -531,18 +618,18 @@
 <?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
 <?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
 <?php endif; ?>
-                         
+
                         <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('questions.create'),'active' => request()->routeIs('questions.create'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('questions.create'),'active' => request()->routeIs('questions.create'),'class' => 'student-pill '.e(request()->routeIs('questions.create') ? 'student-pill-active' : '').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('nav-link'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('questions.create')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('questions.create')),'class' => 'nav-pill nav-text']); ?>
-                            <?php echo e(__('Ask Question')); ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('questions.create')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('questions.create')),'class' => 'student-pill '.e(request()->routeIs('questions.create') ? 'student-pill-active' : '').'']); ?>
+                            <?php echo e(__('Ask')); ?>
 
                          <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
@@ -554,17 +641,17 @@
 <?php $component = $__componentOriginalc295f12dca9d42f28a259237a5724830; ?>
 <?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
 <?php endif; ?>
-                        
+
                         <?php if (isset($component)) { $__componentOriginalc295f12dca9d42f28a259237a5724830 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc295f12dca9d42f28a259237a5724830 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('questions.my'),'active' => request()->routeIs('questions.my'),'class' => 'nav-pill nav-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.nav-link','data' => ['href' => route('questions.my'),'active' => request()->routeIs('questions.my'),'class' => 'student-pill '.e(request()->routeIs('questions.my') ? 'student-pill-active' : '').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('nav-link'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('questions.my')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('questions.my')),'class' => 'nav-pill nav-text']); ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('questions.my')),'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('questions.my')),'class' => 'student-pill '.e(request()->routeIs('questions.my') ? 'student-pill-active' : '').'']); ?>
                             <?php echo e(__('My Questions')); ?>
 
                          <?php echo $__env->renderComponent(); ?>
@@ -578,12 +665,13 @@
 <?php unset($__componentOriginalc295f12dca9d42f28a259237a5724830); ?>
 <?php endif; ?>
                     <?php endif; ?>
+
                 <?php endif; ?>
             </div>
         </div>
 
         
-        <div class="flex items-center">
+        <div class="flex items-center justify-end min-w-[200px]">
             <?php if(auth()->guard()->check()): ?>
                 <div class="relative">
                     <button class="flex items-center text-sm nav-text focus:outline-none"
@@ -597,22 +685,29 @@
                                   clip-rule="evenodd"></path>
                         </svg>
                     </button>
-                    <div class="hidden absolute right-0 mt-2 w-48 dropdown-bg rounded-md shadow-lg py-1 z-50"
-                         id="user-dropdown">
-                        <a href="<?php echo e(route('profile')); ?>"
-                           class="block px-4 py-2 text-sm nav-text dropdown-item">Profile</a>
+                    <div class="hidden absolute left-1/2 -translate-x-1/2 mt-2 dropdown-bg rounded-md shadow-lg z-50 px-1 py-1"
+                        id="user-dropdown"
+                        style="width: 180px;">
+
+                        <a href="<?php echo e(route('profile')); ?>" class="dropdown-square">
+                            Profile
+                        </a>
+
                         <?php if(auth()->user()->hasRole('Super Admin')): ?>
-                            <a href="<?php echo e(route('settings.index')); ?>"
-                               class="block px-4 py-2 text-sm nav-text dropdown-item">Settings</a>
+                            <a href="<?php echo e(route('settings.index')); ?>" class="dropdown-square">
+                                Settings
+                            </a>
                         <?php endif; ?>
-                        <form action="<?php echo e(route('logout')); ?>" method="POST" class="inline">
+
+                        <form action="<?php echo e(route('logout')); ?>" method="POST">
                             <?php echo csrf_field(); ?>
-                            <button type="submit"
-                                    class="block w-full text-left px-4 py-2 text-sm nav-text dropdown-item">
+                            <button type="submit" class="dropdown-square w-full">
                                 Logout
                             </button>
                         </form>
                     </div>
+
+
                 </div>
             <?php endif; ?>
         </div>
@@ -623,42 +718,56 @@
 <hr class="divider-line">
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        function setupToggle(buttonId, menuId) {
-            const btn = document.getElementById(buttonId);
-            const menu = document.getElementById(menuId);
-            if (!btn || !menu) return;
+document.addEventListener('DOMContentLoaded', function () {
 
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                menu.classList.toggle('hidden');
-            });
+    const dropdownPairs = [];
 
-            // close when clicking outside
-            document.addEventListener('click', function (e) {
-                if (!menu.contains(e.target) && !btn.contains(e.target)) {
-                    menu.classList.add('hidden');
-                }
-            });
-        }
+    function registerDropdown(buttonId, menuId) {
+        const btn = document.getElementById(buttonId);
+        const menu = document.getElementById(menuId);
+        if (!btn || !menu) return;
 
-        setupToggle('users-menu-button', 'users-menu');
-        setupToggle('academic-menu-button', 'academic-menu');
-        setupToggle('enrollment-menu-button', 'enrollment-menu');
+        dropdownPairs.push({ btn, menu });
 
-        const userBtn = document.getElementById('user-menu-button');
-        const userMenu = document.getElementById('user-dropdown');
-        if (userBtn && userMenu) {
-            userBtn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                userMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', function (e) {
-                if (!userMenu.contains(e.target) && !userBtn.contains(e.target)) {
-                    userMenu.classList.add('hidden');
-                }
-            });
-        }
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+
+            const willOpen = menu.classList.contains('hidden'); // it is currently closed?
+
+            // Close all dropdowns first
+            dropdownPairs.forEach(pair => pair.menu.classList.add('hidden'));
+
+            // Open only the clicked one (if it was closed)
+            if (willOpen) menu.classList.remove('hidden');
+        });
+    }
+
+    registerDropdown('semester-menu-button', 'semester-menu');
+
+    // Register all dropdown menus
+    registerDropdown('users-menu-button', 'users-menu');
+    registerDropdown('academic-menu-button', 'academic-menu');
+    registerDropdown('enrollment-menu-button', 'enrollment-menu');
+
+    registerDropdown('coord-scholars-menu-button', 'coord-scholars-menu');
+    registerDropdown('coord-stipends-menu-button', 'coord-stipends-menu');
+    registerDropdown('coord-announcements-menu-button', 'coord-announcements-menu');
+
+    registerDropdown('user-menu-button', 'user-dropdown');
+
+    // Close all dropdowns when clicking outside
+    document.addEventListener('click', function () {
+        dropdownPairs.forEach(pair => pair.menu.classList.add('hidden'));
     });
+
+    // Close dropdowns when clicking any nav link (Dashboard, Reports, etc.)
+    document.querySelectorAll('nav a, nav form button').forEach(el => {
+        el.addEventListener('click', function () {
+            dropdownPairs.forEach(pair => pair.menu.classList.add('hidden'));
+        });
+    });
+
+});
 </script>
+
 <?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/layouts/navigation.blade.php ENDPATH**/ ?>

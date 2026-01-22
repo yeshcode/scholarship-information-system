@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 <style>
     .fb-wrap { max-width: 900px; margin: 0 auto; padding: 10px; }
     .fb-header h2 { margin: 0; font-size: 24px; font-weight: 800; }
@@ -117,26 +117,28 @@
         </div>
     </div>
 
-    @if(session('success'))
+    <?php if(session('success')): ?>
         <div class="fb-card" style="border-color:#bbf7d0;background:#f0fdf4;color:#166534;">
-            {{ session('success') }}
-        </div>
-    @endif
+            <?php echo e(session('success')); ?>
 
-    {{-- Composer --}}
+        </div>
+    <?php endif; ?>
+
+    
     <div class="fb-card">
         <div class="fb-row">
             <div class="fb-avatar">
-                {{ strtoupper(substr(auth()->user()->firstname ?? 'U', 0, 1)) }}
+                <?php echo e(strtoupper(substr(auth()->user()->firstname ?? 'U', 0, 1))); ?>
+
             </div>
             <div>
-                <p class="fb-name">{{ auth()->user()->firstname }} {{ auth()->user()->lastname }}</p>
+                <p class="fb-name"><?php echo e(auth()->user()->firstname); ?> <?php echo e(auth()->user()->lastname); ?></p>
                 <p class="fb-sub">Create a new announcement</p>
             </div>
         </div>
 
-        <form action="{{ route('coordinator.announcements.store') }}" method="POST">
-            @csrf
+        <form action="<?php echo e(route('coordinator.announcements.store')); ?>" method="POST">
+            <?php echo csrf_field(); ?>
 
             <div style="margin-top:12px;">
                 <input type="text" name="title" class="fb-input" placeholder="Announcement title…" required>
@@ -161,7 +163,7 @@
                 </div>
             </div>
 
-            {{-- Scholar Selection --}}
+            
             <div id="scholar-selection" style="margin-top:12px; display:none;">
                 <div class="fb-divider"></div>
 
@@ -171,40 +173,45 @@
                 </div>
 
                 <div class="fb-scholar-box" id="scholar-box" style="display:block;">
-                    @foreach(($scholars ?? []) as $scholar)
+                    <?php $__currentLoopData = ($scholars ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $scholar): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <label class="fb-scholar-item">
-                            <input type="checkbox" name="selected_scholars[]" value="{{ $scholar->id }}" style="margin-top:4px;">
+                            <input type="checkbox" name="selected_scholars[]" value="<?php echo e($scholar->id); ?>" style="margin-top:4px;">
                             <div>
                                 <div style="font-weight:800; color:#111827;">
-                                    {{ $scholar->user->firstname }} {{ $scholar->user->lastname }}
+                                    <?php echo e($scholar->user->firstname); ?> <?php echo e($scholar->user->lastname); ?>
+
                                 </div>
-                                <div class="fb-sub">{{ $scholar->user->bisu_email }}</div>
+                                <div class="fb-sub"><?php echo e($scholar->user->bisu_email); ?></div>
                             </div>
                         </label>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
             </div>
         </form>
     </div>
 
-    {{-- Feed --}}
-    @forelse($announcements as $post)
+    
+    <?php $__empty_1 = true; $__currentLoopData = $announcements; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $post): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
         <div class="fb-card">
             <div class="fb-space">
                 <div class="fb-row">
                     <div class="fb-avatar" style="background:#f3f4f6;color:#374151;">
-                        {{ strtoupper(substr($post->creator->firstname ?? 'C', 0, 1)) }}
+                        <?php echo e(strtoupper(substr($post->creator->firstname ?? 'C', 0, 1))); ?>
+
                     </div>
 
                     <div>
                         <p class="fb-name">
-                            {{ $post->creator->firstname ?? 'Coordinator' }} {{ $post->creator->lastname ?? '' }}
+                            <?php echo e($post->creator->firstname ?? 'Coordinator'); ?> <?php echo e($post->creator->lastname ?? ''); ?>
+
                         </p>
                         <p class="fb-sub">
-                            {{ \Carbon\Carbon::parse($post->posted_at)->format('M d, Y • h:i A') }}
+                            <?php echo e(\Carbon\Carbon::parse($post->posted_at)->format('M d, Y • h:i A')); ?>
+
                             •
                             <span class="fb-pill">
-                                {{ $post->audience === 'all_students' ? 'All Students' : 'Specific Scholars' }}
+                                <?php echo e($post->audience === 'all_students' ? 'All Students' : 'Specific Scholars'); ?>
+
                             </span>
                         </p>
                     </div>
@@ -213,10 +220,12 @@
 
             <div style="margin-top:12px;">
                 <div style="font-weight:900; font-size:16px; color:#111827;">
-                    {{ $post->title }}
+                    <?php echo e($post->title); ?>
+
                 </div>
                 <div style="margin-top:6px; color:#374151; white-space:pre-line;">
-                    {{ $post->description }}
+                    <?php echo e($post->description); ?>
+
                 </div>
             </div>
 
@@ -228,14 +237,15 @@
                 <span>↗ Share</span>
             </div>
         </div>
-    @empty
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <div class="fb-card" style="text-align:center; color:#6b7280;">
             No announcements yet. Post the first update above.
         </div>
-    @endforelse
+    <?php endif; ?>
 
     <div style="margin-top: 14px;">
-        {{ $announcements->links() }}
+        <?php echo e($announcements->links()); ?>
+
     </div>
 
 </div>
@@ -254,4 +264,6 @@
         toggleScholarSelection();
     }
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/manage-announcements.blade.php ENDPATH**/ ?>
