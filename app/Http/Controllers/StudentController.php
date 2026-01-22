@@ -43,6 +43,19 @@ class StudentController extends Controller
         return view('student.scholarships', compact('scholarships'));
     }
 
+    public function index()
+    {
+        $scholarships = Scholarship::orderByDesc('id')->paginate(10);
+        return view('student.scholarships.index', compact('scholarships'));
+    }
+
+    public function show($id)
+    {
+        $scholarship = Scholarship::findOrFail($id);
+        return view('student.scholarships.show', compact('scholarship'));
+    }
+
+
     public function stipendHistory()
     {
         $stipends = Stipend::where('student_id', Auth::id())->with('stipendRelease')->paginate(10);  // Use Auth::id()

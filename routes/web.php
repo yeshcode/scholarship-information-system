@@ -158,6 +158,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/manage-scholarships/{id}', [CoordinatorController::class, 'destroyScholarship'])->name('coordinator.scholarships.destroy');
     Route::get('/manage-scholarships/{id}/delete', [CoordinatorController::class, 'confirmDeleteScholarship'])->name('coordinator.scholarships.confirm-delete');
 
+
     // Scholarship Batches
     Route::get('/scholarship-batches', [CoordinatorController::class, 'manageScholarshipBatches'])->name('coordinator.scholarship-batches');
     Route::get('/scholarship-batches/create', [CoordinatorController::class, 'createScholarshipBatch'])->name('coordinator.scholarship-batches.create');
@@ -205,7 +206,9 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:Student')->prefix('student')->group(function () {
         Route::get('/dashboard', [StudentController::class, 'dashboard'])->name('student.dashboard');
         Route::get('/announcements', [StudentController::class, 'announcements'])->name('student.announcements');
-        Route::get('/scholarships', [StudentController::class, 'scholarships'])->name('student.scholarships');
+        Route::get('/scholarships', [StudentController::class, 'index'])->name('student.scholarships.index');
+        Route::get('/student/scholarships', [StudentController::class, 'index'])->name('student.scholarships');
+        Route::get('/scholarships/{id}', [StudentController::class, 'show'])->name('student.scholarships.show');
         Route::get('/stipend-history', [StudentController::class, 'stipendHistory'])->name('student.stipend-history');
         Route::get('/notifications', [StudentController::class, 'notifications'])->name('student.notifications');
         

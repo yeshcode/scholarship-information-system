@@ -462,11 +462,12 @@
                             {{ __('Announcements') }}
                         </x-nav-link>
 
-                        <x-nav-link :href="route('student.scholarships')"
-                                    :active="request()->routeIs('student.scholarships')"
-                                    class="student-pill {{ request()->routeIs('student.scholarships') ? 'student-pill-active' : '' }}">
+                        <x-nav-link :href="route('student.scholarships.index')"
+                                    :active="request()->routeIs('student.scholarships.*')"
+                                    class="student-pill {{ request()->routeIs('student.scholarships.*') ? 'student-pill-active' : '' }}">
                             {{ __('Scholarships') }}
                         </x-nav-link>
+
 
                         @if(\App\Models\Scholar::where('student_id', auth()->id())->exists())
                             <x-nav-link :href="route('student.stipend-history')"
