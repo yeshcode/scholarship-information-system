@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
             // Other aliases
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
         ]);
+
+        $middleware->append(
+            \App\Http\Middleware\SetActiveSemester::class
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

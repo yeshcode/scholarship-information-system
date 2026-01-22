@@ -16,7 +16,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;  // Add this for emails
 use App\Mail\AnnouncementNotification;  // Add this for the Mailable
 use App\Services\ScholarOcrService;
-
+use Illuminate\Support\Str;
+use App\Models\Section;
+use App\Jobs\SendAnnouncementNotifications;
+use Illuminate\Support\Facades\Log;
 
 
 
@@ -28,18 +31,91 @@ class CoordinatorController extends Controller
     }
 
     // Manage Scholars
+
+    private function isBatchBasedScholarship(Scholarship $scholarship): bool
+    {
+        // You can change the logic here anytime
+        $name = strtoupper(trim($scholarship->scholarship_name ?? ''));
+        return in_array($name, ['TDP', 'TES']);
+    }
+
     public function manageScholars()
-{
-    // Eager load relationships: user (with section and course), scholarshipBatch (with semester), and direct scholarship
-    $scholars = Scholar::with([
-        'user.section.course',  // For Section and Course
-        'user.yearLevel',       // If needed for future use
-        'scholarshipBatch.semester',  // For Batch No. and Semester
-        'scholarship'           // NEW: Direct scholarship for Scholarship Name
-    ])->paginate(10);  // Adjust pagination as needed
-    
-    return view('coordinator.manage-scholars', compact('scholars'));
-}
+    {
+        // Show ALL scholarships as buttons with scholar counts
+        $scholarships = Scholarship::withCount('scholars')->orderBy('scholarship_name')->get();
+
+        // Default: show nothing yet until they click a scholarship
+        $scholars = Scholar::with([
+            'user.section.course',
+            'scholarshipBatch.semester',
+            'scholarship'
+        ])->latest()->paginate(10);
+
+        return view('coordinator.manage-scholars', compact('scholarships', 'scholars'));
+    }
+
+    public function scholarsByScholarship(Scholarship $scholarship)
+    {
+        // If TDP/TES -> go to batches page instead
+        if ($this->isBatchBasedScholarship($scholarship)) {
+            return redirect()->route('coordinator.scholars.batches', $scholarship->id);
+        }
+
+        $scholarships = Scholarship::withCount('scholars')->orderBy('scholarship_name')->get();
+
+        $scholars = Scholar::with([
+            'user.section.course',
+            'scholarshipBatch.semester',
+            'scholarship'
+        ])->where('scholarship_id', $scholarship->id)
+        ->latest()
+        ->paginate(10);
+
+        return view('coordinator.manage-scholars', [
+            'scholarships' => $scholarships,
+            'scholars' => $scholars,
+            'selectedScholarship' => $scholarship,
+            'mode' => 'scholarship',
+        ]);
+    }
+
+    public function batchesByScholarship(Scholarship $scholarship)
+    {
+        $scholarships = Scholarship::withCount('scholars')->orderBy('scholarship_name')->get();
+
+        $batches = ScholarshipBatch::withCount('scholars')
+            ->where('scholarship_id', $scholarship->id)
+            ->orderBy('batch_number')
+            ->get();
+
+        return view('coordinator.manage-scholars', [
+            'scholarships' => $scholarships,
+            'batches' => $batches,
+            'selectedScholarship' => $scholarship,
+            'mode' => 'batches',
+        ]);
+    }
+
+    public function scholarsByBatch(ScholarshipBatch $batch)
+    {
+        $scholarships = Scholarship::withCount('scholars')->orderBy('scholarship_name')->get();
+
+        $scholars = Scholar::with([
+            'user.section.course',
+            'scholarshipBatch.semester',
+            'scholarship'
+        ])->where('batch_id', $batch->id)
+        ->latest()
+        ->paginate(10);
+
+        return view('coordinator.manage-scholars', [
+            'scholarships' => $scholarships,
+            'scholars' => $scholars,
+            'selectedBatch' => $batch,
+            'selectedScholarship' => $batch->scholarship,
+            'mode' => 'batch',
+        ]);
+    }
 
     public function createScholar()
     {
@@ -161,17 +237,22 @@ public function showConfirmAddOcr()
 }
 
 
-    // View All Enrolled Users
-    public function viewEnrolledUsers()
+    //new/from superadmin
+    public function enrollmentRecords()
     {
-        $enrolledUsers = Enrollment::with('user', 'semester')->paginate(10);
-        $users = User::all();  // For manual add dropdown
-        $semesters = Semester::all();
-        $sections = \App\Models\Section::all();  // Assuming Section model exists
-        return view('coordinator.enrolled-users', compact('enrolledUsers', 'users', 'semesters', 'sections'));
+        $enrolledUsers = Enrollment::with(['user', 'semester', 'section.course'])
+            ->latest()
+            ->paginate(10);
+
+        // For "Add Enrollment" form
+        $users = User::whereHas('userType', fn($q) => $q->where('name', 'Student'))->orderBy('lastname')->get();
+        $semesters = Semester::orderBy('created_at', 'desc')->get();
+        $sections = Section::with('course')->orderBy('section_name')->get();
+
+        return view('coordinator.enrollment-records', compact('enrolledUsers', 'users', 'semesters', 'sections'));
     }
 
-    public function addEnrolledUser(Request $request)
+    public function addEnrollmentRecord(Request $request)
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -180,8 +261,24 @@ public function showConfirmAddOcr()
             'status' => 'required|string',
         ]);
 
-        Enrollment::create($request->all());
-        return redirect()->route('coordinator.enrolled-users')->with('success', 'User enrolled successfully.');
+        // Optional but recommended: prevent duplicate enrollment per semester
+        $exists = Enrollment::where('user_id', $request->user_id)
+            ->where('semester_id', $request->semester_id)
+            ->exists();
+
+        if ($exists) {
+            return back()->withErrors(['user_id' => 'This student is already enrolled for the selected semester.']);
+
+        }
+
+        Enrollment::create([
+            'user_id' => $request->user_id,
+            'semester_id' => $request->semester_id,
+            'section_id' => $request->section_id,
+            'status' => $request->status,
+        ]);
+
+        return redirect()->route('coordinator.enrollment-records')->with('success', 'Enrollment record added successfully.');
     }
 
     // Manage Scholarship Batches
@@ -392,69 +489,99 @@ public function confirmDeleteStipendRelease($id)
 }
 
     // Manage Announcements
-     // Manage Announcements (unchanged, but ensure it loads with creator)
-     public function manageAnnouncements()
-     {
-         $announcements = Announcement::with('creator')->paginate(10);
-         return view('coordinator.manage-announcements', compact('announcements'));
-     }
- 
-     // Show create announcement form (UPDATED: Add scholar list for selection)
-     public function createAnnouncement()
-     {
-         $scholars = Scholar::with('user')->get();  // Load scholars for selection if audience is specific
-         return view('coordinator.create-announcement', compact('scholars'));
-     }
+    public function manageAnnouncements()
+    {
+        $scholars = Scholar::with('user')->get();
+
+        $announcements = Announcement::with('creator')
+            ->orderByDesc('id')          // ALWAYS newest first
+            ->paginate(10);
+
+        return view('coordinator.manage-announcements', compact('scholars', 'announcements'));
+    }
+
+
  
      // Store announcement and send notifications (UPDATED: Add audience, scholar selection, emails, and notifications)
      public function storeAnnouncement(Request $request)
-     {
-         $request->validate([
-             'title' => 'required|string|max:255',
-             'description' => 'required|string',
-             'audience' => 'required|in:all_students,specific_scholars',
-             'selected_scholars' => 'nullable|array',
-             'posted_at' => 'nullable|date',
-         ]);
- 
-         // Create announcement
-         $announcement = Announcement::create([
-             'created_by' => Auth::id(),
-             'title' => $request->title,
-             'description' => $request->description,
-             'audience' => $request->audience,
-             'posted_at' => $request->posted_at ?: now(),
-         ]);
- 
-         // Get recipients
-         $recipients = collect();
-         if ($request->audience === 'all_students') {
-             $recipients = User::whereHas('userType', function ($q) { $q->where('name', 'Student'); })->get();
-         } elseif ($request->audience === 'specific_scholars') {
-             $recipients = Scholar::whereIn('id', $request->selected_scholars ?? [])->with('user')->get()->pluck('user');
-         }
- 
-         // Get coordinator's email (fallback if bisu_email is missing)
-         $coordinatorEmail = Auth::user()->bisu_email ?? 'default@bisu.edu.ph';  // Use fallback if field is empty
- 
-         // Send emails and create notifications
-         foreach ($recipients as $user) {
-             Mail::to($user->bisu_email)->send(new AnnouncementNotification($announcement->toArray(), $coordinatorEmail));
-             Notification::create([
-                 'recipient_user_id' => $user->id,
-                 'created_by' => Auth::id(),
-                 'type' => 'announcement',
-                 'title' => $announcement->title,
-                 'message' => $announcement->description,
-                 'related_type' => Announcement::class,
-                 'related_id' => $announcement->id,
-                 'is_read' => false, 
-                 'sent_at' => now(),
-             ]);
-         }
- 
-         return redirect()->route('coordinator.manage-announcements')->with('success', 'Announcement posted and notifications sent!');
-     }
+{
+    $request->validate([
+        'title' => 'required|string|max:255',
+        'description' => 'required|string',
+        'audience' => 'required|in:all_students,specific_scholars',
+        'selected_scholars' => 'nullable|array',
+    ]);
+
+    $announcement = Announcement::create([
+        'created_by' => Auth::id(),
+        'title' => $request->title,
+        'description' => $request->description,
+        'audience' => $request->audience,
+        'posted_at' => now(), // auto today
+    ]);
+
+
+    // recipients
+    $recipients = collect();
+
+    if ($request->audience === 'all_students') {
+        $recipients = User::whereHas('userType', function ($q) {
+            $q->where('name', 'Student');
+        })->get();
+    } else {
+        $recipients = Scholar::whereIn('id', $request->selected_scholars ?? [])
+            ->with('user')
+            ->get()
+            ->pluck('user');
+    }
+
+    // ✅ OPTIONAL: include YOU for testing (even if not selected)
+    // (remove this later if you don't want to receive your own announcements)
+    $recipients = $recipients->push(Auth::user())->unique('id');
+
+    $coordinatorEmail = Auth::user()->bisu_email ?? config('mail.from.address');
+
+    foreach ($recipients as $user) {
+
+        // 1) ALWAYS create system notification (kahit walang email)
+        Notification::create([
+            'recipient_user_id' => $user->id,
+            'created_by' => Auth::id(),
+            'type' => 'announcement',
+            'title' => $announcement->title,
+            'message' => $announcement->description,
+            'related_type' => Announcement::class,
+            'related_id' => $announcement->id,
+            'is_read' => false,
+            'sent_at' => now(),
+        ]);
+
+        // 2) TRY to send email (but never break the loop)
+        $email = trim((string) ($user->bisu_email ?? ''));
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Log::warning("Skipped email (invalid/missing)", ['user_id' => $user->id, 'email' => $email]);
+            continue;
+        }
+
+        try {
+            Mail::to($email)->send(
+                new AnnouncementNotification($announcement->toArray(), $coordinatorEmail)
+            );
+        } catch (\Throwable $e) {
+            Log::error("Email send failed", [
+                'user_id' => $user->id,
+                'email' => $email,
+                'error' => $e->getMessage(),
+            ]);
+            // continue sending to others
+        }
+    }
+
+    return redirect()->route('coordinator.manage-announcements', ['page' => 1])
+        ->with('success', 'Announcement posted. Notifications created and emails attempted.');
+}
+
 
     // Manage Scholarships
 public function manageScholarships()
@@ -525,6 +652,13 @@ public function confirmDeleteScholarship($id)
     $scholarship = Scholarship::findOrFail($id);
     return view('coordinator.confirm-delete-scholarship', compact('scholarship'));
 }
+
+//reports
+public function reports()
+{
+    return view('coordinator.reports');
+}
+
 
 
 }
