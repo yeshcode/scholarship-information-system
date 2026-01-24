@@ -73,7 +73,13 @@
             {{-- College Filter --}}
             <div class="col-12 col-md-4">
                 <label class="form-label mb-1">College</label>
-                <select name="college_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                <select name="college_id" class="form-select form-select-sm"
+                    onchange="
+                        // clear selected course when college changes
+                        const courseSelect = this.form.querySelector('select[name=course_id]');
+                        if (courseSelect) courseSelect.selectedIndex = 0;
+                        this.form.submit();
+                    ">
                     <option value="">All Colleges</option>
                     @foreach($colleges as $college)
                         <option value="{{ $college->id }}" {{ request('college_id') == $college->id ? 'selected' : '' }}>
@@ -86,14 +92,26 @@
             {{-- Course Filter --}}
             <div class="col-12 col-md-4">
                 <label class="form-label mb-1">Course</label>
-                <select name="course_id" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">All Courses</option>
+
+                <select name="course_id"
+                        class="form-select form-select-sm"
+                        onchange="this.form.submit()"
+                        @if(!request('college_id')) disabled @endif>
+
+                    <option value="">
+                        {{ request('college_id') ? 'All Courses' : 'Select a college first' }}
+                    </option>
+
                     @foreach($courses as $course)
                         <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
                             {{ $course->course_name }}
                         </option>
                     @endforeach
                 </select>
+
+                @if(!request('college_id'))
+                    <small class="text-muted">Choose a college to load courses.</small>
+                @endif
             </div>
 
             {{-- Year Level Filter --}}

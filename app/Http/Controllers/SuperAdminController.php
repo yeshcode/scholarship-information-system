@@ -164,28 +164,82 @@ public function dashboardData()
 
         // ENROLLMENTS PAGE (inside dashboard: ?page=enrollments)
         elseif ($page === 'enrollments') {
+
+            // Filters
             $selectedSemesterId = request('semester_id');
+            $collegeId = request('college_id');
+            $courseId  = request('course_id');
+            $status    = request('status'); // enrolled | dropped | graduated | not_enrolled
 
-            $data['semesters'] = Semester::orderBy('academic_year', 'desc')->get();
+            // Semesters list
+            $data['semesters'] = Semester::orderBy('start_date', 'desc')->get();
 
-            // ✅ NO section.course anymore
-            $query = Enrollment::with(['user', 'semester', 'course']);
-
-            if ($selectedSemesterId) {
-                $query->where('semester_id', $selectedSemesterId);
+            // Default semester = current semester if not chosen (important for "not enrolled")
+            if (!$selectedSemesterId) {
+                $current = Semester::where('is_current', true)->first();
+                $selectedSemesterId = $current?->id;
             }
-
-            $data['enrollments'] = $query
-                ->orderByDesc('id')
-                ->paginate(15, ['*'], 'enrollments_page');
 
             $data['selectedSemesterId'] = $selectedSemesterId;
 
-            // ✅ dropdowns
-            $data['users']      = User::all();
-            $data['courses']    = Course::all();
-            $data['yearLevels'] = YearLevel::all(); // keep if you need in UI
+            // Dropdowns
+            $data['colleges']  = College::orderBy('college_name')->get();
+            $data['courses']   = Course::orderBy('course_name')->get();
+
+            // Status dropdown (includes derived)
+            $data['statuses'] = ['enrolled', 'dropped', 'graduated', 'not_enrolled'];
+
+            /**
+             * ✅ MAIN LIST:
+             * Show ALL students, with their enrollment (if exists) in the selected semester.
+             * If no enrollment row exists => "not enrolled"
+             */
+            $query = User::query()
+                ->whereHas('userType', function ($q) {
+                    $q->where('name', 'Student');
+                })
+                ->with(['college', 'course', 'yearLevel'])
+                ->leftJoin('enrollments', function ($join) use ($selectedSemesterId) {
+                    $join->on('enrollments.user_id', '=', 'users.id')
+                        ->where('enrollments.semester_id', '=', $selectedSemesterId);
+                })
+                ->leftJoin('semesters', 'semesters.id', '=', 'enrollments.semester_id')
+                ->select([
+                    'users.*',
+                    'enrollments.status as enrollment_status',
+                    'enrollments.id as enrollment_id',
+                    'semesters.term as sem_term',
+                    'semesters.academic_year as sem_academic_year',
+                ]);
+
+            // College filter
+            if (!empty($collegeId)) {
+                $query->where('users.college_id', $collegeId);
+            }
+
+            // Course filter
+            if (!empty($courseId)) {
+                $query->where('users.course_id', $courseId);
+            }
+
+            // Status filter
+            if (!empty($status)) {
+                if ($status === 'not_enrolled') {
+                    $query->whereNull('enrollments.id'); // derived state
+                } else {
+                    $query->where('enrollments.status', $status); // MUST qualify column
+                }
+            }
+
+            // Alphabetical (by last name)
+            $query->orderBy('users.lastname')->orderBy('users.firstname');
+
+            // Paginate 20
+            $data['studentsForEnrollmentList'] = $query->paginate(20, ['*'], 'enrollments_page')
+                ->withQueryString();
         }
+
+
 
        elseif ($page === 'manage-users') {
             try {
@@ -244,6 +298,13 @@ public function dashboardData()
                 $data['colleges']   = College::all();
                 $data['yearLevels'] = YearLevel::all();
                 $data['courses']    = Course::all();
+                
+                // ✅ Courses dropdown: if college is selected, show only its courses
+                $data['courses'] = Course::when(!empty($collegeId), function ($q) use ($collegeId) {
+                        $q->where('college_id', $collegeId);
+                    })
+                    ->orderBy('course_name')
+                    ->get();
 
                 $data['selectedCollegeId']   = $collegeId;
                 $data['selectedYearLevelId'] = $yearLevelId;
@@ -756,12 +817,30 @@ public function storeSemester(Request $request)
         'academic_year' => 'required|string|max:255',
         'start_date' => 'required|date',
         'end_date' => 'required|date|after:start_date',
-        'is_current' => 'boolean',  // Optional, defaults to false
+        'is_current' => 'nullable|boolean',
     ]);
-    
-    Semester::create($request->only(['term', 'academic_year', 'start_date', 'end_date', 'is_current']));
-    return redirect()->route('admin.dashboard', ['page' => 'semesters'])->with('success', 'Semester added successfully!');
+
+    DB::transaction(function () use ($request) {
+
+        // If new semester is current → disable others
+        if ($request->has('is_current')) {
+            Semester::query()->update(['is_current' => false]);
+        }
+
+        Semester::create([
+            'term' => $request->term,
+            'academic_year' => $request->academic_year,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'is_current' => $request->has('is_current'),
+        ]);
+    });
+
+    return redirect()
+        ->route('admin.dashboard', ['page' => 'semesters'])
+        ->with('success', 'Semester added successfully.');
 }
+
 
 public function updateSemester(Request $request, $id)
 {
@@ -770,13 +849,35 @@ public function updateSemester(Request $request, $id)
         'academic_year' => 'required|string|max:255',
         'start_date' => 'required|date',
         'end_date' => 'required|date|after:start_date',
-        'is_current' => 'boolean',  // Optional, defaults to false
+        'is_current' => 'nullable|boolean',
     ]);
-    
-    $semester = Semester::findOrFail($id);
-    $semester->update($request->only(['term', 'academic_year', 'start_date', 'end_date', 'is_current']));
-    return redirect()->route('admin.dashboard', ['page' => 'semesters'])->with('success', 'Semester updated successfully!');
+
+    DB::transaction(function () use ($request, $id) {
+
+        // If this semester is marked as current
+        if ($request->has('is_current')) {
+
+            // 🔴 Turn OFF all other semesters
+            Semester::where('id', '!=', $id)
+                ->update(['is_current' => false]);
+        }
+
+        // Update this semester
+        $semester = Semester::findOrFail($id);
+        $semester->update([
+            'term' => $request->term,
+            'academic_year' => $request->academic_year,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'is_current' => $request->has('is_current'),
+        ]);
+    });
+
+    return redirect()
+        ->route('admin.dashboard', ['page' => 'semesters'])
+        ->with('success', 'Semester updated successfully.');
 }
+
 
 public function destroySemester($id)
 {
@@ -884,59 +985,226 @@ public function destroyEnrollment($id)
 // Add these new methods at the end of the class (before the closing })
 public function enrollStudents(Request $request)
 {
-    $search = $request->get('search');  // Get the search term
+    $search = $request->get('search');
+    $mode   = $request->get('mode', 'promote'); // promote | new
+    $targetSemesterId = $request->get('semester_id'); // required for filtering
+    $sourceSemesterId = $request->get('source_semester_id'); // optional
 
-    $query = User::where('user_type_id', 3)  // Assuming 3 is Student; adjust if needed
-        ->with('college', 'yearLevel', 'course');
+    $currentSemester = Semester::where('is_current', true)->first();
 
+    // If no source semester chosen, use current
+    $sourceSemester = $sourceSemesterId
+        ? Semester::find($sourceSemesterId)
+        : $currentSemester;
+
+    $targetSemester = $targetSemesterId
+        ? Semester::find($targetSemesterId)
+        : null;
+
+    // Base: students only
+    $query = User::where('user_type_id', 3)
+        ->with(['college', 'course', 'yearLevel']);
+
+    // Search
     if ($search) {
-    $query->where(function ($q) use ($search) {
-        $q->whereHas('course', function ($courseQ) use ($search) {
-            $courseQ->where('course_name', 'LIKE', '%' . $search . '%');
-        })
-        ->orWhereHas('yearLevel', function ($yearQ) use ($search) {
-            $yearQ->where('year_level_name', 'LIKE', '%' . $search . '%');
-        })
-        ->orWhere('firstname', 'LIKE', '%' . $search . '%')
-        ->orWhere('lastname', 'LIKE', '%' . $search . '%')
-        ->orWhere('bisu_email', 'LIKE', '%' . $search . '%');
-    });
+        $query->where(function ($q) use ($search) {
+            $q->where('firstname', 'ILIKE', "%{$search}%")
+              ->orWhere('lastname', 'ILIKE', "%{$search}%")
+              ->orWhere('bisu_email', 'ILIKE', "%{$search}%")
+              ->orWhereHas('course', fn($c) => $c->where('course_name', 'ILIKE', "%{$search}%"))
+              ->orWhereHas('college', fn($c) => $c->where('college_name', 'ILIKE', "%{$search}%"))
+              ->orWhereHas('yearLevel', fn($y) => $y->where('year_level_name', 'ILIKE', "%{$search}%"));
+        });
+    }
+
+    /**
+     * ✅ FILTERING LOGIC
+     * - Always hide students already enrolled in TARGET semester (so no duplicates)
+     */
+    if ($targetSemester) {
+        $query->whereDoesntHave('enrollments', function ($e) use ($targetSemester) {
+            $e->where('semester_id', $targetSemester->id);
+        });
+    }
+
+    /**
+     * ✅ Mode-specific logic
+     */
+    if ($mode === 'promote') {
+        // Only show returning students who ARE enrolled in source semester
+        if ($sourceSemester) {
+            $query->whereHas('enrollments', function ($e) use ($sourceSemester) {
+                $e->where('semester_id', $sourceSemester->id)
+                  ->where('status', 'enrolled');
+            });
+        } else {
+            // If no current semester set, show none to avoid wrong updates
+            $query->whereRaw('1=0');
+        }
+    } else {
+        // mode === 'new'
+        // Show students who are NOT enrolled in target semester (already handled above)
+        // Optional: exclude already graduated users
+        if ($sourceSemester) {
+        $query->whereDoesntHave('enrollments', function ($e) use ($sourceSemester) {
+            $e->where('semester_id', $sourceSemester->id)
+              ->where('status', 'enrolled');
+        });
+    }
+
+    // Optional: exclude graduated users in users table
+    $query->where('status', '!=', 'graduated');
+    }
+
+    $students = $query
+        ->orderBy('lastname')
+        ->orderBy('firstname')
+        ->paginate(20);
+
+    $semesters = Semester::orderBy('start_date', 'desc')->get();
+
+    return view('super-admin.enroll-students', compact(
+        'students',
+        'semesters',
+        'currentSemester',
+        'sourceSemester',
+        'targetSemester',
+        'request'
+    ));
 }
 
 
-    $students = $query->paginate(10);  // 10 per page
-    $semesters = Semester::all();
-    $courses = Course::all();
-    $yearLevels = YearLevel::all();
 
-    return view('super-admin.enroll-students', compact('students', 'semesters', 'courses', 'yearLevels', 'request'));
-}
+
 
 // Add this method right after enrollStudents
 public function storeEnrollStudents(Request $request)
 {
     $request->validate([
         'selected_users' => 'required|array|min:1',
-        'semester_id' => 'required|exists:semesters,id',
-        'course_id' => 'required|exists:courses,id',
+        'semester_id'    => 'required|exists:semesters,id',
+        'mode'           => 'required|in:promote,new',
+        'source_semester_id' => 'nullable|exists:semesters,id',
     ]);
 
-    $selectedUserIds = $request->selected_users;
-    $semesterId = $request->semester_id;
-    $courseId = $request->course_id;
+    $mode = $request->mode;
+    $targetSemester = Semester::findOrFail($request->semester_id);
+
+    // source semester: request OR current
+    $currentSemester = Semester::where('is_current', true)->first();
+    $sourceSemester = $request->source_semester_id
+        ? Semester::find($request->source_semester_id)
+        : $currentSemester;
 
     $enrolledCount = 0;
-    foreach ($selectedUserIds as $userId) {
-        // Update or create enrollment: If student is already enrolled in this semester, update; else create
-        Enrollment::updateOrCreate(
-            ['user_id' => $userId, 'semester_id' => $semesterId],
-            ['course_id' => $courseId, 'status' => 'enrolled']
-        );
-        $enrolledCount++;
-    }
+    $graduatedCount = 0;
+    $skippedCount = 0;
 
-    return redirect()->route('admin.dashboard', ['page' => 'enrollments'])->with('success', "$enrolledCount students enrolled in the selected semester.");
+    DB::transaction(function () use (
+        $request, $mode, $targetSemester, $sourceSemester,
+        &$enrolledCount, &$graduatedCount, &$skippedCount
+    ) {
+        foreach ($request->selected_users as $userId) {
+            $user = User::with('yearLevel')->findOrFail($userId);
+
+            // Safety: skip if already enrolled in target (double protection)
+            $alreadyInTarget = Enrollment::where('user_id', $user->id)
+                ->where('semester_id', $targetSemester->id)
+                ->exists();
+
+            if ($alreadyInTarget) {
+                $skippedCount++;
+                continue;
+            }
+
+            // ✅ PROMOTE MODE: must be enrolled in source semester
+            if ($mode === 'promote') {
+                if (!$sourceSemester) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                $isEnrolledInSource = Enrollment::where('user_id', $user->id)
+                    ->where('semester_id', $sourceSemester->id)
+                    ->where('status', 'enrolled')
+                    ->exists();
+
+                if (!$isEnrolledInSource) {
+                    $skippedCount++;
+                    continue;
+                }
+            }
+
+            /**
+             * ✅ YEAR LEVEL / GRADUATION LOGIC (dynamic)
+             * Increase year level ONLY when:
+             * - targetSemester is "1st Semester"
+             * - and target academic_year != source academic_year (new AY)
+             */
+            $isFirstSem = str_contains(strtolower($targetSemester->term), '1st');
+            $isNewAcademicYear = $sourceSemester && ($targetSemester->academic_year !== $sourceSemester->academic_year);
+
+            $shouldPromoteYearLevel = ($mode === 'promote' && $isFirstSem && $isNewAcademicYear);
+
+            // Determine current year number (1-4) from year_level_name
+            $yearName = strtolower($user->yearLevel?->year_level_name ?? '');
+            preg_match('/\d+/', $yearName, $matches);
+            $yearNum = isset($matches[0]) ? (int)$matches[0] : null;
+
+            // If promoting and student is 4th year -> graduate (don’t enroll to target)
+            if ($shouldPromoteYearLevel && $yearNum === 4) {
+                $user->update(['status' => 'graduated']);
+                $graduatedCount++;
+                continue;
+            }
+
+            // If should promote year level: 1->2, 2->3, 3->4 (keep if missing)
+            if ($shouldPromoteYearLevel && $yearNum && $yearNum < 4) {
+                $nextYearNum = $yearNum + 1;
+
+                $nextYearLevel = YearLevel::whereRaw("year_level_name ILIKE ?", ["%{$nextYearNum}%"])
+                    ->first();
+
+                if ($nextYearLevel) {
+                    $user->update(['year_level_id' => $nextYearLevel->id]);
+                }
+            }
+
+            // ✅ ENROLL into target semester
+            Enrollment::create([
+                'user_id' => $user->id,
+                'semester_id' => $targetSemester->id,
+                'course_id' => $user->course_id, // keep their course
+                'status' => 'enrolled',
+            ]);
+
+            $enrolledCount++;
+        }
+    });
+
+    return redirect()->back()->with(
+        'success',
+        "Done! Enrolled: {$enrolledCount}, Graduated: {$graduatedCount}, Skipped: {$skippedCount}"
+    );
 }
+
+private function promoteYearLevelId(?int $currentYearLevelId): ?int
+{
+    if (!$currentYearLevelId) return null;
+
+    $current = YearLevel::find($currentYearLevelId);
+    if (!$current) return null;
+
+    $name = strtolower($current->year_level_name);
+
+    // Adjust if your names are like "2nd Year", "Third Year", etc.
+    if (str_contains($name, '1')) return YearLevel::where('year_level_name', 'ILIKE', '%2%')->value('id');
+    if (str_contains($name, '2')) return YearLevel::where('year_level_name', 'ILIKE', '%3%')->value('id');
+    if (str_contains($name, '3')) return YearLevel::where('year_level_name', 'ILIKE', '%4%')->value('id');
+
+    return null;
+}
+
 
 public function deleteEnrollment($id)
 {
@@ -948,15 +1216,15 @@ public function deleteEnrollment($id)
 
 public function enrollmentRecords()
 {
-    // Get distinct academic years from semesters table
     $academicYears = Semester::select('academic_year')
         ->distinct()
         ->orderBy('academic_year', 'desc')
-        ->get()
         ->pluck('academic_year');
 
     return view('super-admin.enrollment-records', compact('academicYears'));
 }
+
+
 
 public function enrollmentRecordsByYear($academicYear)
 {

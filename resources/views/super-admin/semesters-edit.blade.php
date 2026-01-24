@@ -14,8 +14,19 @@
     <input type="date" name="start_date" value="{{ $semester->start_date }}" class="border p-2 w-full mb-4" required>
     <input type="date" name="end_date" value="{{ $semester->end_date }}" class="border p-2 w-full mb-4" required>
     <label class="block mb-4">
-        <input type="checkbox" name="is_current" value="1" {{ $semester->is_current ? 'checked' : '' }}> Is Current Semester?
+        <input type="checkbox"
+            name="is_current"
+            value="1"
+            {{ $semester->is_current ? 'checked' : '' }}>
+        <span class="ml-2 font-semibold">
+            Set as Current Semester
+        </span>
     </label>
+
+    <p class="text-sm text-gray-500 mb-4">
+        Note: Setting this semester as current will automatically deactivate the
+        previous current semester and require students to be re-enrolled.
+    </p>
     <button type="submit" class="bg-yellow-500 text-black px-4 py-2 rounded">Update Semester</button>
     <a href="{{ route('admin.dashboard', ['page' => 'semesters']) }}" class="ml-4 text-gray-500">Cancel</a>
 </form>
