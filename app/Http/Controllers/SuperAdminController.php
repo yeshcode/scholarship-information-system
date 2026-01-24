@@ -13,6 +13,12 @@ use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\StudentsBulkImport;
+ 
+
 
  // Add your model imports (e.g., YearLevel, etc.)
 
@@ -333,6 +339,292 @@ public function deleteYearLevel($id)
     $yearLevel = YearLevel::findOrFail($id);
     return view('super-admin.year-levels-delete', compact('yearLevel'));
 }
+
+//the users bulk upload helpers
+
+private function norm(?string $v): string
+{
+    $v = trim((string) $v);
+    $v = preg_replace('/\s+/', ' ', $v);
+    return $v ?? '';
+}
+
+private function resolveCollegeId(string $collegeName, array &$collegeCache): ?int
+{
+    $key = Str::lower($collegeName);
+    if (!$collegeName) return null;
+
+    if (!isset($collegeCache[$key])) {
+        $college = \App\Models\College::firstOrCreate(
+            ['college_name' => $collegeName],
+            ['college_name' => $collegeName]
+        );
+        $collegeCache[$key] = $college->id;
+    }
+    return $collegeCache[$key];
+}
+
+private function resolveYearLevelId(string $yearLevelName, array &$yearCache): ?int
+{
+    $key = Str::lower($yearLevelName);
+    if (!$yearLevelName) return null;
+
+    if (!isset($yearCache[$key])) {
+        $yl = \App\Models\YearLevel::firstOrCreate(
+            ['year_level_name' => $yearLevelName],
+            ['year_level_name' => $yearLevelName]
+        );
+        $yearCache[$key] = $yl->id;
+    }
+    return $yearCache[$key];
+}
+
+private function resolveCourseId(string $courseName, ?int $collegeId, array &$courseCache): ?int
+{
+    if (!$courseName) return null;
+
+    // Make cache key include college (because same course name might exist in other colleges)
+    $key = Str::lower($courseName) . '|' . ($collegeId ?? 'null');
+
+    if (!isset($courseCache[$key])) {
+        // If collegeId is missing, we still create course without college_id ONLY if your DB allows it.
+        // Better: require college in CSV and treat missing college as an error.
+        if (!$collegeId) return null;
+
+        $course = \App\Models\Course::firstOrCreate(
+            ['course_name' => $courseName, 'college_id' => $collegeId],
+            ['course_name' => $courseName, 'college_id' => $collegeId, 'course_description' => null]
+        );
+
+        $courseCache[$key] = $course->id;
+    }
+
+    return $courseCache[$key];
+}
+
+// Preview step for bulk upload
+public function previewBulkUploadUsers(Request $request)
+{
+    // ✅ allow Excel + CSV
+    $request->validate([
+        'file' => 'required|file|mimes:xlsx,csv',
+    ]);
+
+    $studentType = \App\Models\UserType::where('name', 'Student')->first();
+    if (!$studentType) {
+        return back()->with('error', 'Student user type not found. Please add it first.');
+    }
+
+    // ✅ read EXCEL/CSV using Laravel-Excel
+    $sheets = Excel::toArray(new StudentsBulkImport, $request->file('file'));
+    $rows = $sheets[0] ?? [];
+
+    if (empty($rows)) {
+        return back()->with('error', 'File is empty or invalid.');
+    }
+
+    // ✅ required headers (must exist in Excel)
+    $required = ['student_id','lastname','firstname','bisu_email','college','course','year_level'];
+
+    // check first row keys
+    $firstRow = $rows[0];
+    $missing = [];
+    foreach ($required as $col) {
+        if (!array_key_exists($col, $firstRow)) {
+            $missing[] = $col;
+        }
+    }
+    if (!empty($missing)) {
+        return back()->with('error', 'Missing required column(s): ' . implode(', ', $missing));
+    }
+
+    $preview = [];
+    $issuesCount = 0;
+
+    // Caches (speed)
+    $collegeCache = [];
+    $yearCache = [];
+    $courseCache = [];
+
+    foreach ($rows as $i => $r) {
+        $lineNo = $i + 2; // row 1 = headers
+
+        $student_id = $this->norm($r['student_id'] ?? '');
+        $lastname   = $this->norm($r['lastname'] ?? '');
+        $firstname  = $this->norm($r['firstname'] ?? '');
+        $email      = $this->norm($r['bisu_email'] ?? '');
+        $college    = $this->norm($r['college'] ?? '');
+        $course     = $this->norm($r['course'] ?? '');
+        $yearLevel  = $this->norm($r['year_level'] ?? '');
+
+        $issues = [];
+
+        // Basic validation
+        if (!$student_id) $issues[] = 'Missing student_id';
+        if (!$lastname)   $issues[] = 'Missing lastname';
+        if (!$firstname)  $issues[] = 'Missing firstname';
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) $issues[] = 'Invalid bisu_email';
+        if (!$college)    $issues[] = 'Missing college';
+        if (!$course)     $issues[] = 'Missing course';
+        if (!$yearLevel)  $issues[] = 'Missing year_level';
+
+        // Resolve IDs dynamically
+        $collegeId = null;
+        $yearId = null;
+        $courseId = null;
+
+        if (empty($issues)) {
+            $collegeId = $this->resolveCollegeId($college, $collegeCache);
+            $yearId    = $this->resolveYearLevelId($yearLevel, $yearCache);
+            $courseId  = $this->resolveCourseId($course, $collegeId, $courseCache);
+
+            if (!$courseId) $issues[] = 'Course could not be resolved (check college/course pairing)';
+        }
+
+        // Check duplicates in DB
+        if ($student_id && \App\Models\User::where('student_id', $student_id)->exists()) {
+            $issues[] = 'student_id already exists';
+        }
+        if ($email && \App\Models\User::where('bisu_email', $email)->exists()) {
+            $issues[] = 'bisu_email already exists';
+        }
+
+        if (!empty($issues)) $issuesCount++;
+
+        $preview[] = [
+            'line' => $lineNo,
+            'student_id' => $student_id,
+            'lastname' => $lastname,
+            'firstname' => $firstname,
+            'bisu_email' => $email,
+            'college' => $college,
+            'course' => $course,
+            'year_level' => $yearLevel,
+            'college_id' => $collegeId,
+            'course_id' => $courseId,
+            'year_level_id' => $yearId,
+            'issues' => $issues,
+        ];
+    }
+
+    // Store preview for confirm step
+    session([
+        'bulk_upload.preview' => $preview,
+        'bulk_upload.student_type_id' => $studentType->id,
+        'bulk_upload.hash' => hash('sha256', json_encode($preview)),
+    ]);
+
+    return view('super-admin.users-bulk-upload-preview', [
+        'preview' => $preview,
+        'issuesCount' => $issuesCount,
+        'totalCount' => count($preview),
+    ]);
+}
+
+//Confirm and save bulk upload
+public function confirmBulkUploadUsers(Request $request)
+{
+    // ⏱️ Prevent timeout (dev/local)
+    set_time_limit(300);
+
+    $preview       = session('bulk_upload.preview', []);
+    $hash          = session('bulk_upload.hash');
+    $studentTypeId = session('bulk_upload.student_type_id');
+
+    // ✅ session validation
+    if (!$preview || !$hash || $hash !== hash('sha256', json_encode($preview))) {
+        return redirect()->route('admin.users.bulk-upload-form')
+            ->with('error', 'Upload session expired or invalid. Please upload again.');
+    }
+
+    // ✅ Stop if preview has issues
+    $hasIssues = collect($preview)->contains(fn ($r) => !empty($r['issues']));
+    if ($hasIssues) {
+        return back()->with('error', 'Fix the issues first. Rows with errors cannot be confirmed.');
+    }
+
+    // 🚀 SPEED-UP: load role ONCE (no repeated DB queries)
+    $studentRole = \Spatie\Permission\Models\Role::where('name', 'Student')->first();
+
+    // Optional: counts for message
+    $created = 0;
+    $updated = 0;
+
+    DB::transaction(function () use ($preview, $studentTypeId, $studentRole, &$created, &$updated) {
+
+        foreach ($preview as $row) {
+
+            // ✅ REQUIRED fields (from preview)
+            $studentId = $row['student_id'];
+            $email     = $row['bisu_email'];
+
+            // ✅ Ensure user_id exists because your DB says NOT NULL
+            // If you want user_id to be student_id, do this:
+            $userId = $row['user_id'] ?? $studentId;
+
+            // ✅ contact_no might be nullable now (as you said adviser recommended)
+            // But if your DB is still NOT NULL, set a safe default:
+            $contactNo = $row['contact_no'] ?? 'N/A';
+
+            // ✅ Build user data
+            $userData = [
+                'user_id'       => $userId,
+                'user_type_id'  => $studentTypeId,
+                'student_id'    => $studentId,
+                'lastname'      => $row['lastname'],
+                'firstname'     => $row['firstname'],
+                'bisu_email'    => $email,
+                'college_id'    => $row['college_id'],
+                'course_id'     => $row['course_id'],
+                'year_level_id' => $row['year_level_id'],
+                'status'        => 'active',
+
+                // If your migration already made contact_no nullable, you can store null:
+                // 'contact_no' => $row['contact_no'] ?? null,
+                'contact_no'    => $contactNo,
+            ];
+
+            /**
+             * ✅ Upsert rule:
+             * Use ONE unique key. Student ID is safest in your system.
+             */
+            $user = \App\Models\User::where('student_id', $studentId)->first();
+
+            if ($user) {
+                // Existing user: update fields
+                $user->fill($userData);
+
+                // Only reset password if you want to force default every upload:
+                // (optional)
+                // $user->password = Hash::make($studentId);
+
+                $user->save();
+                $updated++;
+            } else {
+                // New user: create + set default password
+                $userData['password'] = Hash::make($studentId);
+                $user = \App\Models\User::create($userData);
+                $created++;
+            }
+
+            // ✅ Assign role WITHOUT querying role each loop
+            if ($studentRole) {
+                // syncRoles triggers DB writes; assignRole is lighter if no role yet
+                // but syncRoles is fine if you want to enforce exactly one role.
+                $user->syncRoles([$studentRole->name]);
+            }
+        }
+    });
+
+    // ✅ Clear preview session
+    session()->forget(['bulk_upload.preview', 'bulk_upload.hash', 'bulk_upload.student_type_id']);
+
+    return redirect()->route('admin.dashboard', ['page' => 'manage-users'])
+        ->with('success', "Bulk upload confirmed! Created: {$created}, Updated: {$updated}");
+}
+
+
+
 
 // User Types CRUD
 public function createUserType()
@@ -819,79 +1111,6 @@ public function showBulkUploadForm()
     return view('super-admin.users-bulk-upload', compact('colleges', 'yearLevels', 'courses'));
 }
 
-// Bulk Upload for Students (Updated for Dynamic CSV)
-public function bulkUploadUsers(Request $request)
-{
-    $request->validate([
-        'csv_file' => 'required|file|mimes:csv,txt',
-        'college_id' => 'required|exists:colleges,id',
-        'year_level_id' => 'required|exists:year_levels,id',
-        'course_id' => $request->course_id,
-    ]);
-
-    $file = $request->file('csv_file');
-    $data = array_map('str_getcsv', file($file->getRealPath()));
-    $headers = array_shift($data);
-
-    $studentTypeId = UserType::where('name', 'Student')->first()->id ?? null;
-    if (!$studentTypeId) {
-        return back()->with('error', 'Student user type not found. Please add it first.');
-    }
-
-    $fillable = (new User)->getFillable();
-    $errors = [];
-
-    foreach ($data as $row) {
-        $userData = [
-            'user_type_id' => $studentTypeId,
-            'college_id' => $request->college_id,
-            'year_level_id' => $request->year_level_id,
-            'course_id' => $request->course_id,
-            // Remove the default password here; we'll set it conditionally below
-            'status' => 'active',
-        ];
-
-        foreach ($headers as $index => $header) {
-            $header = trim(strtolower($header));
-            if (in_array($header, $fillable) && isset($row[$index])) {
-                $userData[$header] = trim($row[$index]);
-            }
-        }
-
-        if (empty($userData['firstname']) || empty($userData['lastname']) || empty($userData['bisu_email'])) {
-            $errors[] = 'Row skipped: Missing required fields.';
-            continue;
-        }
-
-        // NEW: Set password based on user type
-        if ($studentTypeId == $userData['user_type_id'] && !empty($userData['student_id'])) {
-            // For students, hash the student_id as the default password
-            $userData['password'] = \Illuminate\Support\Facades\Hash::make($userData['student_id']);
-        } else {
-            // For non-students, use a default hashed password
-            $userData['password'] = bcrypt('password123');
-        }
-
-        try {
-            $user = User::create($userData);  // Create the user
-            
-            // NEW: Assign Spatie role after creation
-            $user->load('userType');  // Load the relationship
-            if ($user->userType) {
-                $user->assignRole($user->userType->name);
-            }
-        } catch (\Exception $e) {
-            $errors[] = 'Row skipped: ' . $e->getMessage();
-        }
-    }
-
-    $message = 'Bulk upload completed! Students registered (enroll them separately via Enrollments page).';
-    if (!empty($errors)) {
-        $message .= ' Errors: ' . implode('; ', $errors);
-    }
-
-    return redirect()->route('admin.dashboard', ['page' => 'manage-users'])->with('success', $message);
-}
 
 // Add this for the delete confirmation page
 public function deleteUser($id)
