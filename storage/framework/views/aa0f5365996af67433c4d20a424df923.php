@@ -75,7 +75,13 @@
             
             <div class="col-12 col-md-4">
                 <label class="form-label mb-1">College</label>
-                <select name="college_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                <select name="college_id" class="form-select form-select-sm"
+                    onchange="
+                        // clear selected course when college changes
+                        const courseSelect = this.form.querySelector('select[name=course_id]');
+                        if (courseSelect) courseSelect.selectedIndex = 0;
+                        this.form.submit();
+                    ">
                     <option value="">All Colleges</option>
                     <?php $__currentLoopData = $colleges; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $college): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <option value="<?php echo e($college->id); ?>" <?php echo e(request('college_id') == $college->id ? 'selected' : ''); ?>>
@@ -89,8 +95,17 @@
             
             <div class="col-12 col-md-4">
                 <label class="form-label mb-1">Course</label>
-                <select name="course_id" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">All Courses</option>
+
+                <select name="course_id"
+                        class="form-select form-select-sm"
+                        onchange="this.form.submit()"
+                        <?php if(!request('college_id')): ?> disabled <?php endif; ?>>
+
+                    <option value="">
+                        <?php echo e(request('college_id') ? 'All Courses' : 'Select a college first'); ?>
+
+                    </option>
+
                     <?php $__currentLoopData = $courses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $course): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <option value="<?php echo e($course->id); ?>" <?php echo e(request('course_id') == $course->id ? 'selected' : ''); ?>>
                             <?php echo e($course->course_name); ?>
@@ -98,6 +113,10 @@
                         </option>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
+
+                <?php if(!request('college_id')): ?>
+                    <small class="text-muted">Choose a college to load courses.</small>
+                <?php endif; ?>
             </div>
 
             

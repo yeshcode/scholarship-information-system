@@ -1,8 +1,8 @@
-{{-- resources/views/super-admin/enrollments.blade.php --}}
-@php $fullWidth = true; @endphp
-@extends('layouts.app')
 
-@section('content')
+<?php $fullWidth = true; ?>
+
+
+<?php $__env->startSection('content'); ?>
 
 <style>
     .page-title-blue {
@@ -65,7 +65,7 @@
 
 <div class="container-fluid py-3">
 
-    {{-- TITLE --}}
+    
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
         <div>
             <h2 class="page-title-blue">Manage Enrollments</h2>
@@ -73,46 +73,49 @@
         </div>
 
         <div class="d-flex gap-2">
-            <a href="{{ route('admin.enrollments.create') }}" class="btn btn-bisu-primary shadow-sm">
+            <a href="<?php echo e(route('admin.enrollments.create')); ?>" class="btn btn-bisu-primary shadow-sm">
                 + Add Enrollment
             </a>
-            <a href="{{ route('admin.enrollments.enroll-students') }}" class="btn btn-bisu-secondary shadow-sm">
+            <a href="<?php echo e(route('admin.enrollments.enroll-students')); ?>" class="btn btn-bisu-secondary shadow-sm">
                 📚 Enroll Students
             </a>
-            <a href="{{ route('admin.enrollments.records') }}" class="btn btn-outline-secondary shadow-sm">
+            <a href="<?php echo e(route('admin.enrollments.records')); ?>" class="btn btn-outline-secondary shadow-sm">
                 📂 Records
             </a>
         </div>
     </div>
 
-    {{-- FLASH --}}
-    @if(session('success'))
+    
+    <?php if(session('success')): ?>
         <div class="alert alert-success alert-dismissible fade show">
-            {{ session('success') }}
-            <button class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show">
-            {{ session('error') }}
-            <button class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
+            <?php echo e(session('success')); ?>
 
-    {{-- FILTERS --}}
-    <form method="GET" action="{{ route('admin.dashboard') }}" class="mb-3">
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+    <?php if(session('error')): ?>
+        <div class="alert alert-danger alert-dismissible fade show">
+            <?php echo e(session('error')); ?>
+
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    
+    <form method="GET" action="<?php echo e(route('admin.dashboard')); ?>" class="mb-3">
         <input type="hidden" name="page" value="enrollments">
 
         <div class="row g-3">
             <div class="col-md-3">
                 <label class="form-label mb-1 fw-semibold text-secondary">Semester</label>
                 <select name="semester_id" class="form-select form-select-sm" onchange="this.form.submit()">
-                    @foreach($semesters ?? [] as $semester)
-                        <option value="{{ $semester->id }}"
-                            {{ (string)request('semester_id', $selectedSemesterId ?? '') === (string)$semester->id ? 'selected' : '' }}>
-                            {{ $semester->term }} {{ $semester->academic_year }}
+                    <?php $__currentLoopData = $semesters ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $semester): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($semester->id); ?>"
+                            <?php echo e((string)request('semester_id', $selectedSemesterId ?? '') === (string)$semester->id ? 'selected' : ''); ?>>
+                            <?php echo e($semester->term); ?> <?php echo e($semester->academic_year); ?>
+
                         </option>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
 
@@ -120,11 +123,12 @@
                 <label class="form-label mb-1 fw-semibold text-secondary">College</label>
                 <select name="college_id" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">All Colleges</option>
-                    @foreach($colleges ?? [] as $college)
-                        <option value="{{ $college->id }}" {{ request('college_id') == $college->id ? 'selected' : '' }}>
-                            {{ $college->college_name }}
+                    <?php $__currentLoopData = $colleges ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $college): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($college->id); ?>" <?php echo e(request('college_id') == $college->id ? 'selected' : ''); ?>>
+                            <?php echo e($college->college_name); ?>
+
                         </option>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
 
@@ -132,11 +136,12 @@
                 <label class="form-label mb-1 fw-semibold text-secondary">Course</label>
                 <select name="course_id" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">All Courses</option>
-                    @foreach($courses ?? [] as $course)
-                        <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
-                            {{ $course->course_name }}
+                    <?php $__currentLoopData = $courses ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $course): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($course->id); ?>" <?php echo e(request('course_id') == $course->id ? 'selected' : ''); ?>>
+                            <?php echo e($course->course_name); ?>
+
                         </option>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
 
@@ -144,26 +149,27 @@
                 <label class="form-label mb-1 fw-semibold text-secondary">Status</label>
                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">All Status</option>
-                    @foreach($statuses ?? [] as $st)
-                        <option value="{{ $st }}" {{ request('status') === $st ? 'selected' : '' }}>
-                            {{ strtoupper(str_replace('_',' ', $st)) }}
+                    <?php $__currentLoopData = $statuses ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $st): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($st); ?>" <?php echo e(request('status') === $st ? 'selected' : ''); ?>>
+                            <?php echo e(strtoupper(str_replace('_',' ', $st))); ?>
+
                         </option>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
         </div>
 
-        @if(request('college_id') || request('course_id') || request('status'))
+        <?php if(request('college_id') || request('course_id') || request('status')): ?>
             <div class="mt-3">
-                <a href="{{ route('admin.dashboard', ['page' => 'enrollments', 'semester_id' => $selectedSemesterId]) }}"
+                <a href="<?php echo e(route('admin.dashboard', ['page' => 'enrollments', 'semester_id' => $selectedSemesterId])); ?>"
                    class="btn btn-sm btn-outline-secondary">
                     ✖ Clear Filters
                 </a>
             </div>
-        @endif
+        <?php endif; ?>
     </form>
 
-    {{-- TABLE --}}
+    
     <div class="table-card shadow-sm mt-3">
         <div class="table-responsive">
             <table class="table modern-table mb-0">
@@ -181,8 +187,8 @@
                 </thead>
 
                 <tbody>
-                    @forelse($studentsForEnrollmentList ?? [] as $row)
-                        @php
+                    <?php $__empty_1 = true; $__currentLoopData = $studentsForEnrollmentList ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                        <?php
                             // Derived status:
                             $status = $row->enrollment_status ?? 'not_enrolled';
 
@@ -191,44 +197,50 @@
                             elseif ($status === 'dropped') $badge = 'bg-danger';
                             elseif ($status === 'graduated') $badge = 'bg-primary';
                             elseif ($status === 'not_enrolled') $badge = 'bg-secondary';
-                        @endphp
+                        ?>
 
                         <tr>
-                            <td>{{ $row->student_id ?? 'N/A' }}</td>
-                            <td class="text-start">{{ $row->lastname ?? 'N/A' }}</td>
-                            <td class="text-start">{{ $row->firstname ?? 'N/A' }}</td>
+                            <td><?php echo e($row->student_id ?? 'N/A'); ?></td>
+                            <td class="text-start"><?php echo e($row->lastname ?? 'N/A'); ?></td>
+                            <td class="text-start"><?php echo e($row->firstname ?? 'N/A'); ?></td>
                             <td>
-                                {{ $row->sem_term ?? 'N/A' }}
-                                {{ $row->sem_academic_year ?? '' }}
+                                <?php echo e($row->sem_term ?? 'N/A'); ?>
+
+                                <?php echo e($row->sem_academic_year ?? ''); ?>
+
                             </td>
-                            <td>{{ $row->college->college_name ?? 'N/A' }}</td>
-                            <td>{{ $row->course->course_name ?? 'N/A' }}</td>
-                            <td>{{ $row->yearLevel->year_level_name ?? 'N/A' }}</td>
+                            <td><?php echo e($row->college->college_name ?? 'N/A'); ?></td>
+                            <td><?php echo e($row->course->course_name ?? 'N/A'); ?></td>
+                            <td><?php echo e($row->yearLevel->year_level_name ?? 'N/A'); ?></td>
                             <td>
-                                <span class="badge badge-status {{ $badge }}">
-                                    {{ strtoupper(str_replace('_',' ', $status)) }}
+                                <span class="badge badge-status <?php echo e($badge); ?>">
+                                    <?php echo e(strtoupper(str_replace('_',' ', $status))); ?>
+
                                 </span>
                             </td>
                         </tr>
-                    @empty
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
                             <td colspan="8" class="text-muted py-4 text-center">
                                 No students found for this filter.
                             </td>
                         </tr>
-                    @endforelse
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
 
-    {{-- PAGINATION --}}
-    @if(isset($studentsForEnrollmentList))
+    
+    <?php if(isset($studentsForEnrollmentList)): ?>
         <div class="mt-4 d-flex justify-content-center">
-            {{ $studentsForEnrollmentList->appends(request()->except('enrollments_page'))->links('pagination::bootstrap-4') }}
+            <?php echo e($studentsForEnrollmentList->appends(request()->except('enrollments_page'))->links('pagination::bootstrap-4')); ?>
+
         </div>
-    @endif
+    <?php endif; ?>
 
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/enrollments.blade.php ENDPATH**/ ?>

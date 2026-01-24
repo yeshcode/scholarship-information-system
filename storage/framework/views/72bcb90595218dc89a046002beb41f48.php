@@ -1,7 +1,7 @@
-{{-- resources/views/super-admin/enroll-students.blade.php --}}
-@extends('layouts.app')
 
-@section('content')
+
+
+<?php $__env->startSection('content'); ?>
 <style>
     .page-title-blue {
         font-weight: 700;
@@ -111,7 +111,7 @@
 
 <div class="p-3 mx-auto" style="max-width: 1200px;">
 
-    {{-- HEADER --}}
+    
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
         <div>
             <h1 class="page-title-blue">Bulk Semester Update (Students)</h1>
@@ -124,84 +124,87 @@
             <div class="pill">
                 Current Semester:
                 <strong>
-                    {{ $currentSemester?->term }} {{ $currentSemester?->academic_year }}
+                    <?php echo e($currentSemester?->term); ?> <?php echo e($currentSemester?->academic_year); ?>
+
                 </strong>
             </div>
         </div>
     </div>
 
-    {{-- ALERTS --}}
-    @if(session('success'))
-        <div class="alert alert-success py-2 mb-3">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger py-2 mb-3">{{ session('error') }}</div>
-    @endif
+    
+    <?php if(session('success')): ?>
+        <div class="alert alert-success py-2 mb-3"><?php echo e(session('success')); ?></div>
+    <?php endif; ?>
+    <?php if(session('error')): ?>
+        <div class="alert alert-danger py-2 mb-3"><?php echo e(session('error')); ?></div>
+    <?php endif; ?>
 
 
 
-   {{-- FILTERS --}}
-<form method="GET" action="{{ route('admin.enrollments.enroll-students') }}" class="card shadow-sm mb-3">
+   
+<form method="GET" action="<?php echo e(route('admin.enrollments.enroll-students')); ?>" class="card shadow-sm mb-3">
     <div class="card-body">
         <div class="row g-2 align-items-end">
 
-            {{-- MODE --}}
+            
             <div class="col-12 col-md-3">
                 <label class="form-label mb-1">Mode</label>
                 <select name="mode" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="promote" {{ request('mode','promote') === 'promote' ? 'selected' : '' }}>
+                    <option value="promote" <?php echo e(request('mode','promote') === 'promote' ? 'selected' : ''); ?>>
                         Promote / Next Semester (returning)
                     </option>
-                    <option value="new" {{ request('mode') === 'new' ? 'selected' : '' }}>
+                    <option value="new" <?php echo e(request('mode') === 'new' ? 'selected' : ''); ?>>
                         New Enrollment (fresh users)
                     </option>
                 </select>
             </div>
 
-            {{-- SOURCE SEMESTER --}}
+            
             <div class="col-12 col-md-3">
                 <label class="form-label mb-1">Source Semester (from)</label>
                 <select name="source_semester_id"
                         class="form-select form-select-sm"
                         onchange="this.form.submit()"
-                        {{ request('mode','promote') === 'new' ? 'disabled' : '' }}>
+                        <?php echo e(request('mode','promote') === 'new' ? 'disabled' : ''); ?>>
                     <option value="">Current Semester</option>
-                    @foreach($semesters as $s)
-                        <option value="{{ $s->id }}" {{ (string)request('source_semester_id') === (string)$s->id ? 'selected' : '' }}>
-                            {{ $s->term }} {{ $s->academic_year }}
+                    <?php $__currentLoopData = $semesters; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($s->id); ?>" <?php echo e((string)request('source_semester_id') === (string)$s->id ? 'selected' : ''); ?>>
+                            <?php echo e($s->term); ?> <?php echo e($s->academic_year); ?>
+
                         </option>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
                 <div class="subtext">Used only for Promote mode.</div>
             </div>
 
-            {{-- SEARCH --}}
+            
             <div class="col-12 col-md-4">
                 <label class="form-label mb-1">Search Student</label>
                 <input type="text"
                        name="search"
-                       value="{{ request('search') }}"
+                       value="<?php echo e(request('search')); ?>"
                        class="form-control form-control-sm"
                        placeholder="Search name, email...">
             </div>
 
-            {{-- TARGET SEMESTER --}}
+            
             <div class="col-12 col-md-2">
                 <label class="form-label mb-1">Target Semester</label>
                 <select name="semester_id" class="form-select form-select-sm" required>
                     <option value="">Select target</option>
-                    @foreach($semesters as $s)
-                        <option value="{{ $s->id }}" {{ (string)request('semester_id') === (string)$s->id ? 'selected' : '' }}>
-                            {{ $s->term }} {{ $s->academic_year }}
+                    <?php $__currentLoopData = $semesters; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($s->id); ?>" <?php echo e((string)request('semester_id') === (string)$s->id ? 'selected' : ''); ?>>
+                            <?php echo e($s->term); ?> <?php echo e($s->academic_year); ?>
+
                         </option>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
 
-            {{-- BUTTONS --}}
+            
             <div class="col-12 d-flex gap-2 mt-2">
                 <button class="btn btn-bisu btn-sm" type="submit">Apply</button>
-                <a class="btn btn-secondary btn-sm" href="{{ route('admin.enrollments.enroll-students') }}">Clear</a>
+                <a class="btn btn-secondary btn-sm" href="<?php echo e(route('admin.enrollments.enroll-students')); ?>">Clear</a>
             </div>
         </div>
 
@@ -213,7 +216,7 @@
     </div>
 </form>
 
-    {{-- TABLE (NO SCROLL, 20 ROWS PER PAGE) --}}
+    
     <form id="selection-form">
         <div class="card shadow-sm">
             <div class="table-responsive">
@@ -233,26 +236,27 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($students as $student)
+                        <?php $__empty_1 = true; $__currentLoopData = $students; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $student): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr>
                                 <td>
                                     <input type="checkbox"
                                            class="user-checkbox"
-                                           value="{{ $student->id }}">
+                                           value="<?php echo e($student->id); ?>">
                                 </td>
-                                <td>{{ $student->student_id ?? 'N/A' }}</td>
+                                <td><?php echo e($student->student_id ?? 'N/A'); ?></td>
                                 <td class="text-start">
-                                    {{ $student->lastname }}, {{ $student->firstname }}
+                                    <?php echo e($student->lastname); ?>, <?php echo e($student->firstname); ?>
+
                                 </td>
-                                <td class="text-start">{{ $student->bisu_email }}</td>
-                                <td>{{ $student->college->college_name ?? 'N/A' }}</td>
-                                <td>{{ $student->course->course_name ?? 'N/A' }}</td>
-                                <td>{{ $student->yearLevel->year_level_name ?? 'N/A' }}</td>
+                                <td class="text-start"><?php echo e($student->bisu_email); ?></td>
+                                <td><?php echo e($student->college->college_name ?? 'N/A'); ?></td>
+                                <td><?php echo e($student->course->course_name ?? 'N/A'); ?></td>
+                                <td><?php echo e($student->yearLevel->year_level_name ?? 'N/A'); ?></td>
                                 <td>
-                                    <span class="badge bg-secondary">{{ $student->status ?? 'active' }}</span>
+                                    <span class="badge bg-secondary"><?php echo e($student->status ?? 'active'); ?></span>
                                 </td>
                             </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
                                 <td colspan="8" class="text-muted py-3">
                                     No students found.
@@ -261,29 +265,30 @@
                                     </div>
                                 </td>
                             </tr>
-                        @endforelse
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        {{-- PAGINATION --}}
+        
         <div class="mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div class="small text-muted">
-                Showing <strong>{{ $students->count() }}</strong> of <strong>{{ $students->total() }}</strong> students
+                Showing <strong><?php echo e($students->count()); ?></strong> of <strong><?php echo e($students->total()); ?></strong> students
             </div>
             <div>
-                {{ $students->appends(request()->query())->links() }}
+                <?php echo e($students->appends(request()->query())->links()); ?>
+
             </div>
         </div>
 
-        {{-- ACTION BUTTON --}}
+        
         <div class="mt-3 d-flex gap-2">
             <button type="button" id="proceed-btn" class="btn btn-bisu btn-sm">
                 Proceed to Confirm Selected
             </button>
 
-            <a href="{{ route('admin.dashboard', ['page' => 'enrollments']) }}" class="btn btn-secondary btn-sm">
+            <a href="<?php echo e(route('admin.dashboard', ['page' => 'enrollments'])); ?>" class="btn btn-secondary btn-sm">
                 Back to Enrollments
             </a>
         </div>
@@ -291,8 +296,8 @@
 
 </div>
 
-{{-- MODAL --}}
-{{-- MODAL --}}
+
+
 <div id="confirmation-modal" class="modal-backdrop">
     <div class="modal-card">
         <div class="modal-header">
@@ -301,7 +306,8 @@
                 <div class="small" style="opacity:.9;">
                     Target:
                     <span id="target-label">
-                        {{ $targetSemester?->term }} {{ $targetSemester?->academic_year }}
+                        <?php echo e($targetSemester?->term); ?> <?php echo e($targetSemester?->academic_year); ?>
+
                     </span>
                 </div>
             </div>
@@ -315,7 +321,7 @@
                 Year level promotion and graduation will be handled automatically based on your rules.
             </div>
 
-            {{-- PREVIEW TABLE --}}
+            
             <div class="table-responsive">
                 <table class="table table-sm table-bordered table-compact mb-0">
                     <thead class="table-light">
@@ -328,24 +334,24 @@
                         </tr>
                     </thead>
                     <tbody id="selected-preview-body">
-                        {{-- injected by JS --}}
+                        
                     </tbody>
                 </table>
             </div>
 
-            {{-- CONFIRM FORM --}}
+            
             <form method="POST"
-                  action="{{ route('admin.enrollments.store-enroll-students') }}"
+                  action="<?php echo e(route('admin.enrollments.store-enroll-students')); ?>"
                   id="confirm-form"
                   class="mt-3">
-                @csrf
+                <?php echo csrf_field(); ?>
 
-                {{-- IMPORTANT: send these always --}}
-                <input type="hidden" name="mode" value="{{ request('mode','promote') }}">
-                <input type="hidden" name="source_semester_id" value="{{ request('source_semester_id') }}">
-                <input type="hidden" name="semester_id" value="{{ request('semester_id') }}">
+                
+                <input type="hidden" name="mode" value="<?php echo e(request('mode','promote')); ?>">
+                <input type="hidden" name="source_semester_id" value="<?php echo e(request('source_semester_id')); ?>">
+                <input type="hidden" name="semester_id" value="<?php echo e(request('semester_id')); ?>">
 
-                {{-- selected_users[] injected by JS --}}
+                
                 <div id="selected-hidden-inputs"></div>
             </form>
 
@@ -357,7 +363,7 @@
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary btn-sm" id="cancel-btn">Cancel</button>
 
-            {{-- ✅ This is the REAL submit button --}}
+            
             <button type="submit"
                     form="confirm-form"
                     class="btn btn-success btn-sm"
@@ -391,7 +397,7 @@
     });
 
     proceedBtn?.addEventListener('click', function () {
-        const targetSemesterId = "{{ request('semester_id') }}";
+        const targetSemesterId = "<?php echo e(request('semester_id')); ?>";
 
         if (!targetSemesterId) {
             alert('Please select a Target Semester first.');
@@ -442,4 +448,6 @@
     });
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/enroll-students.blade.php ENDPATH**/ ?>
