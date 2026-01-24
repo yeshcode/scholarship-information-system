@@ -121,6 +121,12 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/users/{id}', [SuperAdminController::class, 'destroyUser'])->name('admin.users.destroy');
         Route::post('/users/bulk-upload', [SuperAdminController::class, 'bulkUploadUsers'])->name('admin.users.bulk-upload');
         Route::get('/users/{id}/delete', [SuperAdminController::class, 'deleteUser'])->name('admin.users.delete');  // Add this for confirmation
+
+        // Users CRUD
+        Route::get('/users/bulk-upload', [SuperAdminController::class, 'showBulkUploadForm'])->name('admin.users.bulk-upload-form');
+        Route::post('/users/bulk-upload/preview', [SuperAdminController::class, 'previewBulkUploadUsers'])->name('admin.users.bulk-upload.preview');
+        Route::post('/users/bulk-upload/confirm', [SuperAdminController::class, 'confirmBulkUploadUsers'])->name('admin.users.bulk-upload.confirm');
+
     });
 
     // Scholarship Coordinator routes (only Coordinators can access)

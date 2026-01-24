@@ -48,14 +48,14 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('admin.users.bulk-upload') }}"
+        <form method="POST" action="{{ route('admin.users.bulk-upload.preview') }}"
               enctype="multipart/form-data"
               class="space-y-5">
             @csrf
 
             <div>
                 <label for="csv_file" class="block text-sm font-medium text-gray-700">CSV File</label>
-                <input type="file" name="csv_file" id="csv_file"
+                <input type="file" name="file" id="file"
                        class="mt-1 border rounded w-full p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                        required>
                 <p class="text-xs text-gray-500 mt-1">
@@ -63,55 +63,7 @@
                 </p>
             </div>
 
-            <div class="border-t border-gray-200 pt-4 mt-2">
-                <h2 class="text-sm font-semibold text-gray-700 mb-3">Default Academic Assignment</h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="college_id" class="block text-sm font-medium text-gray-700">College</label>
-                        <select name="college_id" id="college_id"
-                                class="mt-1 border rounded w-full p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required>
-                            <option value="">Select College</option>
-                            @foreach($colleges as $college)
-                                <option value="{{ $college->id }}" {{ old('college_id') == $college->id ? 'selected' : '' }}>
-                                    {{ $college->college_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="year_level_id" class="block text-sm font-medium text-gray-700">Year Level</label>
-                        <select name="year_level_id" id="year_level_id"
-                                class="mt-1 border rounded w-full p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required>
-                            <option value="">Select Year Level</option>
-                            @foreach($yearLevels as $level)
-                                <option value="{{ $level->id }}" {{ old('year_level_id') == $level->id ? 'selected' : '' }}>
-                                    {{ $level->year_level_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="course_id" class="block text-sm font-medium text-gray-700">Course</label>
-                        <select name="course_id" id="course_id"
-                                class="mt-1 border rounded w-full p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required>
-                            <option value="">Select Course</option>
-                            @foreach($courses as $course)
-                                <option value="{{ $course->id }}"
-                                        {{ old('course_id') == $course->id ? 'selected' : '' }}>
-                                    {{ $course->course_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div>
-
+            
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 mt-4">
                 <a href="{{ route('admin.dashboard', ['page' => 'manage-users']) }}"
                    class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
