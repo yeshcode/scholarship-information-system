@@ -6,15 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Stipend extends Model
 {
-    protected $fillable = [
-        'scholar_id',     // FK to scholars table
-        'student_id',     // FK to users table (as student)
-        'created_by',     // FK to users table (as creator)
-        'updated_by',     // FK to users table (as updater)
-        'stipend_release_id',     // FK to stipend_releases table
-        'amount_received',         // e.g., 500.00
-        'status',         // e.g., 'pending', 'released'
+        protected $fillable = [
+        'scholar_id',
+        'student_id',
+        'stipend_release_id',
+        'created_by',
+        'updated_by',
+        'amount_received',
+        'status',
+        'date_release',
+        'release_at',  
+        'received_at',
     ];
+
 
     // Relationships
     // belongsTo: Stipend belongs to a scholar (via scholar_id)

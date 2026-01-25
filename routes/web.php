@@ -138,13 +138,12 @@
         Route::get('/manage-scholars', [CoordinatorController::class, 'manageScholars'])->name('coordinator.manage-scholars');
         Route::get('/manage-scholars/create', [CoordinatorController::class, 'createScholar'])->name('coordinator.scholars.create');
         Route::post('/manage-scholars', [CoordinatorController::class, 'storeScholar'])->name('coordinator.scholars.store');
+        
+        //Bulk Upload Scholars
+        Route::get('/scholars/upload', [CoordinatorController::class, 'uploadScholars'])->name('coordinator.scholars.upload');
+        Route::post('/scholars/upload/add-selected', [CoordinatorController::class, 'addSelectedUploadedScholars'])->name('coordinator.scholars.upload.add-selected');
+        Route::post('/scholars/upload/process', [CoordinatorController::class, 'processUploadedScholars'])->name('coordinator.scholars.upload.process');
 
-        // OCR
-        Route::get('/manage-scholars/ocr-upload', [CoordinatorController::class, 'uploadOcr'])->name('coordinator.scholars.ocr-upload');
-        Route::post('/manage-scholars/ocr-process', [CoordinatorController::class, 'processOcr'])->name('coordinator.scholars.ocr-process');
-        Route::post('/manage-scholars/add-selected-ocr', [CoordinatorController::class, 'addSelectedOcrScholars'])->name('coordinator.scholars.add-selected-ocr');
-        Route::get('/manage-scholars/confirm-add-ocr', [CoordinatorController::class, 'showConfirmAddOcr'])->name('coordinator.scholars.confirm-add-ocr');
-        Route::post('/manage-scholars/confirm-add-ocr', [CoordinatorController::class, 'confirmAddOcrScholars'])->name('coordinator.scholars.confirm-add-ocr.post');
 
         // Filters (scholarship / batch)
         Route::get('/manage-scholars/scholarship/{scholarship}', [CoordinatorController::class, 'scholarsByScholarship'])->name('coordinator.scholars.by-scholarship');
@@ -154,6 +153,9 @@
         // Enrollment Records (Coordinator)
         Route::get('/enrollment-records', [CoordinatorController::class, 'enrollmentRecords'])->name('coordinator.enrollment-records');
         Route::post('/enrollment-records/add', [CoordinatorController::class, 'addEnrollmentRecord'])->name('coordinator.enrollment-records.add');
+        Route::get('/enrollment-records/search-students', [CoordinatorController::class, 'searchEnrollmentCandidates'])->name('coordinator.enrollment-records.search-students');
+        Route::post('/enrollment-records/enroll-one', [CoordinatorController::class, 'enrollOneStudent'])->name('coordinator.enrollment-records.enroll-one');
+
 
         // Manage Scholarships
         Route::get('/manage-scholarships', [CoordinatorController::class, 'manageScholarships'])->name('coordinator.manage-scholarships');
@@ -182,6 +184,14 @@
         Route::put('/manage-stipends/{id}', [CoordinatorController::class, 'updateStipend'])->name('coordinator.stipends.update');
         Route::delete('/manage-stipends/{id}', [CoordinatorController::class, 'destroyStipend'])->name('coordinator.stipends.destroy');
         Route::get('/manage-stipends/{id}/delete', [CoordinatorController::class, 'confirmDeleteStipend'])->name('coordinator.stipends.confirm-delete');
+        // Stipends
+        Route::get('/manage-stipends', [CoordinatorController::class, 'manageStipends'])->name('coordinator.manage-stipends');
+        Route::post('/manage-stipends/bulk-assign', [CoordinatorController::class, 'bulkAssignStipends'])->name('coordinator.stipends.bulk-assign');
+
+        // keep your existing create/edit if you still want
+        Route::get('/manage-stipends/create', [CoordinatorController::class, 'createStipend'])->name('coordinator.stipends.create');
+        Route::post('/manage-stipends', [CoordinatorController::class, 'storeStipend'])->name('coordinator.stipends.store');
+
 
         // Stipend Releases
         Route::get('/manage-stipend-releases', [CoordinatorController::class, 'manageStipendReleases'])->name('coordinator.manage-stipend-releases');

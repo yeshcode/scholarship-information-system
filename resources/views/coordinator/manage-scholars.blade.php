@@ -1,145 +1,303 @@
 @extends('layouts.coordinator')
 
 @section('page-content')
+
+<style>
+    :root{
+        --bisu-blue:#003366;
+        --bisu-blue-2:#0b4a85;
+        --bisu-soft:#f4f7fb;
+    }
+
+    /* Titles */
+    .page-title-bisu{
+        font-weight:800;
+        font-size:1.6rem;
+        color:var(--bisu-blue);
+        margin:0;
+    }
+    .subtext{
+        color:#6b7280;
+        font-size:.9rem;
+    }
+
+    /* Buttons */
+    .btn-bisu{
+        background:var(--bisu-blue) !important;
+        border-color:var(--bisu-blue) !important;
+        color:#fff !important;
+        font-weight:700;
+    }
+    .btn-bisu:hover{
+        background:var(--bisu-blue-2) !important;
+        border-color:var(--bisu-blue-2) !important;
+        color:#fff !important;
+    }
+
+    /* Cards */
+    .card-bisu{
+        border:1px solid #e5e7eb;
+        border-radius:14px;
+        overflow:hidden;
+    }
+    .card-bisu .card-header{
+        background:#fff;
+        border-bottom:1px solid #eef2f7;
+    }
+
+    /* Table */
+    .thead-bisu th{
+        background:var(--bisu-blue) !important;
+        color:#fff !important;
+        font-size:.78rem;
+        letter-spacing:.03em;
+        text-transform:uppercase;
+        white-space:nowrap;
+    }
+    .table td{
+        vertical-align:middle;
+        white-space:nowrap;
+        font-size:.9rem;
+    }
+
+    /* Filter layout extras */
+    .filter-label{
+        font-weight:700;
+        color:#475569;
+        margin-bottom:.35rem;
+        font-size:.85rem;
+    }
+</style>
+
+{{-- Flash --}}
 @if(session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+    <div class="alert alert-success alert-dismissible fade show">
         {{ session('success') }}
+        <button class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 @endif
 
-<div class="flex items-center justify-between mb-4">
-    <h2 class="text-2xl font-bold">Manage Scholars</h2>
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show">
+        {{ session('error') }}
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
 
-    <div class="flex gap-2">
-        <a href="{{ route('coordinator.scholars.create') }}"
-           class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
-            Add Scholar
+{{-- Header --}}
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="page-title-bisu">Manage Scholars</h2>
+        <div class="subtext">Filter by scholarship/batch and quickly search a student by name.</div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a href="{{ route('coordinator.scholars.create') }}" class="btn btn-bisu btn-sm">
+            + Add Scholar
         </a>
-        <a href="{{ route('coordinator.scholars.ocr-upload') }}"
-           class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
-            OCR Upload
+        <a href="{{ route('coordinator.scholars.upload') }}" class="btn btn-success btn-sm">
+            ⬆ Upload Scholars
         </a>
+
     </div>
 </div>
 
-{{-- Scholarship Buttons --}}
-<div class="bg-white border border-gray-200 rounded p-3 mb-4">
-    <div class="font-semibold text-gray-700 mb-2">Scholarships</div>
-
-    <div class="flex flex-wrap gap-2">
-        @foreach($scholarships as $s)
-            <a href="{{ route('coordinator.scholars.by-scholarship', $s->id) }}"
-               class="px-3 py-2 rounded border text-sm font-semibold
-                      {{ isset($selectedScholarship) && $selectedScholarship->id == $s->id
-                          ? 'bg-[#003366] text-white border-[#003366]'
-                          : 'bg-white text-[#003366] border-[#003366] hover:bg-gray-100' }}">
-                {{ $s->scholarship_name }}
-                <span class="ml-1 text-xs opacity-80">({{ $s->scholars_count ?? 0 }})</span>
-            </a>
-        @endforeach
+{{-- Filters --}}
+<div class="card card-bisu shadow-sm mb-3">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <div class="fw-bold text-secondary">Filters</div>
+        <small class="text-muted">Scholarship • Batch (TDP/TES) • Search Student</small>
     </div>
-</div>
 
-{{-- MODE: BATCH LIST (TDP/TES) --}}
-@if(($mode ?? null) === 'batches')
-    <div class="bg-white border border-gray-200 rounded p-4 mb-4">
-        <div class="flex items-center justify-between">
-            <div>
-                <div class="text-lg font-bold text-[#003366]">
-                    {{ $selectedScholarship->scholarship_name }} — Batch Numbers
+    <div class="card-body">
+        <form id="filterForm" method="GET" action="{{ route('coordinator.manage-scholars') }}">
+
+            {{-- Row 1: Scholarship + Batch side-by-side --}}
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="filter-label">Scholarship</label>
+                    <select name="scholarship_id" id="scholarship_id" class="form-select form-select-sm">
+                        <option value="">All Scholarships</option>
+                        @foreach($scholarships as $s)
+                            <option value="{{ $s->id }}"
+                                {{ (string)request('scholarship_id') === (string)$s->id ? 'selected' : '' }}>
+                                {{ $s->scholarship_name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
-                <div class="text-sm text-gray-600">Click a batch to view scholars.</div>
+
+                <div class="col-12 col-md-6">
+                    <label class="filter-label">Batch (TDP/TES only)</label>
+                    <select name="batch_id" id="batch_id" class="form-select form-select-sm">
+                        <option value="">All Batches</option>
+
+                        @foreach(($batchOptions ?? []) as $b)
+                            <option value="{{ $b->id }}"
+                                {{ (string)request('batch_id') === (string)$b->id ? 'selected' : '' }}>
+                                Batch {{ $b->batch_number }}
+                                ({{ $b->semester->term ?? '' }} {{ $b->semester->academic_year ?? '' }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <div id="batchHelp" class="form-text text-muted"></div>
+                </div>
             </div>
 
-            <a href="{{ route('coordinator.manage-scholars') }}"
-               class="text-sm font-semibold text-[#003366] hover:underline">
-                Back to all
-            </a>
-        </div>
-
-        <div class="mt-3 flex flex-wrap gap-2">
-            @forelse($batches as $b)
-                <a href="{{ route('coordinator.scholars.by-batch', $b->id) }}"
-                   class="px-3 py-2 rounded border text-sm font-semibold
-                          bg-white text-[#003366] border-[#003366] hover:bg-gray-100">
-                    Batch {{ $b->batch_number }}
-                    <span class="ml-1 text-xs opacity-80">({{ $b->scholars_count ?? 0 }})</span>
-                </a>
-            @empty
-                <div class="text-gray-600 text-sm">
-                    No current batch for this scholarship.
+            {{-- Row 2: Long search (below) --}}
+            <div class="row g-3 mt-1">
+                <div class="col-12">
+                    <label class="filter-label">Search Student (Last name / First name)</label>
+                    <input
+                        type="text"
+                        name="q"
+                        id="q"
+                        value="{{ request('q') }}"
+                        class="form-control form-control-sm"
+                        placeholder="Type last name or first name…"
+                        autocomplete="off"
+                    >
                 </div>
-            @endforelse
-        </div>
+            </div>
+
+        </form>
     </div>
-@endif
+</div>
 
-{{-- Scholar Table --}}
-<div class="bg-white border border-gray-200 rounded overflow-hidden">
-    <div class="px-4 py-3 border-b flex items-center justify-between">
-        <div class="font-semibold text-[#003366]">
-            @if(($mode ?? null) === 'batch' && isset($selectedBatch))
-                Scholars in {{ $selectedScholarship->scholarship_name }} — Batch {{ $selectedBatch->batch_number }}
-            @elseif(($mode ?? null) === 'scholarship' && isset($selectedScholarship))
-                Scholars under {{ $selectedScholarship->scholarship_name }}
-            @else
-                Latest Scholars
-            @endif
-        </div>
+{{-- Table --}}
+<div class="card card-bisu shadow-sm">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <div class="fw-bold text-secondary">Scholar List</div>
 
-        @if(($mode ?? null) !== null)
-            <a href="{{ route('coordinator.manage-scholars') }}"
-               class="text-sm font-semibold text-[#003366] hover:underline">
-                Clear filter
-            </a>
+        @if(isset($selectedSemester))
+            <small class="text-muted">
+                Semester:
+                <strong>
+                    {{ $selectedSemester->term ?? $selectedSemester->semester_name ?? '' }}
+                    {{ $selectedSemester->academic_year ?? '' }}
+                </strong>
+            </small>
         @endif
     </div>
 
-    <table class="w-full">
-        <thead>
-            <tr class="bg-gray-50 text-sm">
-                <th class="px-4 py-2 text-left">Student Name</th>
-                <th class="px-4 py-2 text-left">Student ID</th>
-                <th class="px-4 py-2 text-left">Course</th>
-                <th class="px-4 py-2 text-left">Scholarship</th>
-                <th class="px-4 py-2 text-left">Batch No.</th>
-                <th class="px-4 py-2 text-left">Status</th>
-                <th class="px-4 py-2 text-left">Date Added</th>
-            </tr>
-        </thead>
-
-        <tbody class="text-sm">
-            @forelse($scholars ?? [] as $scholar)
-                <tr class="border-t">
-                    <td class="px-4 py-2">
-                        {{ $scholar->user->firstname ?? 'N/A' }} {{ $scholar->user->lastname ?? 'N/A' }}
-                    </td>
-                    <td class="px-4 py-2">{{ $scholar->user->student_id ?? 'N/A' }}</td>
-                    <td class="px-4 py-2">{{ $scholar->user->course->course_name ?? 'N/A' }}</td>
-                    <td class="px-4 py-2">{{ $scholar->scholarship->scholarship_name ?? 'N/A' }}</td>
-
-                    {{-- Batch only meaningful for TDP/TES, otherwise show — --}}
-                    <td class="px-4 py-2">
-                        {{ $scholar->scholarshipBatch->batch_number ?? '—' }}
-                    </td>
-
-                    <td class="px-4 py-2">{{ $scholar->status }}</td>
-                    <td class="px-4 py-2">{{ $scholar->date_added }}</td>
-                </tr>
-            @empty
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover mb-0">
+            <thead class="thead-bisu">
                 <tr>
-                    <td colspan="8" class="px-4 py-6 text-center text-gray-600">
-                        No current scholar.
-                    </td>
+                    <th>Student ID</th>
+                    <th>Last Name</th>
+                    <th>First Name</th>
+                    <th>Enrolled Status</th>
+                    <th>Semester Enrolled</th>
+                    <th>Scholarship</th>
+                    <th>Batch No.</th>
+                    <th>Date Added</th>
+                    <th>Course</th>
+                    <th>Year Level</th>
                 </tr>
-            @endforelse
-        </tbody>
-    </table>
+            </thead>
+
+            <tbody>
+                @forelse($scholars as $scholar)
+                    @php
+                        // Enrollment info from controller aliases (recommended)
+                        $enrolledStatus = $scholar->enrolled_status ?? 'not_enrolled';
+                        $semLabel = ($scholar->enrolled_term && $scholar->enrolled_academic_year)
+                            ? ($scholar->enrolled_term . ' ' . $scholar->enrolled_academic_year)
+                            : 'N/A';
+
+                        $schName = strtoupper($scholar->scholarship->scholarship_name ?? '');
+                        $isTdpTesRow = str_contains($schName, 'TDP') || str_contains($schName, 'TES');
+                        $batchLabel = $isTdpTesRow ? ($scholar->scholarshipBatch->batch_number ?? 'N/A') : 'N/A';
+                    @endphp
+
+                    <tr>
+                        <td>{{ $scholar->u_student_id ?? $scholar->user->student_id ?? 'N/A' }}</td>
+                        <td>{{ $scholar->u_lastname ?? $scholar->user->lastname ?? 'N/A' }}</td>
+                        <td>{{ $scholar->u_firstname ?? $scholar->user->firstname ?? 'N/A' }}</td>
+
+                        <td>
+                            @if($enrolledStatus === 'enrolled')
+                                <span class="badge bg-success-subtle text-success">ENROLLED</span>
+                            @elseif($enrolledStatus === 'dropped')
+                                <span class="badge bg-danger-subtle text-danger">DROPPED</span>
+                            @elseif($enrolledStatus === 'graduated')
+                                <span class="badge bg-primary-subtle text-primary">GRADUATED</span>
+                            @else
+                                <span class="badge bg-secondary-subtle text-secondary">NOT ENROLLED</span>
+                            @endif
+                        </td>
+
+                        <td>{{ $semLabel }}</td>
+                        <td>{{ $scholar->scholarship->scholarship_name ?? 'N/A' }}</td>
+                        <td>{{ $batchLabel }}</td>
+                        <td>{{ $scholar->date_added ?? 'N/A' }}</td>
+                        <td>{{ $scholar->user->course->course_name ?? 'N/A' }}</td>
+                        <td>{{ $scholar->user->yearLevel->year_level_name ?? 'N/A' }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="10" class="text-center text-muted py-4">
+                            No scholars found.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    @if(method_exists($scholars, 'links'))
+        <div class="card-body">
+            {{ $scholars->links() }}
+        </div>
+    @endif
 </div>
 
-@if(isset($scholars) && method_exists($scholars, 'links'))
-    <div class="mt-4">
-        {{ $scholars->links() }}
-    </div>
-@endif
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('filterForm');
+    const scholarship = document.getElementById('scholarship_id');
+    const batch = document.getElementById('batch_id');
+    const q = document.getElementById('q');
+    const batchHelp = document.getElementById('batchHelp');
+
+    function isTdpTesText(text){
+        const t = (text || '').toUpperCase();
+        return t.includes('TDP') || t.includes('TES');
+    }
+
+    function syncBatchEnabled(){
+        const selectedText = scholarship?.options[scholarship.selectedIndex]?.text || '';
+        const enable = isTdpTesText(selectedText);
+
+        if (!enable) {
+            batch.value = "";           // clear batch if not TDP/TES
+            batch.setAttribute('disabled', 'disabled');
+            batchHelp.textContent = "Select TDP/TES scholarship to enable batch.";
+        } else {
+            batch.removeAttribute('disabled');
+            batchHelp.textContent = "";
+        }
+    }
+
+    // init enable/disable state
+    syncBatchEnabled();
+
+    // submit on dropdown change
+    scholarship?.addEventListener('change', () => {
+        syncBatchEnabled();
+        form.submit();
+    });
+
+    batch?.addEventListener('change', () => form.submit());
+
+    // auto-submit on typing (debounce)
+    let t = null;
+    q?.addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(() => form.submit(), 350);
+    });
+});
+</script>
+
 @endsection

@@ -15,10 +15,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;  // Add this for emails
 use App\Mail\AnnouncementNotification;  // Add this for the Mailable
-use App\Services\ScholarOcrService;
 use Illuminate\Support\Str;
 use App\Jobs\SendAnnouncementNotifications;
 use Illuminate\Support\Facades\Log;
+use App\Models\College;
+use App\Models\Course;
+use App\Models\YearLevel;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
+
+
+
+
+
+
 
 
 
@@ -39,20 +49,116 @@ class CoordinatorController extends Controller
         return in_array($name, ['TDP', 'TES']);
     }
 
-    public function manageScholars()
-    {
-        // Show ALL scholarships as buttons with scholar counts
-        $scholarships = Scholarship::withCount('scholars')->orderBy('scholarship_name')->get();
+    public function manageScholars(Request $request)
+{
+    $semesterId   = $request->get('semester_id');
+    $scholarshipId= $request->get('scholarship_id');
+    $batchId      = $request->get('batch_id');
+    $searchType   = $request->get('search_type', 'name'); // name | student_id
+    $q            = trim((string) $request->get('q', ''));
 
-        // Default: show nothing yet until they click a scholarship
-        $scholars = Scholar::with([
-            'user.course',
-            'scholarshipBatch.semester',
-            'scholarship'
-        ])->latest()->paginate(10);
-
-        return view('coordinator.manage-scholars', compact('scholarships', 'scholars'));
+    // Semesters for dropdown (and default to current semester)
+    $semesters = Semester::orderByDesc('start_date')->get();
+    if (!$semesterId) {
+        $currentSemester = Semester::where('is_current', true)->first();
+        $semesterId = $currentSemester?->id;
     }
+    $selectedSemester = $semesterId ? Semester::find($semesterId) : null;
+
+    // Scholarship buttons/dropdown
+    $scholarships = Scholarship::query()
+        ->withCount('scholars')
+        ->orderBy('scholarship_name')
+        ->get();
+
+    $selectedScholarship = $scholarshipId ? Scholarship::find($scholarshipId) : null;
+
+    // Detect if selected scholarship is TDP/TES
+    $isTdpTes = false;
+    if ($selectedScholarship) {
+        $name = strtoupper($selectedScholarship->scholarship_name ?? '');
+        $isTdpTes = str_contains($name, 'TDP') || str_contains($name, 'TES');
+    }
+
+    // Batch options only if TDP/TES selected
+    $batchOptions = collect();
+    if ($isTdpTes && $selectedScholarship) {
+        $batchOptions = ScholarshipBatch::query()
+            ->where('scholarship_id', $selectedScholarship->id)
+            ->withCount('scholars')
+            ->orderByDesc('batch_number')
+            ->get();
+    } else {
+        // if not TDP/TES, ignore any batch filter
+        $batchId = null;
+    }
+
+    /**
+     * MAIN SCHOLARS QUERY
+     * Join enrollment (for selected semester) to show enrolled_status + semester label
+     */
+    $scholarsQuery = Scholar::query()
+        ->with([
+            'user.course',
+            'user.yearLevel',
+            'scholarship',
+            'scholarshipBatch',
+        ])
+        ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+        ->leftJoin('enrollments', function ($join) use ($semesterId) {
+            $join->on('enrollments.user_id', '=', 'users.id')
+                 ->where('enrollments.semester_id', '=', $semesterId);
+        })
+        ->leftJoin('semesters', 'semesters.id', '=', 'enrollments.semester_id')
+        ->select([
+            'scholars.*',
+            'users.student_id as u_student_id',
+            'users.lastname as u_lastname',
+            'users.firstname as u_firstname',
+            'enrollments.status as enrolled_status', // IMPORTANT: qualified by join
+            'semesters.term as enrolled_term',
+            'semesters.academic_year as enrolled_academic_year',
+        ]);
+
+    // Filter by scholarship
+    if (!empty($scholarshipId)) {
+        $scholarsQuery->where('scholars.scholarship_id', $scholarshipId);
+    }
+
+    // Filter by batch (only for TDP/TES)
+    if (!empty($batchId)) {
+        $scholarsQuery->where('scholars.batch_id', $batchId);
+    }
+
+    // Search
+    if ($q !== '') {
+        if ($searchType === 'student_id') {
+            $scholarsQuery->where('users.student_id', 'ILIKE', "%{$q}%");
+        } else {
+            // name
+            $scholarsQuery->where(function ($w) use ($q) {
+                $w->where('users.lastname', 'ILIKE', "%{$q}%")
+                  ->orWhere('users.firstname', 'ILIKE', "%{$q}%");
+            });
+        }
+    }
+
+    // Alphabetical sorting (your request)
+    $scholarsQuery->orderBy('users.lastname')->orderBy('users.firstname');
+
+    // Paginate
+    $scholars = $scholarsQuery->paginate(15)->withQueryString();
+
+    return view('coordinator.manage-scholars', compact(
+        'scholars',
+        'scholarships',
+        'semesters',
+        'selectedSemester',
+        'selectedScholarship',
+        'batchOptions',
+        'isTdpTes'
+    ));
+}
 
     public function scholarsByScholarship(Scholarship $scholarship)
     {
@@ -117,140 +223,350 @@ class CoordinatorController extends Controller
         ]);
     }
 
-    public function createScholar()
-    {
-        $users = User::whereHas('userType', function ($q) { $q->where('name', 'Student'); })->get();  // Students only
-        $batches = ScholarshipBatch::all();
-        return view('coordinator.create-scholar', compact('users', 'batches'));
+    public function createScholar(Request $request)
+{
+    $q = trim((string) $request->get('q', ''));
+
+    // Current semester
+    $currentSemester = Semester::where('is_current', true)->first();
+
+    // Batches (for dropdown in modal)
+    $batches = ScholarshipBatch::with(['semester', 'scholarship'])
+        ->orderByDesc('id')
+        ->get();
+
+    // Existing scholars table
+    $scholars = Scholar::with([
+            'user.college',
+            'user.course',
+            'scholarship',
+            'scholarshipBatch.semester'
+        ])
+        ->orderByDesc('id')
+        ->paginate(10)
+        ->withQueryString();
+
+    // Search results (candidates)
+    $candidates = collect();
+
+    if ($q !== '') {
+        $users = User::query()
+            ->whereHas('userType', fn($x) => $x->where('name', 'Student'))
+            ->where(function ($x) use ($q) {
+                $x->where('lastname', 'ILIKE', "%{$q}%")
+                  ->orWhere('firstname', 'ILIKE', "%{$q}%")
+                  ->orWhere('student_id', 'ILIKE', "%{$q}%");
+            })
+            ->with(['college', 'course', 'yearLevel'])
+            ->orderBy('lastname')
+            ->orderBy('firstname')
+            ->limit(50)
+            ->get();
+
+        $userIds = $users->pluck('id')->all();
+
+        // who is enrolled (current sem + status enrolled)
+        $enrolledMap = [];
+        if ($currentSemester) {
+            $enrolledMap = Enrollment::query()
+                ->where('semester_id', $currentSemester->id)
+                ->whereIn('user_id', $userIds)
+                ->where('status', 'enrolled')
+                ->pluck('user_id')
+                ->flip()
+                ->toArray();
+        }
+
+        // who is already scholar
+        $scholarMap = Scholar::query()
+            ->whereIn('student_id', $userIds)
+            ->pluck('student_id')
+            ->flip()
+            ->toArray();
+
+        // Build candidate rows with flags
+        $candidates = $users->map(function ($u) use ($enrolledMap, $scholarMap, $currentSemester) {
+            return (object) [
+                'user' => $u,
+                'is_enrolled_current' => isset($enrolledMap[$u->id]),
+                'is_scholar' => isset($scholarMap[$u->id]),
+                'current_semester_label' => $currentSemester
+                    ? (($currentSemester->term ?? $currentSemester->semester_name ?? 'Semester') . ' ' . ($currentSemester->academic_year ?? ''))
+                    : 'No current semester set',
+            ];
+        });
     }
+
+    return view('coordinator.create-scholar', compact(
+        'q',
+        'currentSemester',
+        'batches',
+        'scholars',
+        'candidates'
+    ));
+}
 
     public function storeScholar(Request $request)
-    {
-        $request->validate([
-            'student_id' => 'required|exists:users,id',
-            'batch_id' => 'required|exists:scholarship_batches,id',
-            'date_added' => 'required|date',
-            'status' => 'required|in:active,inactive,graduated',
-        ]);
-
-        // Fetch the batch to get the scholarship_id
-        $batch = ScholarshipBatch::find($request->batch_id);
-
-        Scholar::create([
-            'student_id' => $request->student_id,
-            'batch_id' => $request->batch_id,
-            'scholarship_id' => $batch->scholarship_id, 
-            'updated_by' => Auth::id(),
-            'date_added' => $request->date_added,
-            'status' => $request->status,
-        ]);
-
-        return redirect()->route('coordinator.manage-scholars')->with('success', 'Scholar added successfully.');
-    }
-
-    // Show OCR upload form
-public function uploadOcr()
-{
-    return view('coordinator.ocr-upload-scholar');
-}
-
-
-// Process OCR and add scholars
-public function processOcr(Request $request)
 {
     $request->validate([
-        'file' => 'required|mimes:pdf,xlsx,xls,jpg,jpeg,png,gif,bmp,tiff|max:10240',
-    ]);
-
-    $file = $request->file('file');
-    $extension = strtolower($file->getClientOriginalExtension());  // Get file type (e.g., 'png', 'xlsx')
-
-    $service = new ScholarOcrService();
-    $results = $service->processFileWithOcr($file);
-    $extractedData = $service->getExtractedData();
-
-    return redirect()->route('coordinator.scholars.ocr-upload')
-        ->with('results', $results)
-        ->with('extracted_data', $extractedData)
-        ->with('file_type', $extension)  // NEW: Pass file type to session
-        ->with('success', 'File processed. Review matches below.');
-}
-
-// Add this new method
-public function addSelectedOcrScholars(Request $request)
-{
-    $request->validate([
-        'selected_ids' => 'array',
-        'results' => 'required|string',  // JSON string
-    ]);
-
-    $selectedIds = $request->input('selected_ids', []);
-    $results = json_decode($request->input('results'), true);
-
-    // Filter only the selected results
-    $selectedResults = [];
-    foreach ($selectedIds as $index) {
-        if (isset($results[$index])) {
-            $selectedResults[] = $results[$index];
-        }
-    }
-
-    // Redirect to confirmation page with selected results
-    return redirect()->route('coordinator.scholars.confirm-add-ocr')->with('selectedResults', $selectedResults);
-}
-
-public function confirmAddOcrScholars(Request $request)
-{
-    $request->validate([
+        'student_id' => 'required|exists:users,id',
         'batch_id' => 'required|exists:scholarship_batches,id',
-        'selected_results' => 'required|string',  // JSON string
+        'date_added' => 'required|date',
+        'status' => 'required|in:active,inactive,graduated',
     ]);
 
-    $batchId = $request->input('batch_id');
-    $selectedResults = json_decode($request->input('selected_results'), true);
-
-    $service = new ScholarOcrService();
-    $added = [];
-    foreach ($selectedResults as $result) {
-        if ($result['user'] && $result['is_enrolled'] && !$result['is_scholar']) {
-            Scholar::create([
-                'student_id' => $result['user']->id,
-                'batch_id' => $batchId,  // Use selected batch
-                'updated_by' => Auth::id(),
-                'date_added' => now()->toDateString(),
-                'status' => 'active',
-                'enrollment_status' => $result['data']['enrollment_status'] ?? 'enrolled',
-            ]);
-            $added[] = $result['user']->firstname . ' ' . $result['user']->lastname;
-        }
+    $currentSemester = Semester::where('is_current', true)->first();
+    if (!$currentSemester) {
+        return back()->with('error', 'No current semester is set. Please set a current semester first.');
     }
 
-    $message = count($added) > 0 ? 'Added scholars: ' . implode(', ', $added) : 'No scholars added.';
-    return redirect()->route('coordinator.manage-scholars')->with('success', $message);
-}
+    // Must be enrolled this current semester
+    $isEnrolled = Enrollment::where('user_id', $request->student_id)
+        ->where('semester_id', $currentSemester->id)
+        ->where('status', 'enrolled')
+        ->exists();
 
-public function showConfirmAddOcr()
-{
-    $batches = ScholarshipBatch::with('semester')->get();  // Existing
-    $scholarships = Scholarship::all();  // NEW: Load all scholarships for the dropdown
-    return view('coordinator.confirm-add-ocr', compact('batches', 'scholarships'));  // Note: View path as per your earlier correction
-}
+    if (!$isEnrolled) {
+        return back()->with('error', 'Student is NOT enrolled in the current semester. Cannot add as scholar.');
+    }
 
+    // Must NOT already be a scholar
+    $alreadyScholar = Scholar::where('student_id', $request->student_id)->exists();
+    if ($alreadyScholar) {
+        return back()->with('error', 'This student is already a scholar.');
+    }
+
+    // Get scholarship_id from batch
+    $batch = ScholarshipBatch::findOrFail($request->batch_id);
+
+    Scholar::create([
+        'student_id' => $request->student_id,
+        'batch_id' => $request->batch_id,
+        'scholarship_id' => $batch->scholarship_id,
+        'updated_by' => Auth::id(),
+        'date_added' => $request->date_added,
+        'status' => $request->status,
+    ]);
+
+    return redirect()->route('coordinator.scholars.create')
+        ->with('success', 'Scholar added successfully.');
+}
 
     //new/from superadmin
-    public function enrollmentRecords()
-    {
-        $enrolledUsers = Enrollment::with(['user', 'semester', 'course'])
-            ->latest()
-            ->paginate(10);
+   public function enrollmentRecords(Request $request)
+{
+    // ===== Current semester (used as default for modal target) =====
+    $currentSemester = Semester::where('is_current', true)->first();
 
-        // For "Add Enrollment" form
-        $users = User::whereHas('userType', fn($q) => $q->where('name', 'Student'))->orderBy('lastname')->get();
-        $semesters = Semester::orderBy('created_at', 'desc')->get();
-        $courses = \App\Models\Course::orderBy('course_name')->get();
+    // ===== Dropdown data =====
+    $semesters  = Semester::orderByDesc('start_date')->get();
+    $colleges   = College::orderBy('college_name')->get();
+    $courses    = Course::orderBy('course_name')->get();
+    $yearLevels = YearLevel::orderBy('id')->get();
 
-        return view('coordinator.enrollment-records', compact('enrolledUsers', 'users', 'semesters', 'courses'));
+    // IMPORTANT:
+    // Status list for FILTER UI (includes derived "not_enrolled" - not stored in DB)
+    // Remove 'inactive' like you requested.
+    $statuses = ['enrolled', 'dropped', 'graduated', 'not_enrolled'];
+
+    // ===== Filter inputs =====
+    $semesterId  = $request->get('semester_id'); // optional
+    $collegeId   = $request->get('college_id');
+    $courseId    = $request->get('course_id');
+    $yearLevelId = $request->get('year_level_id');
+    $status      = $request->get('status');      // enrolled/dropped/graduated/not_enrolled
+    $q           = trim((string) $request->get('q', ''));
+
+    // If status is "not_enrolled", we MUST know which semester we are comparing to.
+    // If user didn't select semester, default to current semester.
+    $compareSemesterId = $semesterId ?: ($currentSemester?->id);    
+
+    // ===== MAIN RECORDS QUERY =====
+    // Goal:
+    // - Show students + their enrollment (if exists) for selected/current semester.
+    // - If "not_enrolled", show students with NO enrollment in that compare semester.
+    //
+    // NOTE: This avoids querying Enrollment.status = 'not_enrolled' (enum error).
+   $recordsQuery = Enrollment::query()
+    ->with(['user.college', 'user.course', 'user.yearLevel', 'semester'])
+    ->when($semesterId, fn($x) => $x->where('enrollments.semester_id', $semesterId))
+    ->when($collegeId, fn($x) => $x->whereHas('user', fn($u) => $u->where('college_id', $collegeId)))
+    ->when($courseId, fn($x) => $x->whereHas('user', fn($u) => $u->where('course_id', $courseId)))
+    ->when($yearLevelId, fn($x) => $x->whereHas('user', fn($u) => $u->where('year_level_id', $yearLevelId)));
+
+// Status filter (stored statuses only)
+if (!empty($status) && $status !== 'not_enrolled') {
+    $recordsQuery->where('enrollments.status', $status); // ✅ FIX
+}
+
+// Search filter
+if ($q !== '') {
+    $recordsQuery->whereHas('user', function ($u) use ($q) {
+        $u->where('firstname', 'ILIKE', "%{$q}%")
+          ->orWhere('lastname', 'ILIKE', "%{$q}%")
+          ->orWhere('student_id', 'ILIKE', "%{$q}%");
+    });
+}
+
+// ✅ Alphabetical sort (join users then qualify columns)
+$recordsQuery->join('users', 'users.id', '=', 'enrollments.user_id')
+    ->orderBy('users.lastname')
+    ->orderBy('users.firstname')
+    ->select('enrollments.*');
+
+    // If "not_enrolled": we don’t show enrollments table rows.
+    // We instead build "derived" records as fake rows OR show from User query.
+    // Since your Blade expects Enrollment rows ($row->status etc),
+    // easiest is: if not_enrolled -> create a USERS list but wrap as objects similar to Enrollment.
+    if ($status === 'not_enrolled') {
+
+        if (!$compareSemesterId) {
+            // no current semester in DB, can't compare safely
+            $records = collect([])->paginate(15);
+        } else {
+            // Students who do NOT have enrollment in compare semester
+            $usersNotEnrolled = User::query()
+                ->whereHas('userType', fn($t) => $t->where('name', 'Student'))
+                ->with(['college', 'course', 'yearLevel'])
+                ->when($collegeId, fn($x) => $x->where('college_id', $collegeId))
+                ->when($courseId, fn($x) => $x->where('course_id', $courseId))
+                ->when($yearLevelId, fn($x) => $x->where('year_level_id', $yearLevelId))
+                ->when($q !== '', function ($x) use ($q) {
+                    $x->where(function ($w) use ($q) {
+                        $w->where('firstname', 'ILIKE', "%{$q}%")
+                          ->orWhere('lastname', 'ILIKE', "%{$q}%")
+                          ->orWhere('student_id', 'ILIKE', "%{$q}%");
+                    });
+                })
+                ->whereDoesntHave('enrollments', fn($e) => $e->where('semester_id', $compareSemesterId))
+                ->orderBy('lastname')
+                ->orderBy('firstname')
+                ->paginate(15)
+                ->withQueryString();
+
+            // Convert users to "fake enrollment rows" so your table stays the same
+            $records = $usersNotEnrolled->through(function ($u) use ($compareSemesterId) {
+                $fake = new Enrollment();
+                $fake->setRelation('user', $u);
+                $fake->status = 'not_enrolled'; // derived label (NOT stored in DB)
+                $fake->semester_id = $compareSemesterId;
+                $fake->setRelation('semester', Semester::find($compareSemesterId));
+                return $fake;
+            });
+        }
+
+    } else {
+        $records = $recordsQuery->paginate(15)->withQueryString();
     }
+
+    // ===== MODAL SEARCH (Enroll/Promote one student) =====
+    $modalCandidates = collect();
+    $modalQ = trim((string) $request->get('modal_q', ''));
+
+    if ($request->get('show_add') === '1') {
+
+        // Target semester for eligibility check:
+        // Default to current semester (matches your Blade default selection).
+        $targetSemesterId = $currentSemester?->id;
+
+        $usersQuery = User::query()
+            ->whereHas('userType', fn($t) => $t->where('name', 'Student'))
+            ->with(['college', 'course', 'yearLevel'])
+            ->when($modalQ !== '', function ($x) use ($modalQ) {
+                $x->where(function ($w) use ($modalQ) {
+                    $w->where('firstname', 'ILIKE', "%{$modalQ}%")
+                      ->orWhere('lastname', 'ILIKE', "%{$modalQ}%")
+                      ->orWhere('student_id', 'ILIKE', "%{$modalQ}%");
+                });
+            })
+            ->orderBy('lastname')
+            ->orderBy('firstname')
+            ->limit(50)
+            ->get();
+
+        $modalCandidates = $usersQuery->map(function ($u) use ($targetSemesterId) {
+
+            // Latest enrollment record (previous)
+            $latestEnrollment = Enrollment::with('semester')
+                ->where('user_id', $u->id)
+                ->orderByDesc('semester_id') // or created_at if you prefer
+                ->first();
+
+            // Already enrolled in target/current semester?
+            $alreadyInCurrent = false;
+            if ($targetSemesterId) {
+                $alreadyInCurrent = Enrollment::where('user_id', $u->id)
+                    ->where('semester_id', $targetSemesterId)
+                    ->exists();
+            }
+
+            return (object) [
+                'user' => $u,
+                'latest_enrollment' => $latestEnrollment,
+                'already_in_current' => $alreadyInCurrent,
+            ];
+        });
+    }
+
+    return view('coordinator.enrollment-records', compact(
+        'records',
+        'semesters',
+        'colleges',
+        'courses',
+        'yearLevels',
+        'statuses',
+        'currentSemester',
+        'modalCandidates'
+    ));
+}
+
+
+   public function enrollOneStudent(Request $request)
+{
+    $request->validate([
+        'user_id' => 'required|exists:users,id',
+        'semester_id' => 'required|exists:semesters,id',
+    ]);
+
+    $userId = (int) $request->user_id;
+    $targetSemesterId = (int) $request->semester_id;
+
+    // Block duplicates
+    $exists = Enrollment::where('user_id', $userId)
+        ->where('semester_id', $targetSemesterId)
+        ->exists();
+
+    if ($exists) {
+        return back()->with('error', 'This student is already enrolled in the selected semester.');
+    }
+
+    $user = User::findOrFail($userId);
+
+    // Auto course:
+    // 1) user's current course_id
+    // 2) fallback to latest enrollment course_id
+    $courseId = $user->course_id;
+
+    if (!$courseId) {
+        $last = Enrollment::where('user_id', $userId)->orderByDesc('id')->first();
+        $courseId = $last?->course_id;
+    }
+
+    if (!$courseId) {
+        return back()->with('error', 'Cannot enroll this student because course is missing.');
+    }
+
+    Enrollment::create([
+        'user_id' => $userId,
+        'semester_id' => $targetSemesterId,
+        'course_id' => $courseId,
+        'status' => 'enrolled',
+    ]);
+
+    return redirect()->route('coordinator.enrollment-records')
+        ->with('success', 'Student enrolled successfully.');
+}
+
 
     public function addEnrollmentRecord(Request $request)
     {
@@ -282,11 +598,28 @@ public function showConfirmAddOcr()
     }
 
     // Manage Scholarship Batches
-    public function manageScholarshipBatches()
+    public function manageScholarshipBatches(Request $request)
     {
-        $batches = ScholarshipBatch::with('scholarship', 'semester')->paginate(10);
-        return view('coordinator.scholarship-batches', compact('batches'));
+        $q = trim((string) $request->get('q', ''));
+
+        $batchesQuery = ScholarshipBatch::with(['scholarship', 'semester'])
+            ->orderByDesc('id');
+
+        if ($q !== '') {
+            $batchesQuery->whereHas('scholarship', fn($s) => $s->where('scholarship_name', 'ILIKE', "%{$q}%"))
+                ->orWhereHas('semester', fn($sem) => $sem->where('term', 'ILIKE', "%{$q}%")
+                    ->orWhere('academic_year', 'ILIKE', "%{$q}%"))
+                ->orWhere('batch_number', 'ILIKE', "%{$q}%");
+        }
+
+        $batches = $batchesQuery->paginate(10)->withQueryString();
+
+        $scholarships = Scholarship::orderBy('scholarship_name')->get();
+        $semesters = Semester::orderByDesc('start_date')->get();
+
+        return view('coordinator.scholarship-batches', compact('batches', 'scholarships', 'semesters'));
     }
+
 
     public function createScholarshipBatch()
 
@@ -304,6 +637,13 @@ public function showConfirmAddOcr()
             'semester_id' => 'required|exists:semesters,id',
             'batch_number' => 'required|string',
         ]);
+
+        $sch = Scholarship::findOrFail($request->scholarship_id);
+        $name = strtoupper(trim($sch->scholarship_name ?? ''));
+
+        if (!str_contains($name, 'TDP') && !str_contains($name, 'TES')) {
+            return back()->with('error', 'Only TDP/TES scholarships can have batches.');
+        }
 
         ScholarshipBatch::create($request->all());
         return redirect()->route('coordinator.scholarship-batches')->with('success', 'Batch created successfully.');
@@ -344,11 +684,187 @@ public function confirmDeleteScholarshipBatch($id)
 
 
     // Manage Stipends
-    public function manageStipends()
-    {
-        $stipends = Stipend::with('scholar', 'stipendRelease')->paginate(10);
-        return view('coordinator.manage-stipends', compact('stipends'));
+  public function manageStipends(Request $request)
+{
+    $currentSemester = Semester::where('is_current', true)->first();
+
+    $scholarshipId = $request->get('scholarship_id');
+    $batchId       = $request->get('batch_id');
+    $releaseId     = $request->get('stipend_release_id');
+    $q             = trim((string) $request->get('q', ''));
+
+    $scholarships = Scholarship::orderBy('scholarship_name')->get();
+
+    // ✅ batches list (filtered by scholarship optionally)
+    $batchesQuery = ScholarshipBatch::with(['semester','scholarship'])->orderByDesc('batch_number');
+    if ($scholarshipId) $batchesQuery->where('scholarship_id', $scholarshipId);
+    $batches = $batchesQuery->get();
+
+    // ✅ releases list (filtered by batch optionally)
+    $releasesQuery = StipendsRelease::with(['scholarshipBatch'])->orderByDesc('id');
+    if ($batchId) $releasesQuery->where('batch_id', $batchId);
+    $releases = $releasesQuery->get();
+
+    // ✅ eligible scholars for modal
+    $eligibleScholars = collect();
+
+    if ($currentSemester) {
+        $eligibleQuery = Scholar::query()
+            ->with(['user','scholarship','scholarshipBatch'])
+            ->when($scholarshipId, fn($x) => $x->where('scholars.scholarship_id', $scholarshipId))
+            ->when($batchId, fn($x) => $x->where('scholars.batch_id', $batchId))
+            ->whereHas('user.enrollments', function ($e) use ($currentSemester) {
+                $e->where('semester_id', $currentSemester->id)
+                  ->whereIn('enrollments.status', ['enrolled','graduated']); // ✅ both allowed
+            });
+
+        if ($q !== '') {
+            $eligibleQuery->whereHas('user', function($u) use ($q){
+                $u->where('firstname', 'ILIKE', "%{$q}%")
+                  ->orWhere('lastname', 'ILIKE', "%{$q}%")
+                  ->orWhere('student_id', 'ILIKE', "%{$q}%");
+            });
+        }
+
+        // ✅ avoid ambiguous columns by qualifying or ordering via join
+        $eligibleScholars = $eligibleQuery
+            ->join('users', 'users.id', '=', 'scholars.student_id')
+            ->orderBy('users.lastname')
+            ->orderBy('users.firstname')
+            ->select('scholars.*')
+            ->limit(300)
+            ->get();
     }
+
+    // ✅ stipend rows list
+    $stipendsQuery = Stipend::query()
+        ->with([
+            'scholar.user',
+            'scholar.scholarship',
+            'scholar.scholarshipBatch.semester',
+            'stipendRelease.scholarshipBatch'
+        ])
+        ->when($scholarshipId, fn($x) => $x->whereHas('scholar', fn($s) => $s->where('scholarship_id', $scholarshipId)))
+        ->when($batchId, fn($x) => $x->whereHas('scholar', fn($s) => $s->where('batch_id', $batchId)))
+        ->when($releaseId, fn($x) => $x->where('stipend_release_id', $releaseId));
+
+    if ($q !== '') {
+        $stipendsQuery->whereHas('scholar.user', function($u) use ($q){
+            $u->where('firstname', 'ILIKE', "%{$q}%")
+              ->orWhere('lastname', 'ILIKE', "%{$q}%")
+              ->orWhere('student_id', 'ILIKE', "%{$q}%");
+        });
+    }
+
+    $stipends = $stipendsQuery->orderByDesc('id')->paginate(15)->withQueryString();
+
+    return view('coordinator.manage-stipends', compact(
+        'currentSemester',
+        'scholarships',
+        'batches',          // ✅ FIXED
+        'releases',
+        'eligibleScholars',
+        'stipends'
+    ));
+}
+
+
+
+
+
+public function bulkAssignStipends(Request $request)
+{
+    $request->validate([
+        'scholarship_id' => 'required|exists:scholarships,id',
+        'batch_id' => 'required|exists:scholarship_batches,id',
+        'stipend_release_id' => 'required|exists:stipend_releases,id',
+
+        // ✅ datetime-local input
+        'release_at' => 'required|date',
+
+        'amount_received' => 'required|numeric|min:0',
+
+        // ✅ IMPORTANT: this MUST match your DB constraint allowed values
+        // If your DB only allows old ones, you MUST update the constraint.
+        'status' => 'required|in:for_release,released,returned,waiting',
+
+        'scholar_ids' => 'required|array|min:1',
+        'scholar_ids.*' => 'exists:scholars,id',
+    ]);
+
+    $currentSemester = Semester::where('is_current', true)->first();
+    if (!$currentSemester) {
+        return back()->withInput()->with('error', 'No current semester is set.');
+    }
+
+    // Check batch belongs to scholarship
+    $batch = ScholarshipBatch::where('id', $request->batch_id)
+        ->where('scholarship_id', $request->scholarship_id)
+        ->first();
+
+    if (!$batch) {
+        return back()->withInput()->with('error', 'Selected batch does not belong to selected scholarship.');
+    }
+
+    // Check release belongs to batch
+    $release = StipendsRelease::where('id', $request->stipend_release_id)
+        ->where('batch_id', $batch->id)
+        ->first();
+
+    if (!$release) {
+        return back()->withInput()->with('error', 'Selected release does not belong to selected batch.');
+    }
+
+    $added = 0;
+    $skipped = 0;
+
+    DB::transaction(function () use ($request, $currentSemester, &$added, &$skipped) {
+
+        foreach ($request->scholar_ids as $sid) {
+
+            $scholar = Scholar::find($sid);
+            if (!$scholar) { $skipped++; continue; }
+
+            // ✅ must be enrolled OR graduated in current semester
+            $ok = Enrollment::where('user_id', $scholar->student_id)
+                ->where('semester_id', $currentSemester->id)
+                ->whereIn('enrollments.status', ['enrolled', 'graduated'])
+                ->exists();
+
+            if (!$ok) { $skipped++; continue; }
+
+            // prevent duplicate per scholar + release
+            $exists = Stipend::where('scholar_id', $scholar->id)
+                ->where('stipend_release_id', $request->stipend_release_id)
+                ->exists();
+
+            if ($exists) { $skipped++; continue; }
+
+            Stipend::create([
+                'scholar_id' => $scholar->id,
+                'student_id' => $scholar->student_id,
+                'stipend_release_id' => $request->stipend_release_id,
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
+                'amount_received' => $request->amount_received,
+                'status' => $request->status,
+
+                // ✅ SAVE DATETIME HERE
+                'release_at' => $request->release_at,
+
+                'received_at' => $request->status === 'released' ? now() : null,
+            ]);
+
+            $added++;
+        }
+    });
+
+    return redirect()->route('coordinator.manage-stipends')
+        ->with('success', "Bulk stipends saved. Added: {$added} | Skipped: {$skipped}");
+}
+
+
+
 
     public function createStipend()
     {
@@ -357,27 +873,58 @@ public function confirmDeleteScholarshipBatch($id)
         return view('coordinator.create-stipend', compact('scholars', 'releases'));
     }
 
-    public function storeStipend(Request $request)
-    {
-        $request->validate([
-            'scholar_id' => 'required|exists:scholars,id',
-            'stipend_release_id' => 'required|exists:stipend_releases,id',
-            'amount_received' => 'required|numeric',
-            'status' => 'required|in:for_release,released,returned,waiting',
-        ]);
+   public function storeStipend(Request $request)
+{
+    $request->validate([
+        'scholar_id' => 'required|exists:scholars,id',
+        'stipend_release_id' => 'required|exists:stipend_releases,id',
+        'amount_received' => 'required|numeric',
+        'status' => 'required|in:for_release,released,returned,waiting',
+    ]);
 
-        Stipend::create([
-            'scholar_id' => $request->scholar_id,
-            'student_id' => Scholar::find($request->scholar_id)->student_id,  // Auto-fill
-            'stipend_release_id' => $request->stipend_release_id,
-            'created_by' => Auth::id(),
-            'updated_by' => Auth::id(),
-            'amount_received' => $request->amount_received,
-            'status' => $request->status,
-        ]);
+    $release = StipendsRelease::with('scholarshipBatch.semester')->findOrFail($request->stipend_release_id);
+    $scholar = Scholar::with('user')->findOrFail($request->scholar_id);
 
-        return redirect()->route('coordinator.manage-stipends')->with('success', 'Stipend created successfully.');
+    // ✅ Must match batch (important)
+    if ((int)$scholar->batch_id !== (int)$release->batch_id) {
+        return back()->withInput()->with('error', 'Scholar does not belong to the selected release batch.');
     }
+
+    // ✅ Must be enrolled OR graduated in the schedule semester
+    $targetSemesterId = $release->scholarshipBatch?->semester_id;
+
+    if (!$targetSemesterId) {
+        return back()->withInput()->with('error', 'Release schedule has no semester. Please fix the batch semester first.');
+    }
+
+    $ok = Enrollment::where('user_id', $scholar->student_id)
+        ->where('semester_id', $targetSemesterId)
+        ->whereIn('status', ['enrolled', 'graduated'])
+        ->exists();
+
+    if (!$ok) {
+        return back()->withInput()->with('error', 'Scholar is not ENROLLED/GRADUATED in the schedule semester.');
+    }
+
+    // ✅ Create stipend row
+    Stipend::create([
+        'scholar_id' => $scholar->id,
+        'student_id' => $scholar->student_id,
+        'stipend_release_id' => $release->id,
+        'created_by' => Auth::id(),
+        'updated_by' => Auth::id(),
+        'amount_received' => $request->amount_received,
+        'status' => $request->status,
+
+        // If you already have these columns, uncomment:
+        // 'date_release' => now(),
+        // 'received_at' => ($request->status === 'released' ? now() : null),
+    ]);
+
+    return redirect()->route('coordinator.manage-stipends')
+        ->with('success', 'Stipend created successfully.');
+}
+
 
     public function editStipend($id)
 {
@@ -422,35 +969,60 @@ public function confirmDeleteStipend($id)
     }
 
     public function createStipendRelease()
-    {
-        $batches = ScholarshipBatch::all();
-        return view('coordinator.create-stipend-release', compact('batches'));
-    }
+{
+    // ✅ Only TDP/TES scholarships
+    $scholarships = Scholarship::query()
+        ->where(function($q){
+            $q->whereRaw("UPPER(scholarship_name) LIKE '%TDP%'")
+              ->orWhereRaw("UPPER(scholarship_name) LIKE '%TES%'");
+        })
+        ->orderBy('scholarship_name')
+        ->get();
+
+    // ✅ Batches include semester for labels
+    $batches = ScholarshipBatch::with(['semester', 'scholarship'])
+        ->orderByDesc('id')
+        ->get();
+
+    return view('coordinator.create-stipend-release', compact('scholarships', 'batches'));
+}
+
 
     public function storeStipendRelease(Request $request)
-    {
-        $request->validate([
-            'batch_id' => 'required|exists:scholarship_batches,id',
-            'title' => 'required|string',
-            'amount' => 'required|numeric',
-            'status' => 'required|in:pending,released',
-            'date_release' => 'required|date',
-            'notes' => 'nullable|string',
-        ]);
+{
+    $request->validate([
+        'scholarship_id' => 'required|exists:scholarships,id',
+        'batch_id' => 'required|exists:scholarship_batches,id',
+        'title' => 'required|string|max:255',
+        'amount' => 'required|numeric|min:0',
+        'status' => 'required|in:for_billing,for_check,for_release,received',
+        'notes' => 'nullable|string',
+    ]);
 
-        StipendsRelease::create([
-            'batch_id' => $request->batch_id,
-            'created_by' => Auth::id(),
-            'updated_by' => Auth::id(),
-            'title' => $request->title,
-            'amount' => $request->amount,
-            'status' => $request->status,
-            'date_release' => $request->date_release,
-            'notes' => $request->notes,
-        ]);
+    // ✅ Ensure batch belongs to selected scholarship (important)
+    $batch = ScholarshipBatch::where('id', $request->batch_id)
+        ->where('scholarship_id', $request->scholarship_id)
+        ->first();
 
-        return redirect()->route('coordinator.manage-stipend-releases')->with('success', 'Release created successfully.');
+    if (!$batch) {
+        return back()->withInput()->with('error', 'Selected batch does not belong to the selected scholarship.');
     }
+
+    StipendsRelease::create([
+        'batch_id' => $batch->id,
+        'created_by' => Auth::id(),
+        'updated_by' => Auth::id(),
+        'title' => $request->title,
+        'amount' => $request->amount,
+        'status' => $request->status,
+       'notes' => $request->notes,  
+        // ✅ removed date_release
+    ]);
+
+    return redirect()->route('coordinator.manage-stipend-releases')
+        ->with('success', 'Schedule created successfully.');
+}
+
 
     public function editStipendRelease($id)
 {
@@ -465,7 +1037,7 @@ public function updateStipendRelease(Request $request, $id)
         'batch_id' => 'required|exists:scholarship_batches,id',
         'title' => 'required|string',
         'amount' => 'required|numeric',
-        'status' => 'required|in:pending,released',
+        'status' => 'required|in:for_billing,for_check,for_release,received',   
         'date_release' => 'required|date',
         'notes' => 'nullable|string',
     ]);
@@ -659,6 +1231,234 @@ public function reports()
     return view('coordinator.reports');
 }
 
+//BULK UPLOAD SCHOLARS
 
+public function uploadScholars()
+{
+    $currentSemester = Semester::where('is_current', true)->first();
+
+    // For the modal dropdown batch list
+    $batches = ScholarshipBatch::with(['semester', 'scholarship'])
+        ->orderByDesc('id')
+        ->get();
+
+    // optional (only if your blade uses $scholarships)
+    $scholarships = Scholarship::orderBy('scholarship_name')->get();
+
+    return view('coordinator.upload-scholars', compact('batches', 'currentSemester', 'scholarships'));
+}
+
+
+
+public function processUploadedScholars(Request $request)
+{
+    $request->validate([
+        'file' => 'required|mimes:xlsx,xls,csv|max:10240',
+    ]);
+
+    $currentSemester = Semester::where('is_current', true)->first();
+    if (!$currentSemester) {
+        return back()->with('error', 'No current semester is set.');
+    }
+
+    // Read excel/csv as raw array (first sheet only)
+    $sheets = Excel::toArray([], $request->file('file'));
+    $rows = $sheets[0] ?? [];
+
+    if (count($rows) < 2) {
+        return back()->with('error', 'File looks empty or has no data rows.');
+    }
+
+    $headers = $rows[0]; // first row is header row
+
+    // ✅ Allowed header variants (you can add more anytime)
+    $firstAliases = ['firstname', 'first name', 'first_name', 'givenname', 'given name', 'fname', 'first'];
+    $lastAliases  = ['lastname', 'last name', 'last_name', 'surname', 'lname', 'last'];
+    $yearAliases  = ['yearlevel', 'year level', 'year_level', 'yrlevel', 'yr level', 'year', 'grade'];
+    $statAliases  = ['enrollmentstatus', 'enrollment status', 'enrollstatus', 'enroll status', 'status'];
+
+    $idxFirst = $this->findColIndex($headers, $firstAliases);
+    $idxLast  = $this->findColIndex($headers, $lastAliases);
+    $idxYear  = $this->findColIndex($headers, $yearAliases);
+    $idxStat  = $this->findColIndex($headers, $statAliases); // optional
+
+    if ($idxFirst === null || $idxLast === null) {
+        return back()->with('error', 'Cannot detect FIRSTNAME/LASTNAME columns. Please check your header row.');
+    }
+
+    $results = [];
+
+    // Start from row 2 (index 1) because row 1 is headers
+    foreach (array_slice($rows, 1) as $rIndex => $row) {
+
+        $first = trim((string)($row[$idxFirst] ?? ''));
+        $last  = trim((string)($row[$idxLast] ?? ''));
+
+        if ($first === '' && $last === '') {
+            continue; // skip empty rows
+        }
+
+        $yearUploaded = $idxYear !== null ? trim((string)($row[$idxYear] ?? '')) : '';
+        $statusUploadedRaw = $idxStat !== null ? (string)($row[$idxStat] ?? '') : '';
+        $statusUploaded = $this->normEnrollStatus($statusUploadedRaw); // normalize uploaded status
+
+        // ✅ Match user in database (basic exact match; you can improve later with fuzzy matching)
+        $user = User::query()
+            ->whereHas('userType', fn($q) => $q->where('name', 'Student'))
+            ->where('firstname', 'ILIKE', $first)
+            ->where('lastname', 'ILIKE', $last)
+            ->first();
+
+        // Default: not enrolled
+        $dbEnrollStatus = 'not_enrolled';
+
+        // Scholar status + scholarship name
+        $isScholar = false;
+        $existingScholarshipName = null;
+
+        if ($user) {
+            // DB enrollment status for current semester
+            $enrollment = Enrollment::query()
+                ->where('user_id', $user->id)
+                ->where('semester_id', $currentSemester->id)
+                ->first();
+
+            $dbEnrollStatus = $enrollment?->status ?? 'not_enrolled';
+
+            // Check if already scholar + get scholarship name
+            $existingScholar = Scholar::with('scholarship')
+                ->where('student_id', $user->id)
+                ->first();
+
+            if ($existingScholar) {
+                $isScholar = true;
+                $existingScholarshipName = $existingScholar->scholarship->scholarship_name ?? 'SCHOLAR';
+            }
+        }
+
+        $results[] = [
+            'row' => $rIndex + 2, // excel row number (headers = row 1)
+
+            // Show only the important extracted fields
+            'data' => [
+                'first_name' => $first,
+                'last_name' => $last,
+                'year_level' => $yearUploaded,
+                'uploaded_status' => $statusUploaded, // optional
+            ],
+
+            // Used in Blade for verified check
+            'user' => $user ? [
+                'id' => $user->id,
+                'firstname' => $user->firstname,
+                'lastname' => $user->lastname,
+            ] : null,
+
+            'enrollment_status' => $dbEnrollStatus, // DB CURRENT sem enrollment status
+
+            'is_scholar' => $isScholar,
+            'existing_scholarship_name' => $existingScholarshipName,
+        ];
+    }
+
+    return redirect()->route('coordinator.scholars.upload')
+        ->with('results', $results)
+        ->with('success', 'File processed. Review comparison results.');
+}
+
+
+
+public function addSelectedUploadedScholars(Request $request)
+{
+    $request->validate([
+        'batch_id' => 'required|exists:scholarship_batches,id',
+        'status' => 'required|in:active,inactive,graduated',
+        'selected_indexes' => 'required|array|min:1',
+        'results_json' => 'required|string',
+    ]);
+
+    $batch = ScholarshipBatch::findOrFail($request->batch_id);
+
+    $results = json_decode($request->results_json, true);
+    if (!is_array($results)) {
+        return back()->with('error', 'Upload results invalid. Please upload the file again.');
+    }
+
+    // ✅ Auto-set date_added since UI no longer sends it
+    $dateAdded = now()->toDateString();
+
+    $added = [];
+    $skipped = 0;
+
+    DB::transaction(function () use ($request, $results, $batch, $dateAdded, &$added, &$skipped) {
+
+        foreach ($request->selected_indexes as $i) {
+            if (!isset($results[$i])) { $skipped++; continue; }
+
+            $item = $results[$i];
+
+            // Must have matched user
+            $user = $item['user'] ?? null;
+            if (!$user || empty($user['id'])) { $skipped++; continue; }
+
+            $userId = (int) $user['id'];
+
+            // Must be enrolled in current semester
+            if (($item['enrollment_status'] ?? 'not_enrolled') !== 'enrolled') { $skipped++; continue; }
+
+            // Must NOT already be scholar
+            if (Scholar::where('student_id', $userId)->exists()) { $skipped++; continue; }
+
+            Scholar::create([
+                'student_id' => $userId,
+                'batch_id' => $batch->id,
+                'scholarship_id' => $batch->scholarship_id,
+                'updated_by' => Auth::id(),
+                'date_added' => $dateAdded,          // ✅ FIXED
+                'status' => $request->status,
+            ]);
+
+            $added[] = trim(($user['firstname'] ?? '') . ' ' . ($user['lastname'] ?? ''));
+        }
+    });
+
+    $msg = 'Added: ' . count($added) . ' | Skipped: ' . $skipped;
+    return redirect()->route('coordinator.manage-scholars')->with('success', $msg);
+}
+
+
+
+private function normHeader(string $h): string
+{
+    // "First Name" "FIRSTNAME" "first_name" -> "firstname"
+    $h = strtolower(trim($h));
+    $h = preg_replace('/[^a-z0-9]+/', '', $h); // remove spaces, underscores, symbols
+    return $h;
+}
+
+private function findColIndex(array $headers, array $aliases): ?int
+{
+    $normHeaders = array_map(fn($x) => $this->normHeader((string)$x), $headers);
+
+    foreach ($aliases as $alias) {
+        $aliasNorm = $this->normHeader($alias);
+        $idx = array_search($aliasNorm, $normHeaders, true);
+        if ($idx !== false) return $idx;
+    }
+    return null;
+}
+
+private function normEnrollStatus(?string $s): string
+{
+    $s = strtolower(trim((string)$s));
+
+    // allow many variants from excel
+    if (Str::contains($s, 'enrol')) return 'enrolled';
+    if (Str::contains($s, 'drop'))  return 'dropped';
+    if (Str::contains($s, 'grad'))  return 'graduated';
+
+    return 'not_enrolled';
+}
 
 }
+
