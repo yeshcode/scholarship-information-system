@@ -935,7 +935,7 @@ public function editEnrollment($id)
     $users = User::all();
     $semesters = Semester::all();
     $courses = Course::all();
-    return view('super-admin.enrollments-create', compact('users', 'semesters', 'courses'));
+    return view('super-admin.enrollments-edit', compact('enrollment'));
 }
 
 public function storeEnrollment(Request $request)
@@ -960,21 +960,17 @@ public function storeEnrollment(Request $request)
 public function updateEnrollment(Request $request, $id)
 {
     $request->validate([
-        'user_id' => 'required|exists:users,id',
-        'semester_id' => 'required|exists:semesters,id',
-        'course_id' => 'required|exists:courses,id',
-        'status' => 'required|in:enrolled,graduated,not_enrolled',
+        'status' => 'required|in:enrolled,dropped'
     ]);
-    
+
     $enrollment = Enrollment::findOrFail($id);
-    $enrollment->update([
-        'user_id' => $request->user_id,
-        'semester_id' => $request->semester_id,
-        'course_id' => $request->course_id,
-        'status' => strtolower($request->status),
-    ]);
-    return redirect()->route('admin.dashboard', ['page' => 'enrollments'])->with('success', 'Enrollment updated successfully!');
+    $enrollment->status = $request->status;
+    $enrollment->save();
+
+    return redirect()->route('admin.dashboard', ['page' => 'enrollments', 'semester_id' => $enrollment->semester_id])
+        ->with('success', 'Enrollment updated successfully.');
 }
+
 
 public function destroyEnrollment($id)
 {

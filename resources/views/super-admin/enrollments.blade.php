@@ -151,6 +151,23 @@
                     @endforeach
                 </select>
             </div>
+
+                <div class="col-12">
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label class="form-label mb-1 fw-semibold text-secondary">Search Student</label>
+                            <input type="text"
+                                name="search"
+                                value="{{ request('search') }}"
+                                class="form-control form-control-sm"
+                                placeholder="Search last name, first name, student ID...">
+                        </div>
+
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-sm btn-bisu-primary w-100" type="submit">Search</button>
+                        </div>
+                    </div>
+                </div>
         </div>
 
         @if(request('college_id') || request('course_id') || request('status'))
@@ -177,6 +194,7 @@
                         <th>Course</th>
                         <th>Year Level</th>
                         <th>Status</th>
+                        <th style="width:110px;">Action</th>
                     </tr>
                 </thead>
 
@@ -208,6 +226,17 @@
                                 <span class="badge badge-status {{ $badge }}">
                                     {{ strtoupper(str_replace('_',' ', $status)) }}
                                 </span>
+                            </td>
+
+                            <td>
+                                @if(!empty($row->enrollment_id))
+                                    <a href="{{ route('admin.enrollments.edit', $row->enrollment_id) }}"
+                                    class="btn btn-sm btn-warning">
+                                        Update
+                                    </a>
+                                @else
+                                    <span class="text-muted small">N/A</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

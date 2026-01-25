@@ -157,6 +157,23 @@
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
+
+                <div class="col-12">
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label class="form-label mb-1 fw-semibold text-secondary">Search Student</label>
+                            <input type="text"
+                                name="search"
+                                value="<?php echo e(request('search')); ?>"
+                                class="form-control form-control-sm"
+                                placeholder="Search last name, first name, student ID...">
+                        </div>
+
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-sm btn-bisu-primary w-100" type="submit">Search</button>
+                        </div>
+                    </div>
+                </div>
         </div>
 
         <?php if(request('college_id') || request('course_id') || request('status')): ?>
@@ -183,6 +200,7 @@
                         <th>Course</th>
                         <th>Year Level</th>
                         <th>Status</th>
+                        <th style="width:110px;">Action</th>
                     </tr>
                 </thead>
 
@@ -217,6 +235,17 @@
                                     <?php echo e(strtoupper(str_replace('_',' ', $status))); ?>
 
                                 </span>
+                            </td>
+
+                            <td>
+                                <?php if(!empty($row->enrollment_id)): ?>
+                                    <a href="<?php echo e(route('admin.enrollments.edit', $row->enrollment_id)); ?>"
+                                    class="btn btn-sm btn-warning">
+                                        Update
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted small">N/A</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
