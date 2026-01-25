@@ -902,16 +902,22 @@ public function enrollments(Request $request)
     // Fetch all semesters for the dropdown (order by academic year descending for usability)
     $semesters = Semester::orderBy('academic_year', 'desc')->get();
 
-    // Build the enrollments query with relationships
-    $query = Enrollment::with('user', 'semester', 'course');
+    // Build the enrollments query with relationships + alphabetical order by student
+    $query = Enrollment::query()
+        ->join('users', 'users.id', '=', 'enrollments.user_id')
+        ->select('enrollments.*') // important: keep Enrollment model fields
+        ->with(['user', 'semester', 'course']);
 
     // Apply semester filter if selected
     if ($selectedSemesterId) {
-        $query->where('semester_id', $selectedSemesterId);
+        $query->where('enrollments.semester_id', $selectedSemesterId);
     }
+    // ✅ Alphabetical by student's name
+    $query->orderBy('users.lastname')
+        ->orderBy('users.firstname');
 
-    // Paginate the results (15 per page; adjust as needed)
-    $enrollments = $query->paginate(15);
+    // Paginate the results
+    $enrollments = $query->paginate(15)->withQueryString();
 
     // Existing data for other parts of the page (e.g., dropdowns in create/edit forms)
     $users = User::all();  // For user dropdown
@@ -935,7 +941,7 @@ public function editEnrollment($id)
     $users = User::all();
     $semesters = Semester::all();
     $courses = Course::all();
-    return view('super-admin.enrollments-create', compact('users', 'semesters', 'courses'));
+    return view('super-admin.enrollments-edit', compact('enrollment'));
 }
 
 public function storeEnrollment(Request $request)
@@ -944,7 +950,7 @@ public function storeEnrollment(Request $request)
         'user_id' => 'required|exists:users,id',
         'semester_id' => 'required|exists:semesters,id',
         'course_id' => 'required|exists:courses,id',
-        'status' => 'required|in:enrolled,graduated,not_enrolled',
+        'status' => 'required|in:enrolled,dropped,graduated',
     ]);
 
     Enrollment::create([
@@ -960,21 +966,17 @@ public function storeEnrollment(Request $request)
 public function updateEnrollment(Request $request, $id)
 {
     $request->validate([
-        'user_id' => 'required|exists:users,id',
-        'semester_id' => 'required|exists:semesters,id',
-        'course_id' => 'required|exists:courses,id',
-        'status' => 'required|in:enrolled,graduated,not_enrolled',
+        'status' => 'required|in:enrolled,dropped'
     ]);
-    
+
     $enrollment = Enrollment::findOrFail($id);
-    $enrollment->update([
-        'user_id' => $request->user_id,
-        'semester_id' => $request->semester_id,
-        'course_id' => $request->course_id,
-        'status' => strtolower($request->status),
-    ]);
-    return redirect()->route('admin.dashboard', ['page' => 'enrollments'])->with('success', 'Enrollment updated successfully!');
+    $enrollment->status = $request->status;
+    $enrollment->save();
+
+    return redirect()->route('admin.dashboard', ['page' => 'enrollments', 'semester_id' => $enrollment->semester_id])
+        ->with('success', 'Enrollment updated successfully.');
 }
+
 
 public function destroyEnrollment($id)
 {
@@ -1229,12 +1231,16 @@ public function enrollmentRecords()
 public function enrollmentRecordsByYear($academicYear)
 {
     // Get all enrollments where the semester has this academic year
-    $enrollments = Enrollment::with('user', 'semester', 'course')
-        ->whereHas('semester', function ($q) use ($academicYear) {
-            $q->where('academic_year', $academicYear);
-        })
-        ->orderByDesc('id')
-        ->paginate(15);
+    $enrollments = Enrollment::query()
+        ->join('users', 'users.id', '=', 'enrollments.user_id')
+        ->join('semesters', 'semesters.id', '=', 'enrollments.semester_id')
+        ->select('enrollments.*')
+        ->with(['user', 'semester', 'course'])
+        ->where('semesters.academic_year', $academicYear)
+        ->orderBy('users.lastname')
+        ->orderBy('users.firstname')
+        ->paginate(15)
+        ->withQueryString();
 
     return view('super-admin.enrollment-records-year', compact('enrollments', 'academicYear'));
 }

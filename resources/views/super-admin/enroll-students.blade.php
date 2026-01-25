@@ -45,7 +45,7 @@
 
     /* Modal */
     /* Modal backdrop */
-.modal-backdrop {
+.confirm-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,.55);
@@ -57,7 +57,7 @@
 }
 
 /* Modal container - fits screen */
-.modal-card {
+.confirm-card {
     background: #fff;
     width: 100%;
     max-width: 1100px;      /* wide enough */
@@ -188,7 +188,7 @@
             {{-- TARGET SEMESTER --}}
             <div class="col-12 col-md-2">
                 <label class="form-label mb-1">Target Semester</label>
-                <select name="semester_id" class="form-select form-select-sm" required>
+                <select name="semester_id" id="target-semester" class="form-select form-select-sm" required>
                     <option value="">Select target</option>
                     @foreach($semesters as $s)
                         <option value="{{ $s->id }}" {{ (string)request('semester_id') === (string)$s->id ? 'selected' : '' }}>
@@ -211,6 +211,21 @@
             4th year students will be marked as <strong>Graduated</strong>.
         </div>
     </div>
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <div class="small">
+                <span class="pill">
+                    Selected: <strong id="selected-count">0</strong>
+                </span>
+                <span class="text-muted small ms-2" id="selected-hint" style="display:none;">
+                    (Selections are kept even if you change page)
+                </span>
+            </div>
+
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="clear-selected">
+                Clear Selected
+            </button>
+        </div>
 </form>
 
     {{-- TABLE (NO SCROLL, 20 ROWS PER PAGE) --}}
@@ -292,9 +307,8 @@
 </div>
 
 {{-- MODAL --}}
-{{-- MODAL --}}
-<div id="confirmation-modal" class="modal-backdrop">
-    <div class="modal-card">
+<div id="confirmation-modal" class="confirm-backdrop">
+    <div class="confirm-card">
         <div class="modal-header">
             <div>
                 <strong>Confirm Update</strong>
@@ -370,11 +384,88 @@
 
 
 <script>
+    // ====== Persistent multi-page selection (localStorage) ======
+    const STORAGE_KEY = 'enroll_selected_users_v1';
+
+    function getStoredSelected() {
+        try {
+            return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+        } catch (e) {
+            return new Set();
+        }
+    }
+
+    function saveStoredSelected(set) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(set)));
+    }
+
+    function updateSelectedCount() {
+        const set = getStoredSelected();
+        const countEl = document.getElementById('selected-count');
+        if (countEl) countEl.textContent = set.size;
+
+        const hint = document.getElementById('selected-hint');
+        if (hint) hint.style.display = set.size > 0 ? 'inline' : 'none';
+    }
+
+    // Restore checkbox states on page load
+    function restoreCheckboxes() {
+        const set = getStoredSelected();
+        document.querySelectorAll('.user-checkbox').forEach(cb => {
+            cb.checked = set.has(String(cb.value));
+        });
+
+        // Select-all should reflect visible state
+        const allVisible = document.querySelectorAll('.user-checkbox').length;
+        const checkedVisible = document.querySelectorAll('.user-checkbox:checked').length;
+        const selectAll = document.getElementById('select-all');
+        if (selectAll) selectAll.checked = allVisible > 0 && allVisible === checkedVisible;
+
+        updateSelectedCount();
+    }
+
+    // When a single checkbox changes, store it
+    function bindCheckboxEvents() {
+        document.querySelectorAll('.user-checkbox').forEach(cb => {
+            cb.addEventListener('change', function () {
+                const set = getStoredSelected();
+                if (this.checked) set.add(String(this.value));
+                else set.delete(String(this.value));
+                saveStoredSelected(set);
+
+                // Update select-all for visible page
+                const allVisible = document.querySelectorAll('.user-checkbox').length;
+                const checkedVisible = document.querySelectorAll('.user-checkbox:checked').length;
+                const selectAll = document.getElementById('select-all');
+                if (selectAll) selectAll.checked = allVisible > 0 && allVisible === checkedVisible;
+
+                updateSelectedCount();
+            });
+        });
+    }
+
+    // Select-all affects only visible rows, but should also update storage
     const selectAll = document.getElementById('select-all');
     selectAll?.addEventListener('change', function () {
-        document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = this.checked);
+        const set = getStoredSelected();
+        document.querySelectorAll('.user-checkbox').forEach(cb => {
+            cb.checked = this.checked;
+            if (this.checked) set.add(String(cb.value));
+            else set.delete(String(cb.value));
+        });
+        saveStoredSelected(set);
+        updateSelectedCount();
     });
 
+    // Clear selected
+    document.getElementById('clear-selected')?.addEventListener('click', function () {
+        localStorage.removeItem(STORAGE_KEY);
+        document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+        if (selectAll) selectAll.checked = false;
+        updateSelectedCount();
+    });
+
+    // ====== Your modal logic (updated to use stored selection) ======
     const modal = document.getElementById('confirmation-modal');
     const proceedBtn = document.getElementById('proceed-btn');
     const confirmBtn = document.getElementById('confirm-btn');
@@ -384,25 +475,24 @@
 
     document.getElementById('cancel-btn')?.addEventListener('click', closeModal);
     document.getElementById('cancel-x')?.addEventListener('click', closeModal);
-
-    // close modal on backdrop click (optional)
-    modal?.addEventListener('click', function(e){
-        if(e.target === modal) closeModal();
-    });
+    modal?.addEventListener('click', function(e){ if(e.target === modal) closeModal(); });
 
     proceedBtn?.addEventListener('click', function () {
-        const targetSemesterId = "{{ request('semester_id') }}";
+        const targetSemesterId = document.getElementById('target-semester')?.value;
 
         if (!targetSemesterId) {
             alert('Please select a Target Semester first.');
             return;
         }
 
-        const selected = document.querySelectorAll('.user-checkbox:checked');
-        if (selected.length === 0) {
-            alert('Please select at least one student.');
+        const stored = getStoredSelected();
+        if (stored.size === 0) {
+            alert('Please select at least one student (you can select across pages).');
             return;
         }
+
+        // Set hidden semester_id before submit
+        document.querySelector('#confirm-form input[name="semester_id"]').value = targetSemesterId;
 
         const previewBody = document.getElementById('selected-preview-body');
         const hiddenWrap = document.getElementById('selected-hidden-inputs');
@@ -410,36 +500,65 @@
         previewBody.innerHTML = '';
         hiddenWrap.innerHTML = '';
 
-        selected.forEach(cb => {
+        // Build preview using what’s available on this page (for names),
+        // and still submit ALL selected IDs across pages.
+        const currentPageMap = new Map();
+        document.querySelectorAll('.user-checkbox').forEach(cb => {
             const row = cb.closest('tr');
-            const studentId = row.children[1].textContent.trim();
-            const name = row.children[2].textContent.trim();
-            const college = row.children[4].textContent.trim();
-            const course = row.children[5].textContent.trim();
-            const yearLevel = row.children[6].textContent.trim();
+            if (!row) return;
+            const studentIdText = row.children[1]?.textContent?.trim() || '';
+            const name = row.children[2]?.textContent?.trim() || '';
+            const college = row.children[4]?.textContent?.trim() || '';
+            const course = row.children[5]?.textContent?.trim() || '';
+            const yearLevel = row.children[6]?.textContent?.trim() || '';
 
-            previewBody.innerHTML += `
-                <tr>
-                    <td>${studentId}</td>
-                    <td>${name}</td>
-                    <td>${college}</td>
-                    <td>${course}</td>
-                    <td>${yearLevel}</td>
-                </tr>
-            `;
+            currentPageMap.set(String(cb.value), { studentIdText, name, college, course, yearLevel });
+        });
 
+        // Show preview for current page selected only (optional),
+        // but submit ALL IDs stored.
+        stored.forEach(id => {
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'selected_users[]';
-            input.value = cb.value;
+            input.value = id;
             hiddenWrap.appendChild(input);
+
+            // Preview only if row data is available on this page
+            const info = currentPageMap.get(id);
+            if (info) {
+                previewBody.innerHTML += `
+                    <tr>
+                        <td>${info.studentIdText}</td>
+                        <td>${info.name}</td>
+                        <td>${info.college}</td>
+                        <td>${info.course}</td>
+                        <td>${info.yearLevel}</td>
+                    </tr>
+                `;
+            }
         });
 
-        // enable confirm
-        if (confirmBtn) confirmBtn.disabled = false;
+        // If none of selected are in this page, still show a note
+        if (previewBody.innerHTML.trim() === '') {
+            previewBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-muted small text-center py-3">
+                        You selected <strong>${stored.size}</strong> student(s).
+                        Preview shows only the students visible on the current page.
+                    </td>
+                </tr>
+            `;
+        }
 
+        if (confirmBtn) confirmBtn.disabled = false;
         openModal();
     });
+
+    // Restore selection when page loads
+    restoreCheckboxes();
+    bindCheckboxEvents();
+    updateSelectedCount();
 </script>
 
 @endsection

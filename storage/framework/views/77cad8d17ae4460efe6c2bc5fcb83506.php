@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 
 <style>
     :root{
@@ -36,28 +36,30 @@
     .table td{ vertical-align:middle; font-size:.9rem; }
 </style>
 
-{{-- Flash --}}
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show">
-        {{ session('success') }}
-        <button class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-@if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show">
-        {{ session('error') }}
-        <button class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
 
-{{-- Header --}}
+<?php if(session('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show">
+        <?php echo e(session('success')); ?>
+
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+<?php if(session('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <?php echo e(session('error')); ?>
+
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+
+
 <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
     <div>
         <h2 class="page-title-bisu">Manage Stipend Release Schedules</h2>
         <div class="subtext">Create and manage release schedules for TDP/TES batches.</div>
     </div>
 
-    <a href="{{ route('coordinator.stipend-releases.create') }}" class="btn btn-bisu btn-sm">
+    <a href="<?php echo e(route('coordinator.stipend-releases.create')); ?>" class="btn btn-bisu btn-sm">
         + Add Release Schedule
     </a>
 </div>
@@ -81,8 +83,8 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($releases as $release)
-                    @php
+                <?php $__empty_1 = true; $__currentLoopData = $releases; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $release): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <?php
                         $batch = $release->scholarshipBatch;
                         $schName = $batch?->scholarship?->scholarship_name ?? 'N/A';
                         $batchLabel = $batch
@@ -105,35 +107,38 @@
                             'received' => 'bg-secondary-subtle text-secondary',
                             default => 'bg-light text-dark'
                         };
-                    @endphp
+                    ?>
 
                     <tr>
-                        <td>{{ $schName }}</td>
-                        <td>{{ $batchLabel }}</td>
-                        <td class="fw-semibold">{{ $release->title }}</td>
-                        <td class="text-end">₱ {{ number_format((float)$release->amount, 2) }}</td>
-                        <td><span class="badge {{ $badge }}">{{ $statusLabel }}</span></td>
+                        <td><?php echo e($schName); ?></td>
+                        <td><?php echo e($batchLabel); ?></td>
+                        <td class="fw-semibold"><?php echo e($release->title); ?></td>
+                        <td class="text-end">₱ <?php echo e(number_format((float)$release->amount, 2)); ?></td>
+                        <td><span class="badge <?php echo e($badge); ?>"><?php echo e($statusLabel); ?></span></td>
                         <td class="text-end">
-                            <a href="{{ route('coordinator.stipend-releases.edit', $release->id) }}" class="btn btn-sm btn-outline-primary">
+                            <a href="<?php echo e(route('coordinator.stipend-releases.edit', $release->id)); ?>" class="btn btn-sm btn-outline-primary">
                                 Edit
                             </a>
-                            <a href="{{ route('coordinator.stipend-releases.confirm-delete', $release->id) }}" class="btn btn-sm btn-outline-danger">
+                            <a href="<?php echo e(route('coordinator.stipend-releases.confirm-delete', $release->id)); ?>" class="btn btn-sm btn-outline-danger">
                                 Delete
                             </a>
                         </td>
                     </tr>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="6" class="text-center text-muted py-4">No release schedules found.</td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
 
     <div class="card-body">
-        {{ $releases->links() }}
+        <?php echo e($releases->links()); ?>
+
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/manage-stipend-releases.blade.php ENDPATH**/ ?>

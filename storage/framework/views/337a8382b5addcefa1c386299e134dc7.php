@@ -155,9 +155,12 @@
      $coordScholarsGroupActive =
         request()->routeIs('coordinator.manage-scholars')
         || request()->routeIs('coordinator.scholars.*')
-        || request()->routeIs('coordinator.enrolled-users')
+        || request()->routeIs('coordinator.enrollment-records')
         || request()->routeIs('coordinator.manage-scholarships')
-        || request()->routeIs('coordinator.scholarships.*');
+        || request()->routeIs('coordinator.scholarships.*')
+        || request()->routeIs('coordinator.scholarship-batches')
+        || request()->routeIs('coordinator.scholarship-batches.*');
+
 
     $coordStipendsGroupActive =
         request()->routeIs('coordinator.manage-stipends')
@@ -411,6 +414,12 @@
                                     class="dropdown-square <?php echo e((request()->routeIs('coordinator.manage-scholarships') || request()->routeIs('coordinator.scholarships.*')) ? 'dropdown-square-active' : ''); ?>">
                                         Scholarships
                                     </a>
+
+                                    <a href="<?php echo e(route('coordinator.scholarship-batches')); ?>"
+                                    class="dropdown-square <?php echo e((request()->routeIs('coordinator.scholarship-batches') || request()->routeIs('coordinator.scholarship-batches.*')) ? 'dropdown-square-active' : ''); ?>">
+                                        Scholarship Batches
+                                    </a>
+
                                 </div>
                             </div>
 

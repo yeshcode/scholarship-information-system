@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 
 <style>
 :root{
@@ -33,19 +33,21 @@
 .filter-label{ font-weight:700; color:#475569; margin-bottom:.35rem; font-size:.85rem; }
 </style>
 
-@if(session('success'))
+<?php if(session('success')): ?>
 <div class="alert alert-success alert-dismissible fade show">
-    {{ session('success') }}
-    <button class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
+    <?php echo e(session('success')); ?>
 
-@if(session('error'))
-<div class="alert alert-danger alert-dismissible fade show">
-    {{ session('error') }}
     <button class="btn-close" data-bs-dismiss="alert"></button>
 </div>
-@endif
+<?php endif; ?>
+
+<?php if(session('error')): ?>
+<div class="alert alert-danger alert-dismissible fade show">
+    <?php echo e(session('error')); ?>
+
+    <button class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<?php endif; ?>
 
 <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
     <div>
@@ -54,14 +56,14 @@
             Filter Scholarship → Batch → Release. Bulk-assign stipend schedules to eligible scholars.
         </div>
 
-        @if(!empty($currentSemester))
+        <?php if(!empty($currentSemester)): ?>
             <div class="mt-1">
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
                     Current Semester:
-                    <strong>{{ $currentSemester->term ?? $currentSemester->semester_name }} {{ $currentSemester->academic_year }}</strong>
+                    <strong><?php echo e($currentSemester->term ?? $currentSemester->semester_name); ?> <?php echo e($currentSemester->academic_year); ?></strong>
                 </span>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 
     <div class="d-flex gap-2">
@@ -71,7 +73,7 @@
     </div>
 </div>
 
-{{-- FILTERS --}}
+
 <div class="card card-bisu shadow-sm mb-3">
     <div class="card-header d-flex align-items-center justify-content-between">
         <div class="fw-bold text-secondary">Filters</div>
@@ -79,18 +81,19 @@
     </div>
 
     <div class="card-body">
-        <form id="filterForm" method="GET" action="{{ route('coordinator.manage-stipends') }}">
+        <form id="filterForm" method="GET" action="<?php echo e(route('coordinator.manage-stipends')); ?>">
             <div class="row g-3">
 
                 <div class="col-12 col-md-3">
                     <label class="filter-label">Scholarship</label>
                     <select name="scholarship_id" id="scholarship_id" class="form-select form-select-sm">
                         <option value="">Select scholarship…</option>
-                        @foreach($scholarships as $s)
-                            <option value="{{ $s->id }}" {{ (string)request('scholarship_id')===(string)$s->id?'selected':'' }}>
-                                {{ $s->scholarship_name }}
+                        <?php $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($s->id); ?>" <?php echo e((string)request('scholarship_id')===(string)$s->id?'selected':''); ?>>
+                                <?php echo e($s->scholarship_name); ?>
+
                             </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
 
@@ -98,12 +101,13 @@
                     <label class="filter-label">Batch</label>
                     <select name="batch_id" id="batch_id" class="form-select form-select-sm">
                         <option value="">Select batch…</option>
-                        @foreach($batches as $b)
-                            <option value="{{ $b->id }}" {{ (string)request('batch_id')===(string)$b->id?'selected':'' }}>
-                                Batch {{ $b->batch_number }}
-                                ({{ $b->semester->term ?? '' }} {{ $b->semester->academic_year ?? '' }})
+                        <?php $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($b->id); ?>" <?php echo e((string)request('batch_id')===(string)$b->id?'selected':''); ?>>
+                                Batch <?php echo e($b->batch_number); ?>
+
+                                (<?php echo e($b->semester->term ?? ''); ?> <?php echo e($b->semester->academic_year ?? ''); ?>)
                             </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
 
@@ -111,19 +115,20 @@
                     <label class="filter-label">Release Schedule</label>
                     <select name="stipend_release_id" id="stipend_release_id" class="form-select form-select-sm">
                         <option value="">All releases</option>
-                        @foreach($releases as $r)
-                            <option value="{{ $r->id }}" {{ (string)request('stipend_release_id')===(string)$r->id?'selected':'' }}>
-                                {{ $r->title }}
-                                ({{ strtoupper(str_replace('_',' ', $r->status ?? '')) }})
+                        <?php $__currentLoopData = $releases; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($r->id); ?>" <?php echo e((string)request('stipend_release_id')===(string)$r->id?'selected':''); ?>>
+                                <?php echo e($r->title); ?>
+
+                                (<?php echo e(strtoupper(str_replace('_',' ', $r->status ?? ''))); ?>)
                             </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
 
                 <div class="col-12 col-md-3">
                     <label class="filter-label">Search scholar</label>
                     <input type="text" name="q" id="q" class="form-control form-control-sm"
-                           value="{{ request('q') }}" placeholder="Lastname / Firstname / Student ID">
+                           value="<?php echo e(request('q')); ?>" placeholder="Lastname / Firstname / Student ID">
                 </div>
 
             </div>
@@ -131,7 +136,7 @@
     </div>
 </div>
 
-{{-- TABLE --}}
+
 <div class="card card-bisu shadow-sm">
     <div class="card-header d-flex align-items-center justify-content-between">
         <div class="fw-bold text-secondary">Stipend Records</div>
@@ -156,57 +161,60 @@
             </thead>
 
             <tbody>
-                @forelse($stipends as $stipend)
-                    @php
+                <?php $__empty_1 = true; $__currentLoopData = $stipends; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $stipend): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <?php
                         $rel = $stipend->stipendRelease;
                         $relStatusLabel = strtoupper(str_replace('_',' ', $rel->status ?? ''));
-                    @endphp
+                    ?>
                     <tr>
-                        <td>{{ $stipend->scholar->user->firstname ?? 'N/A' }} {{ $stipend->scholar->user->lastname ?? '' }}</td>
-                        <td>{{ $stipend->scholar->scholarship->scholarship_name ?? 'N/A' }}</td>
-                        <td>Batch {{ $stipend->scholar->scholarshipBatch->batch_number ?? 'N/A' }}</td>
-                        <td>{{ $rel->title ?? 'N/A' }}</td>
-                        <td><span class="badge bg-info-subtle text-info">{{ $relStatusLabel ?: 'N/A' }}</span></td>
+                        <td><?php echo e($stipend->scholar->user->firstname ?? 'N/A'); ?> <?php echo e($stipend->scholar->user->lastname ?? ''); ?></td>
+                        <td><?php echo e($stipend->scholar->scholarship->scholarship_name ?? 'N/A'); ?></td>
+                        <td>Batch <?php echo e($stipend->scholar->scholarshipBatch->batch_number ?? 'N/A'); ?></td>
+                        <td><?php echo e($rel->title ?? 'N/A'); ?></td>
+                        <td><span class="badge bg-info-subtle text-info"><?php echo e($relStatusLabel ?: 'N/A'); ?></span></td>
 
                         <td>
-                            @if($stipend->release_at)
-                                {{ \Carbon\Carbon::parse($stipend->release_at)->format('M d, Y h:i A') }}
-                            @else
+                            <?php if($stipend->release_at): ?>
+                                <?php echo e(\Carbon\Carbon::parse($stipend->release_at)->format('M d, Y h:i A')); ?>
+
+                            <?php else: ?>
                                 —
-                            @endif
+                            <?php endif; ?>
                         </td>
 
                         <td>
-                            @if($stipend->received_at)
-                                {{ \Carbon\Carbon::parse($stipend->received_at)->format('M d, Y h:i A') }}
-                            @else
+                            <?php if($stipend->received_at): ?>
+                                <?php echo e(\Carbon\Carbon::parse($stipend->received_at)->format('M d, Y h:i A')); ?>
+
+                            <?php else: ?>
                                 —
-                            @endif
+                            <?php endif; ?>
                         </td>
 
-                        <td>{{ $stipend->amount_received }}</td>
-                        <td>{{ strtoupper(str_replace('_',' ', $stipend->status)) }}</td>
+                        <td><?php echo e($stipend->amount_received); ?></td>
+                        <td><?php echo e(strtoupper(str_replace('_',' ', $stipend->status))); ?></td>
 
                         <td class="text-end">
-                            <a href="{{ route('coordinator.stipends.edit', $stipend->id) }}" class="text-primary me-2">Edit</a>
-                            <a href="{{ route('coordinator.stipends.confirm-delete', $stipend->id) }}" class="text-danger">Delete</a>
+                            <a href="<?php echo e(route('coordinator.stipends.edit', $stipend->id)); ?>" class="text-primary me-2">Edit</a>
+                            <a href="<?php echo e(route('coordinator.stipends.confirm-delete', $stipend->id)); ?>" class="text-danger">Delete</a>
                         </td>
                     </tr>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="10" class="text-center text-muted py-4">No stipend records found.</td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
 
     <div class="card-body">
-        {{ $stipends->links() }}
+        <?php echo e($stipends->links()); ?>
+
     </div>
 </div>
 
-{{-- BULK ASSIGN MODAL --}}
+
 <div class="modal fade" id="bulkStipendModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
@@ -219,8 +227,8 @@
                 <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            <form method="POST" action="{{ route('coordinator.stipends.bulk-assign') }}">
-                @csrf
+            <form method="POST" action="<?php echo e(route('coordinator.stipends.bulk-assign')); ?>">
+                <?php echo csrf_field(); ?>
 
                 <div class="modal-body">
 
@@ -230,9 +238,9 @@
                             <label class="filter-label">Scholarship</label>
                             <select name="scholarship_id" class="form-select form-select-sm" required>
                                 <option value="">Select scholarship…</option>
-                                @foreach($scholarships as $s)
-                                    <option value="{{ $s->id }}">{{ $s->scholarship_name }}</option>
-                                @endforeach
+                                <?php $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($s->id); ?>"><?php echo e($s->scholarship_name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
 
@@ -240,11 +248,11 @@
                             <label class="filter-label">Batch</label>
                             <select name="batch_id" class="form-select form-select-sm" required>
                                 <option value="">Select batch…</option>
-                                @foreach($batches as $b)
-                                    <option value="{{ $b->id }}">
-                                        Batch {{ $b->batch_number }} ({{ $b->semester->term ?? '' }} {{ $b->semester->academic_year ?? '' }})
+                                <?php $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($b->id); ?>">
+                                        Batch <?php echo e($b->batch_number); ?> (<?php echo e($b->semester->term ?? ''); ?> <?php echo e($b->semester->academic_year ?? ''); ?>)
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
 
@@ -252,11 +260,12 @@
                             <label class="filter-label">Stipend Release Schedule</label>
                             <select name="stipend_release_id" class="form-select form-select-sm" required>
                                 <option value="">Select release…</option>
-                                @foreach($releases as $r)
-                                    <option value="{{ $r->id }}" data-status="{{ $r->status }}">
-                                        {{ $r->title }}
+                                <?php $__currentLoopData = $releases; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($r->id); ?>" data-status="<?php echo e($r->status); ?>">
+                                        <?php echo e($r->title); ?>
+
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                             <div class="form-text" id="releaseNote">Select a release to see its status.</div>
                         </div>
@@ -302,24 +311,24 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($eligibleScholars as $sc)
+                                <?php $__empty_1 = true; $__currentLoopData = $eligibleScholars; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sc): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                     <tr>
                                         <td class="text-center">
-                                            <input type="checkbox" name="scholar_ids[]" value="{{ $sc->id }}">
+                                            <input type="checkbox" name="scholar_ids[]" value="<?php echo e($sc->id); ?>">
                                         </td>
-                                        <td>{{ $sc->user->student_id ?? 'N/A' }}</td>
-                                        <td>{{ $sc->user->lastname ?? 'N/A' }}</td>
-                                        <td>{{ $sc->user->firstname ?? 'N/A' }}</td>
-                                        <td>{{ $sc->scholarship->scholarship_name ?? 'N/A' }}</td>
-                                        <td>Batch {{ $sc->scholarshipBatch->batch_number ?? 'N/A' }}</td>
+                                        <td><?php echo e($sc->user->student_id ?? 'N/A'); ?></td>
+                                        <td><?php echo e($sc->user->lastname ?? 'N/A'); ?></td>
+                                        <td><?php echo e($sc->user->firstname ?? 'N/A'); ?></td>
+                                        <td><?php echo e($sc->scholarship->scholarship_name ?? 'N/A'); ?></td>
+                                        <td>Batch <?php echo e($sc->scholarshipBatch->batch_number ?? 'N/A'); ?></td>
                                     </tr>
-                                @empty
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                     <tr>
                                         <td colspan="6" class="text-center text-muted py-3">
                                             No eligible scholars found. Select filters above first.
                                         </td>
                                     </tr>
-                                @endforelse
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
@@ -373,4 +382,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/manage-stipends.blade.php ENDPATH**/ ?>
