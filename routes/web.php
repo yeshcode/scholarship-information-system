@@ -10,13 +10,17 @@
     use App\Http\Controllers\QuestionController;
     use App\Http\Controllers\QuestionClusterController;
     use App\Http\Controllers\SemesterFilterController;
+    use App\Http\Controllers\LandingPageController;
+
 
 
     // Public routes
-    Route::get('/', function () { return redirect('/login'); });
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+        Route::get('/', [LandingPageController::class, 'index'])->name('landing');
+
+        Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+        Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+        Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+
 
     // Protected routes (authenticated users only)
     Route::middleware(['auth'])->group(function () {
