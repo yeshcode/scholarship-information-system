@@ -28,116 +28,301 @@ class SuperAdminController extends Controller
     use UsesActiveSemester;
 
     private function buildDashboardData(): array
-    {
-        $data = [];
-        $activeSemesterId = $this->activeSemesterId();
+{
+    $data = [];
+    $activeSemesterId = $this->activeSemesterId();
+
+    // =====================
+    // KPI / COUNTS (for Super Admin dashboard)
+    // =====================
+    $data['countUsers'] = User::count();
+    $data['countColleges'] = College::count();
+    $data['countCourses'] = Course::count();
+    $data['countYearLevels'] = YearLevel::count();
+    $data['countSemesters'] = Semester::count();
+
+    // Total enrollments (filtered by active semester if set)
+    $data['countEnrollments'] = Enrollment::query()
+        ->when($activeSemesterId, fn($q) => $q->where('semester_id', $activeSemesterId))
+        ->count();
+
+    // KPIs you already used previously (keep these if you still show them)
+    $data['kpiTotalUsers'] = $data['countUsers'];
+    $data['kpiActiveUsers'] = User::where('status', 'active')->count();
+    $data['kpiInactiveUsers'] = User::where('status', 'inactive')->count();
+
+    $studentType = UserType::where('name', 'Student')->first();
+    $studentTypeId = $studentType?->id;
+
+    $data['kpiTotalStudents'] = User::when($studentTypeId, fn($q) => $q->where('user_type_id', $studentTypeId))->count();
+
+    // enrolled this semester
+    $data['kpiEnrolledThisSemester'] = Enrollment::query()
+        ->when($activeSemesterId, fn($q) => $q->where('semester_id', $activeSemesterId))
+        ->where('status', 'enrolled')
+        ->count();
+
+    // incomplete profiles (simple rule: any missing college/course/year_level)
+    $data['kpiIncompleteStudents'] = User::query()
+        ->when($studentTypeId, fn($q) => $q->where('user_type_id', $studentTypeId))
+        ->where(function($q){
+            $q->whereNull('college_id')
+            ->orWhereNull('course_id')
+            ->orWhereNull('year_level_id');
+        })
+        ->count();
 
 
-        // 1) Students added per year (created_at year, "Student" user type)
-        $studentsByYear = User::whereHas('userType', function ($q) {
-                $q->where('name', 'Student');
-            })
-            ->select(
-                DB::raw("EXTRACT(YEAR FROM created_at) as year"),
-                DB::raw("COUNT(*) as total")
-            )
-            ->groupBy(DB::raw("EXTRACT(YEAR FROM created_at)"))
-            ->orderBy('year')
-            ->get();
+    // =====================
+    // Enrollment Status Overview
+    // =====================
+    $enrollmentBase = Enrollment::query()
+        ->when($activeSemesterId, fn($q) => $q->where('semester_id', $activeSemesterId));
 
-        $data['studentYearLabels'] = $studentsByYear->pluck('year');   // e.g. [2019, 2020, 2021]
-        $data['studentYearCounts'] = $studentsByYear->pluck('total');  // counts per year
+    $data['statEnrolled'] = (clone $enrollmentBase)->where('status', 'enrolled')->count();
+    $data['statDropped'] = (clone $enrollmentBase)->where('status', 'dropped')->count();
+    $data['statGraduated'] = (clone $enrollmentBase)->where('status', 'graduated')->count();
 
-        // 2) Enrollments per course (for pie chart)
-        $enrollmentByCourse = Enrollment::query()
-            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
-                $q->where('semester_id', $activeSemesterId);
-            })
-            ->select('course_id', DB::raw('COUNT(*) as total'))
-            ->with('course')
-            ->groupBy('course_id')
-            ->get();
-
-
-        $data['coursePieLabels'] = $enrollmentByCourse->map(function ($row) {
-            return $row->course ? $row->course->course_name : 'Unknown Course';
-        });
-
-        $data['coursePieCounts'] = $enrollmentByCourse->pluck('total');
-
-        // 3) Enrollments per course per semester (for stacked bar)
-        $enrollmentBySemesterCourse = Enrollment::query()
-            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
-                $q->where('semester_id', $activeSemesterId);
-            })
-            ->select(
-                'semester_id',
-                'course_id',
-                DB::raw('COUNT(*) as total')
-            )
-            ->with(['semester', 'course'])
-            ->groupBy('semester_id', 'course_id')
-            ->get();
-
-        // Build maps: semester_id -> label, course_id -> name
-        $semesterMap = [];
-        $courseMap = [];
-
-        foreach ($enrollmentBySemesterCourse as $row) {
-            if (!isset($semesterMap[$row->semester_id])) {
-                if ($row->semester) {
-                    $semesterMap[$row->semester_id] = $row->semester->term . ' ' . $row->semester->academic_year;
-                } else {
-                    $semesterMap[$row->semester_id] = 'Unknown Semester';
-                }
-            }
-
-            if (!isset($courseMap[$row->course_id])) {
-                $courseMap[$row->course_id] = $row->course ? $row->course->course_name : 'Unknown Course';
-            }
-        }
-
-        // Sort semesters and courses by label for stable order
-        $semesterIds = array_keys($semesterMap);
-        $courseIds   = array_keys($courseMap);
-
-        usort($semesterIds, function ($a, $b) use ($semesterMap) {
-            return strcmp($semesterMap[$a], $semesterMap[$b]);
-        });
-
-        usort($courseIds, function ($a, $b) use ($courseMap) {
-            return strcmp($courseMap[$a], $courseMap[$b]);
-        });
-
-        // Build lookup [course_id][semester_id] = total
-        $lookup = [];
-        foreach ($enrollmentBySemesterCourse as $row) {
-            $lookup[$row->course_id][$row->semester_id] = $row->total;
-        }
-
-        // Build matrix: for each course → array of counts per semester
-        $matrix = [];
-        foreach ($courseIds as $courseId) {
-            $rowData = [];
-            foreach ($semesterIds as $semesterId) {
-                $rowData[] = $lookup[$courseId][$semesterId] ?? 0;
-            }
-            $matrix[] = $rowData;
-        }
-
-        $data['semCourseLabels']      = array_map(fn($id) => $semesterMap[$id], $semesterIds);  // x-axis labels
-        $data['semCourseCourseNames'] = array_map(fn($id) => $courseMap[$id], $courseIds);      // dataset labels
-        $data['semCourseMatrix']      = $matrix;                                                // [courseIndex][semIndex]
-
-        return $data;
+    // Not enrolled: students who have NO enrollment row in active semester
+    if ($activeSemesterId && $studentTypeId) {
+        $data['statNotEnrolled'] = User::where('user_type_id', $studentTypeId)
+            ->whereDoesntHave('enrollments', fn($e) => $e->where('semester_id', $activeSemesterId))
+            ->count();
+    } else {
+        $data['statNotEnrolled'] = 0;
     }
+
+
+    // If no session semester filter, use DB current semester
+    $semester = $activeSemesterId
+        ? Semester::find($activeSemesterId)
+        : Semester::where('is_current', true)->first();
+
+    $semesterIdForDash = $semester?->id;
+
+    $data['activeSemesterName'] = $semester
+        ? ($semester->term . ' ' . $semester->academic_year)
+        : null;
+
+    /**
+     * =========================
+     * KPI CARDS
+     * =========================
+     */
+    $data['kpiTotalUsers'] = User::count();
+
+    // Adjust these status values based on your system
+    $data['kpiActiveUsers'] = User::where('status', 'active')->count();
+    $data['kpiInactiveUsers'] = User::where('status', '!=', 'active')->count();
+
+    $studentType = UserType::where('name', 'Student')->first();
+    $studentTypeId = $studentType?->id;
+
+    $data['kpiTotalStudents'] = $studentTypeId
+        ? User::where('user_type_id', $studentTypeId)->count()
+        : 0;
+
+    $data['kpiEnrolledThisSemester'] = $semesterIdForDash
+        ? Enrollment::where('semester_id', $semesterIdForDash)
+            ->where('status', 'enrolled')
+            ->count()
+        : 0;
+
+    // Incomplete profiles (students missing key academic fields)
+    $data['kpiIncompleteStudents'] = $studentTypeId
+        ? User::where('user_type_id', $studentTypeId)
+            ->where(function ($q) {
+                $q->whereNull('college_id')
+                  ->orWhereNull('course_id')
+                  ->orWhereNull('year_level_id')
+                  ->orWhereNull('student_id')
+                  ->orWhereNull('bisu_email');
+            })
+            ->count()
+        : 0;
+
+    /**
+     * =========================
+     * CHART 1: Enrollments by College (Current Semester)
+     * =========================
+     */
+    $enrollByCollege = Enrollment::query()
+        ->when($semesterIdForDash, fn($q) => $q->where('enrollments.semester_id', $semesterIdForDash))
+        ->join('users', 'users.id', '=', 'enrollments.user_id')
+        ->leftJoin('colleges', 'colleges.id', '=', 'users.college_id')
+        ->select(DB::raw("COALESCE(colleges.college_name, 'Unknown College') as label"), DB::raw('COUNT(*) as total'))
+        ->where('enrollments.status', 'enrolled')
+        ->groupBy('label')
+        ->orderBy('label')
+        ->get();
+
+    $data['enrollCollegeLabels'] = $enrollByCollege->pluck('label');
+    $data['enrollCollegeCounts'] = $enrollByCollege->pluck('total');
+
+    /**
+     * =========================
+     * CHART 2: Users by Role (based on user_types)
+     * =========================
+     */
+    $usersByType = User::query()
+        ->join('user_types', 'user_types.id', '=', 'users.user_type_id')
+        ->select('user_types.name as label', DB::raw('COUNT(*) as total'))
+        ->groupBy('user_types.name')
+        ->orderBy('user_types.name')
+        ->get();
+
+    $data['roleLabels'] = $usersByType->pluck('label');
+    $data['roleCounts'] = $usersByType->pluck('total');
+
+    /**
+     * =========================
+     * ALERTS (Data Quality)
+     * =========================
+     */
+    $data['alertMissingCourse'] = $studentTypeId
+        ? User::where('user_type_id', $studentTypeId)->whereNull('course_id')->count()
+        : 0;
+
+    $data['alertMissingYearLevel'] = $studentTypeId
+        ? User::where('user_type_id', $studentTypeId)->whereNull('year_level_id')->count()
+        : 0;
+
+    $data['alertMissingCollege'] = $studentTypeId
+        ? User::where('user_type_id', $studentTypeId)->whereNull('college_id')->count()
+        : 0;
+
+    $data['alertMissingEmail'] = User::whereNull('bisu_email')->orWhere('bisu_email', '')->count();
+
+    /**
+     * =========================
+     * RECENT ACTIVITY (last 10)
+     * =========================
+     */
+    $recentUsers = User::orderByDesc('created_at')
+        ->limit(5)
+        ->get(['id', 'firstname', 'lastname', 'created_at']);
+
+    $recentEnrollments = Enrollment::query()
+        ->with(['user:id,firstname,lastname', 'semester:id,term,academic_year'])
+        ->orderByDesc('created_at')
+        ->limit(5)
+        ->get();
+
+    $activity = [];
+
+    foreach ($recentUsers as $u) {
+        $activity[] = [
+            'type' => 'User',
+            'detail' => trim(($u->lastname ?? '') . ', ' . ($u->firstname ?? '')),
+            'date' => optional($u->created_at)->format('M d, Y h:i A'),
+        ];
+    }
+
+    foreach ($recentEnrollments as $e) {
+        $semLabel = $e->semester ? ($e->semester->term . ' ' . $e->semester->academic_year) : 'Semester';
+        $student = $e->user ? trim(($e->user->lastname ?? '') . ', ' . ($e->user->firstname ?? '')) : 'Student';
+        $activity[] = [
+            'type' => 'Enrollment',
+            'detail' => "{$student} • {$semLabel}",
+            'date' => optional($e->created_at)->format('M d, Y h:i A'),
+        ];
+    }
+
+    // sort by date string not perfect; if you want exact sort, I’ll convert to timestamps.
+    $data['recentActivity'] = array_slice($activity, 0, 10);
+
+    /**
+     * =========================
+     * KEEP YOUR EXISTING CHARTS (optional)
+     * =========================
+     * If you still want your previous charts (Students per Year, Pie by Course, etc.)
+     * keep them here so your current blade won't break.
+     */
+
+    // Students added per year
+    $studentsByYear = User::whereHas('userType', function ($q) {
+            $q->where('name', 'Student');
+        })
+        ->select(
+            DB::raw("EXTRACT(YEAR FROM created_at) as year"),
+            DB::raw("COUNT(*) as total")
+        )
+        ->groupBy(DB::raw("EXTRACT(YEAR FROM created_at)"))
+        ->orderBy('year')
+        ->get();
+
+    $data['studentYearLabels'] = $studentsByYear->pluck('year');
+    $data['studentYearCounts'] = $studentsByYear->pluck('total');
+
+    // Enrollments per course (pie)
+    $enrollmentByCourse = Enrollment::query()
+        ->when($semesterIdForDash, fn($q) => $q->where('semester_id', $semesterIdForDash))
+        ->select('course_id', DB::raw('COUNT(*) as total'))
+        ->with('course')
+        ->groupBy('course_id')
+        ->get();
+
+    $data['coursePieLabels'] = $enrollmentByCourse->map(fn($row) =>
+        $row->course ? $row->course->course_name : 'Unknown Course'
+    );
+    $data['coursePieCounts'] = $enrollmentByCourse->pluck('total');
+
+    // Enrollments per course per semester (stacked bar)
+    $enrollmentBySemesterCourse = Enrollment::query()
+        ->select('semester_id', 'course_id', DB::raw('COUNT(*) as total'))
+        ->with(['semester', 'course'])
+        ->groupBy('semester_id', 'course_id')
+        ->get();
+
+    $semesterMap = [];
+    $courseMap = [];
+
+    foreach ($enrollmentBySemesterCourse as $row) {
+        if (!isset($semesterMap[$row->semester_id])) {
+            $semesterMap[$row->semester_id] = $row->semester
+                ? ($row->semester->term . ' ' . $row->semester->academic_year)
+                : 'Unknown Semester';
+        }
+        if (!isset($courseMap[$row->course_id])) {
+            $courseMap[$row->course_id] = $row->course
+                ? $row->course->course_name
+                : 'Unknown Course';
+        }
+    }
+
+    $semesterIds = array_keys($semesterMap);
+    $courseIds = array_keys($courseMap);
+
+    usort($semesterIds, fn($a, $b) => strcmp($semesterMap[$a], $semesterMap[$b]));
+    usort($courseIds, fn($a, $b) => strcmp($courseMap[$a], $courseMap[$b]));
+
+    $lookup = [];
+    foreach ($enrollmentBySemesterCourse as $row) {
+        $lookup[$row->course_id][$row->semester_id] = $row->total;
+    }
+
+    $matrix = [];
+    foreach ($courseIds as $courseId) {
+        $rowData = [];
+        foreach ($semesterIds as $semesterId) {
+            $rowData[] = $lookup[$courseId][$semesterId] ?? 0;
+        }
+        $matrix[] = $rowData;
+    }
+
+    $data['semCourseLabels'] = array_map(fn($id) => $semesterMap[$id], $semesterIds);
+    $data['semCourseCourseNames'] = array_map(fn($id) => $courseMap[$id], $courseIds);
+    $data['semCourseMatrix'] = $matrix;
+
+    return $data;
+}
+
 
 public function dashboardData()
 {
-    // You can add auth/permission checks if needed, but route is already in Super Admin group
-    $data = $this->buildDashboardData();
-    return response()->json($data);
+    return response()->json($this->buildDashboardData());
 }
+
 
 
     public function dashboard()
