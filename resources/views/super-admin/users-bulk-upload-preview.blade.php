@@ -1,56 +1,122 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+  /* Only for College + Course cells */
+  .wrap-cell{
+    white-space: normal !important;      /* allow wrapping */
+    word-break: break-word;              /* break long words */
+    overflow-wrap: anywhere;             /* prevent overlay */
+    line-height: 1.2;
+  }
+</style>
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-start mb-3">
-        <div>
-            <h3 class="mb-1">Bulk Upload Preview</h3>
-            <div class="text-muted small">
-                Total rows: <b>{{ $totalCount }}</b> |
-                Rows with issues: <b>{{ $issuesCount }}</b>
+
+    {{-- ✅ Enhanced Header (Bootstrap theme friendly) --}}
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body d-flex flex-wrap align-items-start justify-content-between gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="mb-0 fw-bold text-primary" style="letter-spacing:.3px;">Bulk Upload Preview</h5>
+                    <span class="badge bg-light text-dark border">
+                        Preview
+                    </span>
+                </div>
+
+                <div class="small" style="color:#6c757d;">
+                    Review the list before confirming. Rows with issues cannot be uploaded.
+                </div>
+
+                <div class="mt-2 d-flex flex-wrap gap-2">
+                    <span class="badge bg-primary-subtle text-primary border">
+                        Total: <span class="fw-semibold">{{ $totalCount }}</span>
+                    </span>
+                    <span class="badge {{ ($issuesCount ?? 0) > 0 ? 'bg-warning-subtle text-warning border' : 'bg-success-subtle text-success border' }}">
+                        Issues: <span class="fw-semibold">{{ $issuesCount }}</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 ms-auto">
+                <a href="{{ route('admin.users.bulk-upload-form') }}" class="btn btn-outline-primary btn-sm">
+                    Upload another file
+                </a>
+                <a href="{{ route('admin.users.bulk-upload-form') }}" class="btn btn-outline-primary btn-sm">
+                    Cancel
+                </a>
             </div>
         </div>
-        <a href="{{ route('admin.users.bulk-upload-form') }}" class="btn btn-outline-secondary btn-sm">
-            Upload another file
-        </a>
     </div>
 
     @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
+        <div class="alert alert-danger py-2 mb-3">
+            <div class="small">{{ session('error') }}</div>
+        </div>
     @endif
 
-    <div class="card">
+    <div class="card shadow-sm">
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover mb-0 align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Line</th>
-                            <th>Student ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>College</th>
-                            <th>Course</th>
-                            <th>Year Level</th>
-                            <th>Result</th>
+            {{-- ✅ Scroll only inside the card --}}
+            <div class="table-responsive" style="max-height: 520px; overflow:auto;">
+                <table class="table table-striped table-hover table-sm mb-0 align-middle" style="table-layout:fixed;">
+
+                    <thead class="table-light position-sticky top-0" style="z-index:2;">
+                        <tr class="small">
+                            <th class="py-1 text-primary fw-semibold">LINE</th>
+                            <th class="py-1 text-primary fw-semibold">STUDENT ID</th>
+                            <th class="py-1 text-primary fw-semibold">NAME</th>
+                            <th class="py-1 text-primary fw-semibold">BISU EMAIL</th>
+                            <th class="py-1 text-primary fw-semibold">COLLEGE</th>
+                            <th class="py-1 text-primary fw-semibold">COURSE</th>
+                            <th class="py-1 text-primary fw-semibold">YEAR LEVEL</th>
+                            <th class="py-1 text-primary fw-semibold">RESULT</th>
                         </tr>
                     </thead>
-                    <tbody>
+
+                    {{-- ✅ Compressed rows --}}
+                    <tbody class="small text-nowrap">
                         @foreach($preview as $r)
                             <tr class="{{ !empty($r['issues']) ? 'table-warning' : '' }}">
-                                <td>{{ $r['line'] }}</td>
-                                <td>{{ $r['student_id'] }}</td>
-                                <td>{{ $r['lastname'] }}, {{ $r['firstname'] }}</td>
-                                <td>{{ $r['bisu_email'] }}</td>
-                                <td>{{ $r['college'] }}</td>
-                                <td>{{ $r['course'] }}</td>
-                                <td>{{ $r['year_level'] }}</td>
-                                <td>
+
+                                <td class="py-1">
+                                    <div class="text-truncate" title="{{ $r['line'] }}">
+                                        {{ $r['line'] }}
+                                    </div>
+                                </td>
+
+                                <td class="py-1">
+                                    <div class="text-truncate" title="{{ $r['student_id'] }}">
+                                        {{ $r['student_id'] }}
+                                    </div>
+                                </td>
+
+                                <td class="py-1">
+                                    <div class="text-truncate" title="{{ $r['lastname'] }}, {{ $r['firstname'] }}">
+                                        {{ $r['lastname'] }}, {{ $r['firstname'] }}
+                                    </div>
+                                </td>
+
+                                <td class="py-1">
+                                    <div class="text-truncate" title="{{ $r['bisu_email'] }}">
+                                        {{ $r['bisu_email'] }}
+                                    </div>
+                                </td>
+
+                               <td class="py-1 wrap-cell">{{ $r['college'] }}</td>
+
+                                <td class="py-1 wrap-cell">{{ $r['course'] }}</td>
+
+
+                                <td class="py-1">{{ $r['year_level'] }}</td>
+                                <td class="py-1" style="min-width: 240px;">
                                     @if(empty($r['issues']))
                                         <span class="badge bg-success">OK</span>
                                     @else
                                         <span class="badge bg-danger">Has issues</span>
-                                        <div class="small text-muted mt-1">
+                                        <div class="text-muted mt-1 text-truncate"
+                                            style="font-size:.82rem;"
+                                            title="{{ implode('; ', $r['issues']) }}">
+
                                             {{ implode('; ', $r['issues']) }}
                                         </div>
                                     @endif
@@ -58,22 +124,18 @@
                             </tr>
                         @endforeach
                     </tbody>
+
                 </table>
             </div>
         </div>
 
-        <div class="card-footer d-flex justify-content-end gap-2">
-            <a href="{{ route('admin.users.bulk-upload-form') }}" class="btn btn-outline-secondary">
-                Cancel
-            </a>
-
+        <div class="card-footer d-flex justify-content-end gap-2 bg-white">
             @if($issuesCount > 0)
-                <button class="btn btn-success" disabled title="Fix issues first">
+                <button class="btn btn-primary btn-sm" disabled title="Fix issues first">
                     Confirm Upload
                 </button>
             @else
-                <!-- Trigger modal -->
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmModal">
+                <button type="button" class="btn btn-primary btn-sm" id="openConfirmCard">
                     Confirm Upload
                 </button>
             @endif
@@ -81,31 +143,83 @@
     </div>
 </div>
 
+{{-- ✅ Center Confirm Card Overlay (replaces modal) --}}
 @if($issuesCount === 0)
-<!-- Confirm Modal -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Confirm Bulk Upload</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        This will register <b>{{ $totalCount }}</b> students.
-        Their default password will be their <b>student_id</b>.
-        <div class="mt-2 text-muted small">
-            Make sure the list is correct before confirming.
+<div id="confirmOverlay"
+     class="d-none position-fixed top-0 start-0 w-100 h-100"
+     style="background: rgba(0,0,0,.35); z-index: 1055;">
+    <div class="d-flex align-items-center justify-content-center h-100 p-3">
+        <div class="card shadow-lg border-0"
+             style="width: 520px; max-width: 100%; border-radius: 14px;">
+
+            {{-- Header --}}
+            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="mb-1 fw-semibold">Confirm Bulk Upload</h6>
+                    <div class="text-muted small">Please review before confirming</div>
+                </div>
+                <button type="button" class="btn-close" aria-label="Close" id="closeConfirmCard"></button>
+            </div>
+
+            {{-- Body (scroll inside card if needed) --}}
+            <div class="card-body" style="max-height: 50vh; overflow:auto;">
+                <div class="border rounded-3 p-3 bg-light">
+                    <div class="mb-2 small">
+                        This will register <b>{{ $totalCount }}</b> students.
+                    </div>
+                    <div class="mb-2 small">
+                        Default password will be their <b>student_id</b>.
+                    </div>
+                    <div class="text-muted small">
+                        Make sure the list is correct before confirming.
+                    </div>
+                </div>
+
+                <div class="mt-3 text-muted small">
+                    By confirming, you agree that the uploaded data is accurate and ready to be stored.
+                </div>
+            </div>
+
+            {{-- Footer (buttons always visible) --}}
+            <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="backConfirmCard">
+                    Back
+                </button>
+
+                <form method="POST" action="{{ route('admin.users.bulk-upload.confirm') }}">
+                    @csrf
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Yes, Confirm
+                    </button>
+                </form>
+            </div>
+
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button>
-        <form method="POST" action="{{ route('admin.users.bulk-upload.confirm') }}">
-            @csrf
-            <button type="submit" class="btn btn-success">Yes, Confirm</button>
-        </form>
-      </div>
     </div>
-  </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const overlay = document.getElementById('confirmOverlay');
+    const openBtn = document.getElementById('openConfirmCard');
+    const closeBtn = document.getElementById('closeConfirmCard');
+    const backBtn = document.getElementById('backConfirmCard');
+
+    const open = () => overlay?.classList.remove('d-none');
+    const close = () => overlay?.classList.add('d-none');
+
+    openBtn?.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+    backBtn?.addEventListener('click', close);
+
+    overlay?.addEventListener('click', (e) => {
+        if (e.target === overlay) close();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') close();
+    });
+});
+</script>
 @endif
 @endsection
