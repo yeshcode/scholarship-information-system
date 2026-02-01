@@ -8,9 +8,14 @@ use App\Models\Scholarship;
 use App\Models\Stipend;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;  // Add this import
+use App\Http\Controllers\Concerns\UsesActiveSemester;
+
 
 class StudentController extends Controller
 {
+
+use UsesActiveSemester;
+
     public function dashboard()
     {
         $announcements = Announcement::where('audience', 'all_students')
@@ -57,10 +62,22 @@ class StudentController extends Controller
 
 
     public function stipendHistory()
-    {
-        $stipends = Stipend::where('student_id', Auth::id())->with('stipendRelease')->paginate(10);  // Use Auth::id()
-        return view('student.stipend-history', compact('stipends'));
-    }
+{
+    $activeSemesterId = $this->activeSemesterId();
+
+    $stipends = Stipend::query()
+        ->where('student_id', Auth::id())
+        ->with('stipendRelease.scholarshipBatch.semester')
+        ->when($activeSemesterId, function($q) use ($activeSemesterId){
+            $q->whereHas('stipendRelease.scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
+        })
+        ->orderByDesc('id')
+        ->paginate(10)
+        ->withQueryString();
+
+    return view('student.stipend-history', compact('stipends', 'activeSemesterId'));
+}
+
 
     public function notifications()
     {

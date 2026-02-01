@@ -17,106 +17,120 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\StudentsBulkImport;
- 
+use App\Http\Controllers\Concerns\UsesActiveSemester;
+
 
 
  // Add your model imports (e.g., YearLevel, etc.)
 
 class SuperAdminController extends Controller
 {
+    use UsesActiveSemester;
+
     private function buildDashboardData(): array
-{
-    $data = [];
+    {
+        $data = [];
+        $activeSemesterId = $this->activeSemesterId();
 
-    // 1) Students added per year (created_at year, "Student" user type)
-    $studentsByYear = User::whereHas('userType', function ($q) {
-            $q->where('name', 'Student');
-        })
-        ->select(
-            DB::raw("EXTRACT(YEAR FROM created_at) as year"),
-            DB::raw("COUNT(*) as total")
-        )
-        ->groupBy(DB::raw("EXTRACT(YEAR FROM created_at)"))
-        ->orderBy('year')
-        ->get();
 
-    $data['studentYearLabels'] = $studentsByYear->pluck('year');   // e.g. [2019, 2020, 2021]
-    $data['studentYearCounts'] = $studentsByYear->pluck('total');  // counts per year
+        // 1) Students added per year (created_at year, "Student" user type)
+        $studentsByYear = User::whereHas('userType', function ($q) {
+                $q->where('name', 'Student');
+            })
+            ->select(
+                DB::raw("EXTRACT(YEAR FROM created_at) as year"),
+                DB::raw("COUNT(*) as total")
+            )
+            ->groupBy(DB::raw("EXTRACT(YEAR FROM created_at)"))
+            ->orderBy('year')
+            ->get();
 
-    // 2) Enrollments per course (for pie chart)
-    $enrollmentByCourse = Enrollment::select('course_id', DB::raw('COUNT(*) as total'))
-        ->with('course') // assumes Enrollment has course()
-        ->groupBy('course_id')
-        ->get();
+        $data['studentYearLabels'] = $studentsByYear->pluck('year');   // e.g. [2019, 2020, 2021]
+        $data['studentYearCounts'] = $studentsByYear->pluck('total');  // counts per year
 
-    $data['coursePieLabels'] = $enrollmentByCourse->map(function ($row) {
-        return $row->course ? $row->course->course_name : 'Unknown Course';
-    });
+        // 2) Enrollments per course (for pie chart)
+        $enrollmentByCourse = Enrollment::query()
+            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
+                $q->where('semester_id', $activeSemesterId);
+            })
+            ->select('course_id', DB::raw('COUNT(*) as total'))
+            ->with('course')
+            ->groupBy('course_id')
+            ->get();
 
-    $data['coursePieCounts'] = $enrollmentByCourse->pluck('total');
 
-    // 3) Enrollments per course per semester (for stacked bar)
-    $enrollmentBySemesterCourse = Enrollment::select(
-            'semester_id',
-            'course_id',
-            DB::raw('COUNT(*) as total')
-        )
-        ->with(['semester', 'course'])
-        ->groupBy('semester_id', 'course_id')
-        ->get();
+        $data['coursePieLabels'] = $enrollmentByCourse->map(function ($row) {
+            return $row->course ? $row->course->course_name : 'Unknown Course';
+        });
 
-    // Build maps: semester_id -> label, course_id -> name
-    $semesterMap = [];
-    $courseMap = [];
+        $data['coursePieCounts'] = $enrollmentByCourse->pluck('total');
 
-    foreach ($enrollmentBySemesterCourse as $row) {
-        if (!isset($semesterMap[$row->semester_id])) {
-            if ($row->semester) {
-                $semesterMap[$row->semester_id] = $row->semester->term . ' ' . $row->semester->academic_year;
-            } else {
-                $semesterMap[$row->semester_id] = 'Unknown Semester';
+        // 3) Enrollments per course per semester (for stacked bar)
+        $enrollmentBySemesterCourse = Enrollment::query()
+            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
+                $q->where('semester_id', $activeSemesterId);
+            })
+            ->select(
+                'semester_id',
+                'course_id',
+                DB::raw('COUNT(*) as total')
+            )
+            ->with(['semester', 'course'])
+            ->groupBy('semester_id', 'course_id')
+            ->get();
+
+        // Build maps: semester_id -> label, course_id -> name
+        $semesterMap = [];
+        $courseMap = [];
+
+        foreach ($enrollmentBySemesterCourse as $row) {
+            if (!isset($semesterMap[$row->semester_id])) {
+                if ($row->semester) {
+                    $semesterMap[$row->semester_id] = $row->semester->term . ' ' . $row->semester->academic_year;
+                } else {
+                    $semesterMap[$row->semester_id] = 'Unknown Semester';
+                }
+            }
+
+            if (!isset($courseMap[$row->course_id])) {
+                $courseMap[$row->course_id] = $row->course ? $row->course->course_name : 'Unknown Course';
             }
         }
 
-        if (!isset($courseMap[$row->course_id])) {
-            $courseMap[$row->course_id] = $row->course ? $row->course->course_name : 'Unknown Course';
+        // Sort semesters and courses by label for stable order
+        $semesterIds = array_keys($semesterMap);
+        $courseIds   = array_keys($courseMap);
+
+        usort($semesterIds, function ($a, $b) use ($semesterMap) {
+            return strcmp($semesterMap[$a], $semesterMap[$b]);
+        });
+
+        usort($courseIds, function ($a, $b) use ($courseMap) {
+            return strcmp($courseMap[$a], $courseMap[$b]);
+        });
+
+        // Build lookup [course_id][semester_id] = total
+        $lookup = [];
+        foreach ($enrollmentBySemesterCourse as $row) {
+            $lookup[$row->course_id][$row->semester_id] = $row->total;
         }
-    }
 
-    // Sort semesters and courses by label for stable order
-    $semesterIds = array_keys($semesterMap);
-    $courseIds   = array_keys($courseMap);
-
-    usort($semesterIds, function ($a, $b) use ($semesterMap) {
-        return strcmp($semesterMap[$a], $semesterMap[$b]);
-    });
-
-    usort($courseIds, function ($a, $b) use ($courseMap) {
-        return strcmp($courseMap[$a], $courseMap[$b]);
-    });
-
-    // Build lookup [course_id][semester_id] = total
-    $lookup = [];
-    foreach ($enrollmentBySemesterCourse as $row) {
-        $lookup[$row->course_id][$row->semester_id] = $row->total;
-    }
-
-    // Build matrix: for each course → array of counts per semester
-    $matrix = [];
-    foreach ($courseIds as $courseId) {
-        $rowData = [];
-        foreach ($semesterIds as $semesterId) {
-            $rowData[] = $lookup[$courseId][$semesterId] ?? 0;
+        // Build matrix: for each course → array of counts per semester
+        $matrix = [];
+        foreach ($courseIds as $courseId) {
+            $rowData = [];
+            foreach ($semesterIds as $semesterId) {
+                $rowData[] = $lookup[$courseId][$semesterId] ?? 0;
+            }
+            $matrix[] = $rowData;
         }
-        $matrix[] = $rowData;
+
+        $data['semCourseLabels']      = array_map(fn($id) => $semesterMap[$id], $semesterIds);  // x-axis labels
+        $data['semCourseCourseNames'] = array_map(fn($id) => $courseMap[$id], $courseIds);      // dataset labels
+        $data['semCourseMatrix']      = $matrix;                                                // [courseIndex][semIndex]
+
+        return $data;
     }
-
-    $data['semCourseLabels']      = array_map(fn($id) => $semesterMap[$id], $semesterIds);  // x-axis labels
-    $data['semCourseCourseNames'] = array_map(fn($id) => $courseMap[$id], $courseIds);      // dataset labels
-    $data['semCourseMatrix']      = $matrix;                                                // [courseIndex][semIndex]
-
-    return $data;
-}
 
 public function dashboardData()
 {
@@ -822,9 +836,9 @@ public function storeSemester(Request $request)
 
     DB::transaction(function () use ($request) {
 
-        // If new semester is current → disable others
-        if ($request->has('is_current')) {
+        if ($request->filled('is_current')) {
             Semester::query()->update(['is_current' => false]);
+            session()->forget('active_semester_id');
         }
 
         Semester::create([
@@ -832,7 +846,7 @@ public function storeSemester(Request $request)
             'academic_year' => $request->academic_year,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
-            'is_current' => $request->has('is_current'),
+            'is_current' => $request->filled('is_current'),
         ]);
     });
 
@@ -854,12 +868,17 @@ public function updateSemester(Request $request, $id)
 
     DB::transaction(function () use ($request, $id) {
 
-        // If this semester is marked as current
-        if ($request->has('is_current')) {
+        $setAsCurrent = $request->filled('is_current'); // ✅ safer checkbox check
 
-            // 🔴 Turn OFF all other semesters
+        // If this semester is marked as current
+        if ($setAsCurrent) {
+
+            // Turn OFF all other semesters
             Semester::where('id', '!=', $id)
                 ->update(['is_current' => false]);
+
+            // ✅ IMPORTANT: clear global session filter so navbar follows the DB current semester
+            session()->forget('active_semester_id');
         }
 
         // Update this semester
@@ -869,7 +888,7 @@ public function updateSemester(Request $request, $id)
             'academic_year' => $request->academic_year,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
-            'is_current' => $request->has('is_current'),
+            'is_current' => $setAsCurrent,
         ]);
     });
 
@@ -877,6 +896,7 @@ public function updateSemester(Request $request, $id)
         ->route('admin.dashboard', ['page' => 'semesters'])
         ->with('success', 'Semester updated successfully.');
 }
+
 
 
 public function destroySemester($id)

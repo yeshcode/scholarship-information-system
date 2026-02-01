@@ -29,14 +29,11 @@
         Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
 
         // Semester filter (Coordinator + Super Admin)
-        Route::get('/semester/filter', [SemesterFilterController::class, 'show'])
-            ->name('semester.filter.show');
+        Route::get('/semester/filter', [SemesterFilterController::class, 'show'])->name('semester.filter.show');
+        Route::post('/semester/filter', [SemesterFilterController::class, 'set'])->name('semester.filter.set');
+        Route::post('/semester/filter/clear', [SemesterFilterController::class, 'clear'])->name('semester.filter.clear');
 
-        Route::post('/semester/filter', [SemesterFilterController::class, 'set'])
-            ->name('semester.filter.set');
-
-        Route::post('/semester/filter/clear', [SemesterFilterController::class, 'clear'])
-            ->name('semester.filter.clear');
+        Route::get('/semester/filter/search', [SemesterFilterController::class, 'search'])->name('semester.filter.search');
 
 
         Route::middleware('role:Super Admin')->group(function () {
