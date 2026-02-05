@@ -4,8 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+
 class Enrollment extends Model
 {
+    public const STATUS_ENROLLED  = 'enrolled';
+    public const STATUS_GRADUATED = 'graduated';
+    public const STATUS_DROPPED   = 'dropped';
+
+
     protected $fillable = [
         'user_id',       // FK to users table (matches migration and User model)
         'semester_id',   // FK to semesters table
@@ -30,4 +36,18 @@ class Enrollment extends Model
     {
         return $this->belongsTo(Course::class, 'course_id', 'id');
     }
+
+    public function college()
+    {
+        // Enrollment -> Course -> College
+        return $this->hasOneThrough(
+            College::class,
+            Course::class,
+            'id',         // Course primary key
+            'id',         // College primary key
+            'course_id',  // Enrollment.course_id
+            'college_id'  // Course.college_id
+        );
+    }
+
 }

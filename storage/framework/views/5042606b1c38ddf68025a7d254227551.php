@@ -1,54 +1,85 @@
 
 
 <?php $__env->startSection('content'); ?>
-
 <?php
-    $user = auth()->user();
-    $isAdminLike = $user->hasRole('Super Admin') || $user->hasRole('Scholarship Coordinator');
+    // Theme
+    $theme = '#003366';
+    $soft  = '#e3f2fd';
 
-    // Safely get active enrollment for students
-    $activeEnrollment = !$isAdminLike 
-        ? $user->enrollments->where('status', 'active')->first()
-        : null;
+    $fullName = trim(($user->firstname ?? '').' '.($user->lastname ?? ''));
+    $initials = strtoupper(substr($user->firstname ?? 'U', 0, 1) . substr($user->lastname ?? 'S', 0, 1));
 
-    $semesterLabel = $activeEnrollment && $activeEnrollment->semester
-        ? $activeEnrollment->semester->term . ' ' . $activeEnrollment->semester->academic_year
-        : 'N/A';
+    // Safe defaults
+    $collegeName = 'N/A';
+    $courseName  = 'N/A';
+    $yearLevel   = 'N/A';
+    $scholarshipName = '';
+    $batchNumber = '';
 
-    // Scholar info (if any)
-    $scholarRecord = (!$isAdminLike && $user->isScholar())
-        ? $user->scholarsAsStudent->first()
-        : null;
+    if ($isStudent && !$isAdminLike) {
+        // Enrollment is source of truth for Course + Semester (real-time)
+        $courseName  = $activeEnrollment?->course?->course_name ?? 'N/A';
+
+        // College derived from course->college (make sure Course has college() relationship)
+        $collegeName = $activeEnrollment?->course?->college?->college_name ?? 'N/A';
+
+        // Year level from users table (because Enrollment model currently has no year_level_id)
+        $yearLevel   = $user->yearLevel?->year_level_name ?? 'N/A';
+
+        // Scholar info (blank if none)
+        $scholarshipName = $scholarRecord?->scholarship?->name ?? '';
+        $batchNumber     = $scholarRecord?->batch_number ?? '';
+    }
 ?>
 
-<div class="container py-4 d-flex justify-content-center">
-    <div class="card shadow-sm border-0 w-100" style="max-width: 900px;">
-        <div class="card-body p-4 p-md-5">
+<div class="container py-4">
+    <div class="d-flex justify-content-center">
+        <div class="w-100" style="max-width: 1050px;">
 
-         
             
-<div class="text-center mb-4">
-    <h1 class="fw-bold" style="color:#003366; font-size:2rem;">
-        My Profile
-    </h1>
-</div>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
+                                 style="width:64px;height:64px;background:<?php echo e($soft); ?>;color:<?php echo e($theme); ?>;font-weight:800;font-size:1.4rem;">
+                                <?php echo e($initials); ?>
 
+                            </div>
 
-<div class="d-flex align-items-center mb-4">
-    <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
-         style="width: 56px; height: 56px; background-color: #e3f2fd; color: #003366; font-weight: 700; font-size: 1.3rem;">
-        <?php echo e(strtoupper(substr($user->firstname, 0, 1) . substr($user->lastname, 0, 1))); ?>
+                            <div>
+                                <div class="fw-bold" style="color:<?php echo e($theme); ?>; font-size:1.25rem;">
+                                    <?php echo e($fullName ?: 'N/A'); ?>
 
-    </div>
-    <div>
-        <h5 class="mb-0 fw-semibold" style="color:#003366;"><?php echo e($user->firstname); ?> <?php echo e($user->lastname); ?></h5>
-        <small class="text-muted">
-            <?php echo e($user->bisu_email); ?>
+                                </div>
+                                <div class="text-muted small"><?php echo e($user->bisu_email ?? 'N/A'); ?></div>
 
-        </small>
-    </div>
-</div>
+                                <div class="mt-2 d-flex flex-wrap gap-2">
+                                    <span class="badge rounded-pill" style="background:<?php echo e($theme); ?>;">
+                                        <?php echo e($user->userType->name ?? 'User'); ?>
 
+                                    </span>
+
+                                    <?php if($isStudent && !$isAdminLike && $scholarRecord): ?>
+                                        <span class="badge rounded-pill bg-success">Scholar</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <div class="fw-bold" style="color:<?php echo e($theme); ?>;">My Profile</div>
+                            <div class="text-muted small">
+                                <?php if($isStudent && !$isAdminLike): ?>
+                                    Academic information is managed by the administration.
+                                <?php else: ?>
+                                    Account information overview.
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             
             <?php if(session('success')): ?>
@@ -74,145 +105,203 @@
             <div class="row g-4">
 
                 
-                <div class="col-md-6">
-                    <h5 class="fw-bold mb-3" style="color:#003366;">Account Information</h5>
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h5 class="fw-bold mb-0" style="color:<?php echo e($theme); ?>;">
+                                    <?php echo e(($isStudent && !$isAdminLike) ? 'Account & Academic Details' : 'Account Details'); ?>
 
-                    <div class="mb-2">
-                        <span class="d-block text-muted small fw-semibold">Name</span>
-                        <span class="fw-semibold">
-                            <?php echo e($user->firstname); ?> <?php echo e($user->lastname); ?>
+                                </h5>
+                                <span class="badge rounded-pill" style="background:<?php echo e($soft); ?>; color:<?php echo e($theme); ?>;">
+                                    Read-only
+                                </span>
+                            </div>
 
-                        </span>
-                    </div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="text-muted small fw-semibold">Complete Name</label>
+                                    <input class="form-control" value="<?php echo e($fullName ?: 'N/A'); ?>" disabled>
+                                </div>
 
-                    <?php if($isAdminLike): ?>
-                        <div class="mb-2">
-                            <span class="d-block text-muted small fw-semibold">Position / Role</span>
-                            <span class="badge bg-primary">
-                                <?php echo e($user->userType->name ?? 'N/A'); ?>
+                                
+                                <?php if($isStudent && !$isAdminLike): ?>
+                                    <div class="col-md-6">
+                                        <label class="text-muted small fw-semibold">Student ID</label>
+                                        <input class="form-control" value="<?php echo e($user->student_id ?? 'N/A'); ?>" disabled>
+                                    </div>
+                                <?php endif; ?>
 
-                            </span>
-                        </div>
-                    <?php else: ?>
-                        
-                        <div class="mb-2">
-                            <span class="d-block text-muted small fw-semibold">College</span>
-                            <span class="fw-semibold">
-                                <?php echo e($user->college->college_name ?? 'N/A'); ?>
+                                <div class="col-md-6">
+                                    <label class="text-muted small fw-semibold">Role</label>
+                                    <input class="form-control" value="<?php echo e($user->userType->name ?? 'N/A'); ?>" disabled>
+                                </div>
 
-                            </span>
-                        </div>
+                                
+                                <?php if($isStudent && !$isAdminLike): ?>
 
-                        <div class="mb-2">
-                            <span class="d-block text-muted small fw-semibold">Course & Year Level</span>
-                            <span class="fw-semibold">
-                                <?php echo e($user->section->course->course_name ?? 'N/A'); ?>
+                                    <div class="col-12">
+                                        <label class="text-muted small fw-semibold">Current Semester</label>
+                                        <input class="form-control" value="<?php echo e($semesterLabel ?? 'N/A'); ?>" disabled>
+                                    </div>
 
-                                <?php if($user->yearLevel): ?>
-                                    • <?php echo e($user->yearLevel->year_level_name); ?>
+                                    <div class="col-12">
+                                        <label class="text-muted small fw-semibold">College</label>
+                                        <input class="form-control" value="<?php echo e($collegeName); ?>" disabled>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="text-muted small fw-semibold">Course</label>
+                                        <div class="form-control bg-light" style="white-space: normal; height:auto;">
+                                            <?php echo e($courseName); ?>
+
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="text-muted small fw-semibold">Year Level</label>
+                                        <input class="form-control" value="<?php echo e($yearLevel); ?>" disabled>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="text-muted small fw-semibold">Scholarship</label>
+                                        <input class="form-control"
+                                               value="<?php echo e($scholarshipName); ?>"
+                                               placeholder="(Blank if not a scholar)"
+                                               disabled>
+                                    </div>
+
+                                    <?php if(!empty($batchNumber)): ?>
+                                        <div class="col-md-6">
+                                            <label class="text-muted small fw-semibold">Batch Number</label>
+                                            <input class="form-control" value="<?php echo e($batchNumber); ?>" disabled>
+                                        </div>
+                                    <?php endif; ?>
 
                                 <?php endif; ?>
-                            </span>
-                        </div>
-
-                        <div class="mb-2">
-                            <span class="d-block text-muted small fw-semibold">Section</span>
-                            <span class="fw-semibold">
-                                <?php echo e($user->section->section_name ?? 'N/A'); ?>
-
-                            </span>
-                        </div>
-
-                        <div class="mb-2">
-                            <span class="d-block text-muted small fw-semibold">Current Semester</span>
-                            <span class="fw-semibold">
-                                <?php echo e($semesterLabel); ?>
-
-                            </span>
-                        </div>
-
-                        <?php if($scholarRecord): ?>
-                            <hr class="my-3">
-                            <h6 class="fw-bold mb-2" style="color:#003366;">Scholarship Details</h6>
-
-                            <div class="mb-2">
-                                <span class="d-block text-muted small fw-semibold">Scholarship</span>
-                                <span class="fw-semibold">
-                                    <?php echo e($scholarRecord->scholarship->name ?? 'N/A'); ?>
-
-                                </span>
                             </div>
-
-                            <div class="mb-2">
-                                <span class="d-block text-muted small fw-semibold">Batch Number</span>
-                                <span class="fw-semibold">
-                                    <?php echo e($scholarRecord->batch_number ?? 'N/A'); ?>
-
-                                </span>
-                            </div>
-                        <?php endif; ?>
-                    <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
 
+
+                <?php if($isStudent && !$isAdminLike): ?>
                 
-                <div class="col-md-6">
-                    <h5 class="fw-bold mb-3" style="color:#003366;">Change Password</h5>
+                <div class="col-lg-6">
 
-                    <form action="<?php echo e(route('profile.update-password')); ?>" method="POST">
-                        <?php echo csrf_field(); ?>
+                    
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h5 class="fw-bold mb-0" style="color:<?php echo e($theme); ?>;">Contact Information</h5>
+                                <span class="badge rounded-pill" style="background:<?php echo e($soft); ?>; color:<?php echo e($theme); ?>;">
+                                    Editable
+                                </span>
+                            </div>
 
-                        <div class="mb-3">
-                            <label for="current_password" class="form-label fw-bold text-dark">
-                                Current Password
-                            </label>
-                            <input
-                                type="password"
-                                name="current_password"
-                                id="current_password"
-                                class="form-control"
-                                required
-                            >
+                            <form action="<?php echo e(route('profile.update-contact')); ?>" method="POST">
+                                <?php echo csrf_field(); ?>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-semibold">Contact Number</label>
+
+                                    <input type="text"
+                                        name="contact_no"
+                                        class="form-control"
+                                        value="<?php echo e(old('contact_no', $user->contact_no ?? '')); ?>"
+                                        placeholder="Enter contact number">
+
+                                    <div class="small mt-1">
+                                        <span class="text-muted">Current:</span>
+                                        <span class="fw-semibold" style="color:#003366;">
+                                            <?php echo e($user->contact_no ? $user->contact_no : 'N/A'); ?>
+
+                                        </span>
+                                    </div>
+
+                                    <?php $__errorArgs = ['contact_no'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                        <div class="text-danger small mt-1"><?php echo e($message); ?></div>
+                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                                </div>
+
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn fw-semibold px-4" style="background:#003366; color:#fff;">
+                                        Save Contact
+                                    </button>
+                                </div>
+                            </form>
+
                         </div>
+                    </div>
+                    <?php endif; ?>
 
-                        <div class="mb-3">
-                            <label for="password" class="form-label fw-bold text-dark">
-                                New Password
-                            </label>
-                            <input
-                                type="password"
-                                name="password"
-                                id="password"
-                                class="form-control"
-                                required
-                            >
-                        </div>
+                    
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3" style="color:<?php echo e($theme); ?>;">Change Password</h5>
 
-                        <div class="mb-3">
-                            <label for="password_confirmation" class="form-label fw-bold text-dark">
-                                Confirm New Password
-                            </label>
-                            <input
-                                type="password"
-                                name="password_confirmation"
-                                id="password_confirmation"
-                                class="form-control"
-                                required
-                            >
-                        </div>
+                            <form action="<?php echo e(route('profile.update-password')); ?>" method="POST">
+                                <?php echo csrf_field(); ?>
 
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-primary fw-semibold px-4">
-                                Update Password
-                            </button>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-semibold">Current Password</label>
+                                    <input type="password" name="current_password" class="form-control" required>
+                                    <?php $__errorArgs = ['current_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                        <div class="text-danger small mt-1"><?php echo e($message); ?></div>
+                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-semibold">New Password</label>
+                                    <input type="password" name="password" class="form-control" required>
+                                    <div class="text-muted small mt-1">Minimum 8 characters, with letters & numbers.</div>
+                                    <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                        <div class="text-danger small mt-1"><?php echo e($message); ?></div>
+                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-semibold">Confirm New Password</label>
+                                    <input type="password" name="password_confirmation" class="form-control" required>
+                                </div>
+
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn fw-semibold px-4"
+                                            style="background:<?php echo e($theme); ?>; color:#fff;">
+                                        Update Password
+                                    </button>
+                                </div>
+                            </form>
+
                         </div>
-                    </form>
+                    </div>
+
                 </div>
+            </div>
 
-            </div> 
         </div>
     </div>
 </div>
-
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/profile.blade.php ENDPATH**/ ?>

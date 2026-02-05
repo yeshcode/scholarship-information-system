@@ -1,52 +1,82 @@
 @extends('layouts.app')
 
 @section('content')
-
 @php
-    $user = auth()->user();
-    $isAdminLike = $user->hasRole('Super Admin') || $user->hasRole('Scholarship Coordinator');
+    // Theme
+    $theme = '#003366';
+    $soft  = '#e3f2fd';
 
-    // Safely get active enrollment for students
-    $activeEnrollment = !$isAdminLike 
-        ? $user->enrollments->where('status', 'active')->first()
-        : null;
+    $fullName = trim(($user->firstname ?? '').' '.($user->lastname ?? ''));
+    $initials = strtoupper(substr($user->firstname ?? 'U', 0, 1) . substr($user->lastname ?? 'S', 0, 1));
 
-    $semesterLabel = $activeEnrollment && $activeEnrollment->semester
-        ? $activeEnrollment->semester->term . ' ' . $activeEnrollment->semester->academic_year
-        : 'N/A';
+    // Safe defaults
+    $collegeName = 'N/A';
+    $courseName  = 'N/A';
+    $yearLevel   = 'N/A';
+    $scholarshipName = '';
+    $batchNumber = '';
 
-    // Scholar info (if any)
-    $scholarRecord = (!$isAdminLike && $user->isScholar())
-        ? $user->scholarsAsStudent->first()
-        : null;
+    if ($isStudent && !$isAdminLike) {
+        // Enrollment is source of truth for Course + Semester (real-time)
+        $courseName  = $activeEnrollment?->course?->course_name ?? 'N/A';
+
+        // College derived from course->college (make sure Course has college() relationship)
+        $collegeName = $activeEnrollment?->course?->college?->college_name ?? 'N/A';
+
+        // Year level from users table (because Enrollment model currently has no year_level_id)
+        $yearLevel   = $user->yearLevel?->year_level_name ?? 'N/A';
+
+        // Scholar info (blank if none)
+        $scholarshipName = $scholarRecord?->scholarship?->name ?? '';
+        $batchNumber     = $scholarRecord?->batch_number ?? '';
+    }
 @endphp
 
-<div class="container py-4 d-flex justify-content-center">
-    <div class="card shadow-sm border-0 w-100" style="max-width: 900px;">
-        <div class="card-body p-4 p-md-5">
+<div class="container py-4">
+    <div class="d-flex justify-content-center">
+        <div class="w-100" style="max-width: 1050px;">
 
-         
-            {{-- MAIN PROFILE TITLE --}}
-<div class="text-center mb-4">
-    <h1 class="fw-bold" style="color:#003366; font-size:2rem;">
-        My Profile
-    </h1>
-</div>
+            {{-- HEADER --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
+                                 style="width:64px;height:64px;background:{{ $soft }};color:{{ $theme }};font-weight:800;font-size:1.4rem;">
+                                {{ $initials }}
+                            </div>
 
-{{-- PROFILE HEADER (Avatar + Email) --}}
-<div class="d-flex align-items-center mb-4">
-    <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
-         style="width: 56px; height: 56px; background-color: #e3f2fd; color: #003366; font-weight: 700; font-size: 1.3rem;">
-        {{ strtoupper(substr($user->firstname, 0, 1) . substr($user->lastname, 0, 1)) }}
-    </div>
-    <div>
-        <h5 class="mb-0 fw-semibold" style="color:#003366;">{{ $user->firstname }} {{ $user->lastname }}</h5>
-        <small class="text-muted">
-            {{ $user->bisu_email }}
-        </small>
-    </div>
-</div>
+                            <div>
+                                <div class="fw-bold" style="color:{{ $theme }}; font-size:1.25rem;">
+                                    {{ $fullName ?: 'N/A' }}
+                                </div>
+                                <div class="text-muted small">{{ $user->bisu_email ?? 'N/A' }}</div>
 
+                                <div class="mt-2 d-flex flex-wrap gap-2">
+                                    <span class="badge rounded-pill" style="background:{{ $theme }};">
+                                        {{ $user->userType->name ?? 'User' }}
+                                    </span>
+
+                                    @if($isStudent && !$isAdminLike && $scholarRecord)
+                                        <span class="badge rounded-pill bg-success">Scholar</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <div class="fw-bold" style="color:{{ $theme }};">My Profile</div>
+                            <div class="text-muted small">
+                                @if($isStudent && !$isAdminLike)
+                                    Academic information is managed by the administration.
+                                @else
+                                    Account information overview.
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {{-- ALERTS --}}
             @if(session('success'))
@@ -70,135 +100,178 @@
 
             <div class="row g-4">
 
-                {{-- LEFT: PROFILE INFO --}}
-                <div class="col-md-6">
-                    <h5 class="fw-bold mb-3" style="color:#003366;">Account Information</h5>
+                {{-- LEFT: DETAILS (READ-ONLY) --}}
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h5 class="fw-bold mb-0" style="color:{{ $theme }};">
+                                    {{ ($isStudent && !$isAdminLike) ? 'Account & Academic Details' : 'Account Details' }}
+                                </h5>
+                                <span class="badge rounded-pill" style="background:{{ $soft }}; color:{{ $theme }};">
+                                    Read-only
+                                </span>
+                            </div>
 
-                    <div class="mb-2">
-                        <span class="d-block text-muted small fw-semibold">Name</span>
-                        <span class="fw-semibold">
-                            {{ $user->firstname }} {{ $user->lastname }}
-                        </span>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="text-muted small fw-semibold">Complete Name</label>
+                                    <input class="form-control" value="{{ $fullName ?: 'N/A' }}" disabled>
+                                </div>
+
+                                {{-- Show Student ID only if student --}}
+                                @if($isStudent && !$isAdminLike)
+                                    <div class="col-md-6">
+                                        <label class="text-muted small fw-semibold">Student ID</label>
+                                        <input class="form-control" value="{{ $user->student_id ?? 'N/A' }}" disabled>
+                                    </div>
+                                @endif
+
+                                <div class="col-md-6">
+                                    <label class="text-muted small fw-semibold">Role</label>
+                                    <input class="form-control" value="{{ $user->userType->name ?? 'N/A' }}" disabled>
+                                </div>
+
+                                {{-- STUDENT ONLY: Academic fields --}}
+                                @if($isStudent && !$isAdminLike)
+
+                                    <div class="col-12">
+                                        <label class="text-muted small fw-semibold">Current Semester</label>
+                                        <input class="form-control" value="{{ $semesterLabel ?? 'N/A' }}" disabled>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="text-muted small fw-semibold">College</label>
+                                        <input class="form-control" value="{{ $collegeName }}" disabled>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="text-muted small fw-semibold">Course</label>
+                                        <div class="form-control bg-light" style="white-space: normal; height:auto;">
+                                            {{ $courseName }}
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="text-muted small fw-semibold">Year Level</label>
+                                        <input class="form-control" value="{{ $yearLevel }}" disabled>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="text-muted small fw-semibold">Scholarship</label>
+                                        <input class="form-control"
+                                               value="{{ $scholarshipName }}"
+                                               placeholder="(Blank if not a scholar)"
+                                               disabled>
+                                    </div>
+
+                                    @if(!empty($batchNumber))
+                                        <div class="col-md-6">
+                                            <label class="text-muted small fw-semibold">Batch Number</label>
+                                            <input class="form-control" value="{{ $batchNumber }}" disabled>
+                                        </div>
+                                    @endif
+
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                @if($isStudent && !$isAdminLike)
+                {{-- RIGHT: CONTACT + PASSWORD --}}
+                <div class="col-lg-6">
+
+                    {{-- CONTACT (EDITABLE) --}}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h5 class="fw-bold mb-0" style="color:{{ $theme }};">Contact Information</h5>
+                                <span class="badge rounded-pill" style="background:{{ $soft }}; color:{{ $theme }};">
+                                    Editable
+                                </span>
+                            </div>
+
+                            <form action="{{ route('profile.update-contact') }}" method="POST">
+                                @csrf
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-semibold">Contact Number</label>
+
+                                    <input type="text"
+                                        name="contact_no"
+                                        class="form-control"
+                                        value="{{ old('contact_no', $user->contact_no ?? '') }}"
+                                        placeholder="Enter contact number">
+
+                                    <div class="small mt-1">
+                                        <span class="text-muted">Current:</span>
+                                        <span class="fw-semibold" style="color:#003366;">
+                                            {{ $user->contact_no ? $user->contact_no : 'N/A' }}
+                                        </span>
+                                    </div>
+
+                                    @error('contact_no')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn fw-semibold px-4" style="background:#003366; color:#fff;">
+                                        Save Contact
+                                    </button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- CHANGE PASSWORD --}}
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3" style="color:{{ $theme }};">Change Password</h5>
+
+                            <form action="{{ route('profile.update-password') }}" method="POST">
+                                @csrf
+
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-semibold">Current Password</label>
+                                    <input type="password" name="current_password" class="form-control" required>
+                                    @error('current_password')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-semibold">New Password</label>
+                                    <input type="password" name="password" class="form-control" required>
+                                    <div class="text-muted small mt-1">Minimum 8 characters, with letters & numbers.</div>
+                                    @error('password')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-semibold">Confirm New Password</label>
+                                    <input type="password" name="password_confirmation" class="form-control" required>
+                                </div>
+
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn fw-semibold px-4"
+                                            style="background:{{ $theme }}; color:#fff;">
+                                        Update Password
+                                    </button>
+                                </div>
+                            </form>
+
+                        </div>
                     </div>
 
-                    @if($isAdminLike)
-                        <div class="mb-2">
-                            <span class="d-block text-muted small fw-semibold">Position / Role</span>
-                            <span class="badge bg-primary">
-                                {{ $user->userType->name ?? 'N/A' }}
-                            </span>
-                        </div>
-                    @else
-                        {{-- Student-specific info --}}
-                        <div class="mb-2">
-                            <span class="d-block text-muted small fw-semibold">College</span>
-                            <span class="fw-semibold">
-                                {{ $user->college->college_name ?? 'N/A' }}
-                            </span>
-                        </div>
-
-                        <div class="mb-2">
-                            <span class="d-block text-muted small fw-semibold">Course & Year Level</span>
-                            <span class="fw-semibold">
-                                {{ $user->section->course->course_name ?? 'N/A' }}
-                                @if($user->yearLevel)
-                                    • {{ $user->yearLevel->year_level_name }}
-                                @endif
-                            </span>
-                        </div>
-
-                        <div class="mb-2">
-                            <span class="d-block text-muted small fw-semibold">Section</span>
-                            <span class="fw-semibold">
-                                {{ $user->section->section_name ?? 'N/A' }}
-                            </span>
-                        </div>
-
-                        <div class="mb-2">
-                            <span class="d-block text-muted small fw-semibold">Current Semester</span>
-                            <span class="fw-semibold">
-                                {{ $semesterLabel }}
-                            </span>
-                        </div>
-
-                        @if($scholarRecord)
-                            <hr class="my-3">
-                            <h6 class="fw-bold mb-2" style="color:#003366;">Scholarship Details</h6>
-
-                            <div class="mb-2">
-                                <span class="d-block text-muted small fw-semibold">Scholarship</span>
-                                <span class="fw-semibold">
-                                    {{ $scholarRecord->scholarship->name ?? 'N/A' }}
-                                </span>
-                            </div>
-
-                            <div class="mb-2">
-                                <span class="d-block text-muted small fw-semibold">Batch Number</span>
-                                <span class="fw-semibold">
-                                    {{ $scholarRecord->batch_number ?? 'N/A' }}
-                                </span>
-                            </div>
-                        @endif
-                    @endif
                 </div>
+            </div>
 
-                {{-- RIGHT: CHANGE PASSWORD --}}
-                <div class="col-md-6">
-                    <h5 class="fw-bold mb-3" style="color:#003366;">Change Password</h5>
-
-                    <form action="{{ route('profile.update-password') }}" method="POST">
-                        @csrf
-
-                        <div class="mb-3">
-                            <label for="current_password" class="form-label fw-bold text-dark">
-                                Current Password
-                            </label>
-                            <input
-                                type="password"
-                                name="current_password"
-                                id="current_password"
-                                class="form-control"
-                                required
-                            >
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label fw-bold text-dark">
-                                New Password
-                            </label>
-                            <input
-                                type="password"
-                                name="password"
-                                id="password"
-                                class="form-control"
-                                required
-                            >
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="password_confirmation" class="form-label fw-bold text-dark">
-                                Confirm New Password
-                            </label>
-                            <input
-                                type="password"
-                                name="password_confirmation"
-                                id="password_confirmation"
-                                class="form-control"
-                                required
-                            >
-                        </div>
-
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-primary fw-semibold px-4">
-                                Update Password
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-            </div> {{-- /row --}}
         </div>
     </div>
 </div>
-
 @endsection
