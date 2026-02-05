@@ -208,6 +208,9 @@
         Route::get('/manage-announcements/create', [CoordinatorController::class, 'createAnnouncement'])->name('coordinator.announcements.create');
         Route::post('/manage-announcements', [CoordinatorController::class, 'storeAnnouncement'])->name('coordinator.announcements.store');
         
+        // routes/web.php (inside coordinator group)
+        Route::get('/announcements/recipients', [CoordinatorController::class, 'searchAnnouncementRecipients'])->name('coordinator.announcements.recipients');
+
 
         // Clusters
         Route::get('/clusters', [QuestionClusterController::class, 'index'])->name('clusters.index');

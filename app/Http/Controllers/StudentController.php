@@ -9,6 +9,8 @@ use App\Models\Stipend;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;  // Add this import
 use App\Http\Controllers\Concerns\UsesActiveSemester;
+use App\Models\AnnouncementView;
+
 
 
 class StudentController extends Controller
@@ -41,6 +43,7 @@ use UsesActiveSemester;
 
         return view('student.announcements', compact('announcements'));
     }
+
 
     public function scholarships()
     {
@@ -85,22 +88,20 @@ use UsesActiveSemester;
         return view('student.notifications', compact('notifications'));
     }
 
-   public function announcementShow($id)
-{
-    $announcement = Announcement::where('id', $id)
-        ->where(function ($query) {
-            $query->where('audience', 'all_students')
-                ->orWhere(function($q) {
-                    $q->where('audience', 'specific_scholars')
-                      ->whereHas('notifications', function($n) {
-                          $n->where('recipient_user_id', Auth::id());
-                      });
-                });
-        })
-        ->firstOrFail();
+   public function announcementShow(Announcement $announcement)
+    {
+        AnnouncementView::firstOrCreate(
+            [
+                'announcement_id' => $announcement->id,
+                'user_id' => Auth::id(),
+            ],
+            [
+                'seen_at' => now(),
+            ]
+        );
 
-    return view('student.announcement-show', compact('announcement'));
-}
+        return view('student.announcement-show', compact('announcement'));
+    }
 
 
     public function open($id)
