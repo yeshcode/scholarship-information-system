@@ -165,7 +165,7 @@
         Route::get('/manage-scholarships/{id}/edit', [CoordinatorController::class, 'editScholarship'])->name('coordinator.scholarships.edit');
         Route::put('/manage-scholarships/{id}', [CoordinatorController::class, 'updateScholarship'])->name('coordinator.scholarships.update');
         Route::delete('/manage-scholarships/{id}', [CoordinatorController::class, 'destroyScholarship'])->name('coordinator.scholarships.destroy');
-        Route::get('/manage-scholarships/{id}/delete', [CoordinatorController::class, 'confirmDeleteScholarship'])->name('coordinator.scholarships.confirm-delete');
+
 
 
         // Scholarship Batches

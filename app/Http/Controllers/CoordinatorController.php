@@ -1195,7 +1195,10 @@ public function storeScholarship(Request $request)
         'requirements' => 'required|string',
         'benefactor' => 'required|string',
         'status' => 'required|in:open,closed',
+        'application_date' => 'nullable|date',
+        'deadline' => 'nullable|date|after_or_equal:application_date', // optional but nice
     ]);
+
 
     \App\Models\Scholarship::create([
         'scholarship_name' => $request->scholarship_name,
@@ -1203,6 +1206,8 @@ public function storeScholarship(Request $request)
         'requirements' => $request->requirements,
         'benefactor' => $request->benefactor,
         'status' => $request->status,
+        'application_date' => $request->application_date,
+        'deadline' => $request->deadline,
         'created_by' => Auth::id(),
         'updated_by' => Auth::id(),
     ]);
@@ -1224,6 +1229,8 @@ public function updateScholarship(Request $request, $id)
         'requirements' => 'required|string',
         'benefactor' => 'required|string',
         'status' => 'required|in:open,closed',
+        'application_date' => 'nullable|date',
+        'deadline' => 'nullable|date|after_or_equal:application_date',
     ]);
 
     $scholarship = \App\Models\Scholarship::findOrFail($id);
@@ -1233,17 +1240,30 @@ public function updateScholarship(Request $request, $id)
         'requirements' => $request->requirements,
         'benefactor' => $request->benefactor,
         'status' => $request->status,
+        'application_date' => $request->application_date,
+        'deadline' => $request->deadline,
         'updated_by' => Auth::id(),
     ]);
 
     return redirect()->route('coordinator.manage-scholarships')->with('success', 'Scholarship updated successfully.');
 }
 
+
 public function confirmDeleteScholarship($id)
 {
     $scholarship = Scholarship::findOrFail($id);
     return view('coordinator.confirm-delete-scholarship', compact('scholarship'));
 }
+
+public function destroyScholarship($id)
+{
+    $scholarship = Scholarship::findOrFail($id);
+    $scholarship->delete();
+
+    return redirect()->route('coordinator.manage-scholarships')
+        ->with('success', 'Scholarship deleted successfully.');
+}
+
 
 //reports
 public function reports()
