@@ -1081,13 +1081,24 @@ public function confirmDeleteStipendRelease($id)
 }
 
     // Manage Announcements
-    public function manageAnnouncements()
-    {
-        $scholars = Scholar::with('user')->get();
+        public function manageAnnouncements()
+        {
+            $scholars = Scholar::with('user')->get();
 
         $announcements = Announcement::with('creator')
-            ->orderByDesc('id')          // ALWAYS newest first
-            ->paginate(10);
+        ->withCount('views')
+
+        // ✅ Put NULL posted_at at the bottom
+        ->orderByRaw('posted_at IS NULL')
+
+        // ✅ Latest announcements first
+        ->orderByDesc('posted_at')
+
+        // ✅ Fallback ordering
+        ->orderByDesc('id')
+
+        ->paginate(10);
+
 
         return view('coordinator.manage-announcements', compact('scholars', 'announcements'));
     }
@@ -1095,12 +1106,13 @@ public function confirmDeleteStipendRelease($id)
 
  
      // Store announcement and send notifications (UPDATED: Add audience, scholar selection, emails, and notifications)
-     public function storeAnnouncement(Request $request)
+public function storeAnnouncement(Request $request)
 {
     $request->validate([
         'title' => 'required|string|max:255',
         'description' => 'required|string',
-        'audience' => 'required|in:all_students,specific_scholars',
+        'audience' => 'required|in:all_students,all_scholars,specific_students,specific_scholars',
+        'selected_users' => 'nullable|array',
         'selected_scholars' => 'nullable|array',
     ]);
 
@@ -1109,70 +1121,75 @@ public function confirmDeleteStipendRelease($id)
         'title' => $request->title,
         'description' => $request->description,
         'audience' => $request->audience,
-        'posted_at' => now(), // auto today
+        'posted_at' => now(),
     ]);
 
-
-    // recipients
-    $recipients = collect();
-
-    if ($request->audience === 'all_students') {
-        $recipients = User::whereHas('userType', function ($q) {
-            $q->where('name', 'Student');
-        })->get();
-    } else {
-        $recipients = Scholar::whereIn('id', $request->selected_scholars ?? [])
-            ->with('user')
-            ->get()
-            ->pluck('user');
-    }
-
-    // ✅ OPTIONAL: include YOU for testing (even if not selected)
-    // (remove this later if you don't want to receive your own announcements)
-    $recipients = $recipients->push(Auth::user())->unique('id');
-
-    $coordinatorEmail = Auth::user()->bisu_email ?? config('mail.from.address');
-
-    foreach ($recipients as $user) {
-
-        // 1) ALWAYS create system notification (kahit walang email)
-        Notification::create([
-            'recipient_user_id' => $user->id,
-            'created_by' => Auth::id(),
-            'type' => 'announcement',
-            'title' => $announcement->title,
-            'message' => $announcement->description,
-            'related_type' => Announcement::class,
-            'related_id' => $announcement->id,
-            'is_read' => false,
-            'sent_at' => now(),
-        ]);
-
-        // 2) TRY to send email (but never break the loop)
-        $email = trim((string) ($user->bisu_email ?? ''));
-
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            Log::warning("Skipped email (invalid/missing)", ['user_id' => $user->id, 'email' => $email]);
-            continue;
-        }
-
-        try {
-            Mail::to($email)->send(
-                new AnnouncementNotification($announcement->toArray(), $coordinatorEmail)
-            );
-        } catch (\Throwable $e) {
-            Log::error("Email send failed", [
-                'user_id' => $user->id,
-                'email' => $email,
-                'error' => $e->getMessage(),
-            ]);
-            // continue sending to others
-        }
-    }
+    // ✅ ONLY dispatch ONCE (no loop)
+    SendAnnouncementNotifications::dispatch(
+        $announcement->id,
+        Auth::id(),
+        $request->audience,
+        $request->selected_users ?? [],
+        $request->selected_scholars ?? []
+    );
 
     return redirect()->route('coordinator.manage-announcements', ['page' => 1])
-        ->with('success', 'Announcement posted. Notifications created and emails attempted.');
+        ->with('success', 'Announcement posted. Notifications + emails are being sent in the background.');
 }
+
+
+public function searchAnnouncementRecipients(Request $request)
+{
+    $type = $request->get('type'); // students | scholars
+    $q = trim((string)$request->get('q',''));
+
+    if ($type === 'students') {
+        $users = User::whereHas('userType', fn($x) => $x->where('name','Student'))
+            ->when($q !== '', function($x) use ($q){
+                $x->where(function($w) use ($q){
+                    $w->where('firstname','ILIKE',"%{$q}%")
+                      ->orWhere('lastname','ILIKE',"%{$q}%")
+                      ->orWhere('student_id','ILIKE',"%{$q}%")
+                      ->orWhere('bisu_email','ILIKE',"%{$q}%");
+                });
+            })
+            ->orderBy('lastname')->orderBy('firstname')
+            ->limit(25)
+            ->get(['id','firstname','lastname','student_id','bisu_email']);
+
+        return response()->json($users);
+    }
+
+    if ($type === 'scholars') {
+        $scholars = Scholar::with('user:id,firstname,lastname,student_id,bisu_email')
+            ->when($q !== '', function($x) use ($q){
+                $x->whereHas('user', function($u) use ($q){
+                    $u->where('firstname','ILIKE',"%{$q}%")
+                      ->orWhere('lastname','ILIKE',"%{$q}%")
+                      ->orWhere('student_id','ILIKE',"%{$q}%")
+                      ->orWhere('bisu_email','ILIKE',"%{$q}%");
+                });
+            })
+            ->orderByDesc('id')
+            ->limit(25)
+            ->get(['id','student_id']);
+
+        // return flattened info
+        return response()->json($scholars->map(function($s){
+            return [
+                'id' => $s->id,
+                'user_id' => $s->user?->id,
+                'firstname' => $s->user?->firstname,
+                'lastname' => $s->user?->lastname,
+                'student_id' => $s->user?->student_id,
+                'bisu_email' => $s->user?->bisu_email,
+            ];
+        }));
+    }
+
+    return response()->json([]);
+}
+
 
 
     // Manage Scholarships
@@ -1195,7 +1212,10 @@ public function storeScholarship(Request $request)
         'requirements' => 'required|string',
         'benefactor' => 'required|string',
         'status' => 'required|in:open,closed',
+        'application_date' => 'nullable|date',
+        'deadline' => 'nullable|date|after_or_equal:application_date', // optional but nice
     ]);
+
 
     \App\Models\Scholarship::create([
         'scholarship_name' => $request->scholarship_name,
@@ -1203,6 +1223,8 @@ public function storeScholarship(Request $request)
         'requirements' => $request->requirements,
         'benefactor' => $request->benefactor,
         'status' => $request->status,
+        'application_date' => $request->application_date,
+        'deadline' => $request->deadline,
         'created_by' => Auth::id(),
         'updated_by' => Auth::id(),
     ]);
@@ -1224,6 +1246,8 @@ public function updateScholarship(Request $request, $id)
         'requirements' => 'required|string',
         'benefactor' => 'required|string',
         'status' => 'required|in:open,closed',
+        'application_date' => 'nullable|date',
+        'deadline' => 'nullable|date|after_or_equal:application_date',
     ]);
 
     $scholarship = \App\Models\Scholarship::findOrFail($id);
@@ -1233,17 +1257,30 @@ public function updateScholarship(Request $request, $id)
         'requirements' => $request->requirements,
         'benefactor' => $request->benefactor,
         'status' => $request->status,
+        'application_date' => $request->application_date,
+        'deadline' => $request->deadline,
         'updated_by' => Auth::id(),
     ]);
 
     return redirect()->route('coordinator.manage-scholarships')->with('success', 'Scholarship updated successfully.');
 }
 
+
 public function confirmDeleteScholarship($id)
 {
     $scholarship = Scholarship::findOrFail($id);
     return view('coordinator.confirm-delete-scholarship', compact('scholarship'));
 }
+
+public function destroyScholarship($id)
+{
+    $scholarship = Scholarship::findOrFail($id);
+    $scholarship->delete();
+
+    return redirect()->route('coordinator.manage-scholarships')
+        ->with('success', 'Scholarship deleted successfully.');
+}
+
 
 //reports
 public function reports()

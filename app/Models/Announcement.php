@@ -29,4 +29,9 @@ class Announcement extends Model
     {
         return $this->morphMany(Notification::class, 'related');
     }
+
+    public function views()
+    {
+        return $this->hasMany(AnnouncementView::class);
+    }
 }

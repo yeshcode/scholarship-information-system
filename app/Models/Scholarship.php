@@ -12,6 +12,8 @@ class Scholarship extends Model
         'requirements',
         'benefactor',
         'status',  // e.g., 'GPA 3.5+'
+        'application_date',   // ✅ add
+        'deadline',           // ✅ add
         'created_by',     
         'updated_by'  // FK to users table (creator)
     ];

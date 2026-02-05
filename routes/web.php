@@ -165,7 +165,7 @@
         Route::get('/manage-scholarships/{id}/edit', [CoordinatorController::class, 'editScholarship'])->name('coordinator.scholarships.edit');
         Route::put('/manage-scholarships/{id}', [CoordinatorController::class, 'updateScholarship'])->name('coordinator.scholarships.update');
         Route::delete('/manage-scholarships/{id}', [CoordinatorController::class, 'destroyScholarship'])->name('coordinator.scholarships.destroy');
-        Route::get('/manage-scholarships/{id}/delete', [CoordinatorController::class, 'confirmDeleteScholarship'])->name('coordinator.scholarships.confirm-delete');
+
 
 
         // Scholarship Batches
@@ -208,6 +208,9 @@
         Route::get('/manage-announcements/create', [CoordinatorController::class, 'createAnnouncement'])->name('coordinator.announcements.create');
         Route::post('/manage-announcements', [CoordinatorController::class, 'storeAnnouncement'])->name('coordinator.announcements.store');
         
+        // routes/web.php (inside coordinator group)
+        Route::get('/announcements/recipients', [CoordinatorController::class, 'searchAnnouncementRecipients'])->name('coordinator.announcements.recipients');
+
 
         // Clusters
         Route::get('/clusters', [QuestionClusterController::class, 'index'])->name('clusters.index');
@@ -236,8 +239,9 @@
 
             Route::get('/notifications/{id}/open', [StudentController::class, 'open'])->name('student.notifications.open');
 
-        
-
+            Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+            Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
+            Route::post('/profile/update-contact', [ProfileController::class, 'updateContact'])->name('profile.update-contact');
 
             //Questions
             Route::get('/ask', [QuestionController::class, 'create'])->name('questions.create');

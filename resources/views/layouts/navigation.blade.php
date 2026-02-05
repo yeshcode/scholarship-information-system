@@ -417,13 +417,13 @@
                                 </svg>
                             </button>
                             <div id="coord-stipends-menu" class="hidden absolute left-0 mt-0 w-72 dropdown-bg">
-                                <a href="{{ route('coordinator.manage-stipends') }}"
-                                   class="dropdown-square {{ (request()->routeIs('coordinator.manage-stipends') || request()->routeIs('coordinator.stipends.*')) ? 'dropdown-square-active' : '' }}">
-                                    Stipend Details
-                                </a>
                                 <a href="{{ route('coordinator.manage-stipend-releases') }}"
                                    class="dropdown-square {{ (request()->routeIs('coordinator.manage-stipend-releases') || request()->routeIs('coordinator.stipend-releases.*')) ? 'dropdown-square-active' : '' }}">
                                     Stipend Release Schedule
+                                </a>    
+                                <a href="{{ route('coordinator.manage-stipends') }}"
+                                   class="dropdown-square {{ (request()->routeIs('coordinator.manage-stipends') || request()->routeIs('coordinator.stipends.*')) ? 'dropdown-square-active' : '' }}">
+                                    Stipend Details
                                 </a>
                             </div>
                         </div>
