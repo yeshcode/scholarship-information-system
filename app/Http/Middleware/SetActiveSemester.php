@@ -10,18 +10,19 @@ class SetActiveSemester
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!session()->has('active_semester_id')) {
-            $current = Semester::where('is_current', true)->first();
+        $mode = session('semester_filter_mode', 'auto'); // default auto
 
-            if (!$current) {
-                $current = Semester::orderByDesc('start_date')->first();
-            }
+        // ✅ AUTO: always follow whatever is_current is in DB
+        if ($mode === 'auto') {
+            $current = Semester::where('is_current', true)->first()
+                ?? Semester::orderByDesc('start_date')->first();
 
             if ($current) {
                 session(['active_semester_id' => $current->id]);
             }
         }
 
+        // ✅ MANUAL: keep session active_semester_id as-is
         return $next($request);
     }
 }

@@ -37,6 +37,20 @@
         max-height: calc(100vh - 210px);
         overflow-y: auto;
     }
+
+    .row-disabled{
+        background:#f3f4f6;
+        color:#6b7280;
+    }
+    .row-disabled td{
+        color:#6b7280 !important;
+    }
+    .badge-na{
+        background:#e5e7eb !important;
+        color:#6b7280 !important;
+        border:1px solid #d1d5db;
+    }
+
 </style>
 
 
@@ -162,15 +176,16 @@
                                 </div>
 
                                 
-                                <div class="col-12 col-md-6">
+                                <div class="col-12 col-md-6" id="batch_wrap">
                                     <label class="form-label fw-semibold text-secondary mb-1">Batch (optional)</label>
-                                    <select name="batch_id" class="form-select form-select-sm">
-                                        <option value="">No batch</option>
+                                    <select name="batch_id" id="batch_id" class="form-select form-select-sm">
+                                        <option value="" selected>No batch</option>
                                         <?php $__currentLoopData = ($batches ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                            <option value="<?php echo e($b->id); ?>">
-                                                <?php echo e($b->scholarship->scholarship_name ?? 'Scholarship'); ?>
-
-                                                - Batch <?php echo e($b->batch_number); ?>
+                                            <option
+                                                value="<?php echo e($b->id); ?>"
+                                                data-scholarship-id="<?php echo e($b->scholarship_id); ?>"
+                                            >
+                                                Batch <?php echo e($b->batch_number); ?>
 
                                                 (<?php echo e($b->semester->term ?? ''); ?> <?php echo e($b->semester->academic_year ?? ''); ?>)
                                             </option>
@@ -182,14 +197,8 @@
                                 </div>
 
                                 
-                                <div class="col-12 col-md-4">
-                                    <label class="form-label fw-semibold text-secondary mb-1">Scholar Status</label>
-                                    <select name="status" class="form-select form-select-sm" required>
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                        <option value="graduated">Graduated</option>
-                                    </select>
-                                </div>
+                                <input type="hidden" name="status" value="active">
+
 
                                 <div class="col-12 col-md-8">
                                     <div class="alert alert-info mb-0 py-2 small">
@@ -225,12 +234,12 @@
                                         $canSelect = $verified && ($enrollStatus === 'enrolled') && !$isScholar;
                                     ?>
 
-                                    <tr>
+                                    <tr class="<?php echo e($canSelect ? '' : 'row-disabled'); ?>">
                                         <td class="text-center">
                                             <?php if($canSelect): ?>
                                                 <input type="checkbox" name="selected_indexes[]" value="<?php echo e($index); ?>">
                                             <?php else: ?>
-                                                <span class="text-muted">N/A</span>
+                                                <span class="badge badge-na">-</span>
                                             <?php endif; ?>
                                         </td>
 
@@ -302,6 +311,53 @@ document.addEventListener('DOMContentLoaded', function () {
     <?php endif; ?>
 });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    function isBatchBasedScholarshipName(name){
+        name = (name || '').toUpperCase().trim();
+        return name.includes('TDP') || name.includes('TES');
+    }
+
+    function filterBatchesByScholarship(){
+        const schSelect  = document.getElementById('scholarship_id');
+        const batchWrap  = document.getElementById('batch_wrap');
+        const batchSelect= document.getElementById('batch_id');
+
+        if(!schSelect || !batchSelect || !batchWrap) return;
+
+        const selectedOption = schSelect.options[schSelect.selectedIndex];
+        const schName = selectedOption ? selectedOption.text : '';
+        const schId   = schSelect.value;
+
+        const batchBased = isBatchBasedScholarshipName(schName);
+
+        // show/hide + required
+        batchWrap.style.display = batchBased ? '' : 'none';
+        batchSelect.required = batchBased;
+
+        // reset to "No batch"
+        batchSelect.value = '';
+
+        // filter visible options
+        const opts = batchSelect.querySelectorAll('option[data-scholarship-id]');
+        opts.forEach(opt => {
+            const optSchId = opt.getAttribute('data-scholarship-id');
+            opt.hidden = batchBased ? (optSchId !== schId) : true;
+        });
+    }
+
+    // run on change
+    const scholarshipSelect = document.getElementById('scholarship_id');
+    if (scholarshipSelect) {
+        scholarshipSelect.addEventListener('change', filterBatchesByScholarship);
+        filterBatchesByScholarship(); // run once on load
+    }
+
+});
+</script>
+
 
 <?php $__env->stopSection(); ?>
 

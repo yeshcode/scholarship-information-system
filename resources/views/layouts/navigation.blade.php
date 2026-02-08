@@ -582,6 +582,10 @@
 @endauth
 
 <script>
+window.ACTIVE_SEMESTER_ID = {{ (int) (session('active_semester_id') ?? 0) }};
+</script>
+
+<script>
 document.addEventListener('DOMContentLoaded', function () {
 
     // ✅ Dropdown system
@@ -679,7 +683,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
             semResults.classList.remove('hidden');
             semResults.innerHTML = items.map(it => {
-                const badge = it.is_current ? `<span class="sem-badge">current</span>` : '';
+                const isSelected = Number(it.id) === Number(window.ACTIVE_SEMESTER_ID);
+
+                const badge = isSelected
+                    ? `<span class="sem-badge">selected</span>`
+                    : (it.is_current ? `<span class="sem-badge">current</span>` : '');
+
                 return `
                     <button type="button" class="sem-row" data-id="${it.id}">
                         <span>${escapeHtml(it.label)}</span>
