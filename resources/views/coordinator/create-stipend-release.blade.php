@@ -108,6 +108,25 @@
                     <div id="batchHelp" class="form-text text-muted">Choose a scholarship to load batches.</div>
                 </div>
 
+                {{-- ✅ Release Semester (for record; can be past) --}}
+                <div class="col-12 col-md-6">
+                    <label class="form-label-bisu">Release Semester (For Record)</label>
+                    <select name="semester_id"
+                            class="form-select form-select-sm @error('semester_id') is-invalid @enderror"
+                            required>
+                        <option value="">Select semester…</option>
+                        @foreach($semesters as $sem)
+                            <option value="{{ $sem->id }}" {{ old('semester_id') == $sem->id ? 'selected' : '' }}>
+                                {{ $sem->term ?? $sem->semester_name }} {{ $sem->academic_year }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('semester_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <div class="form-text">
+                        This is the semester the stipend is intended for (can be delayed/past semester).
+                    </div>
+                </div>
+
                 {{-- Title --}}
                 <div class="col-12">
                     <label class="form-label-bisu">Schedule Title</label>
@@ -173,8 +192,6 @@
             'id' => $b->id,
             'scholarship_id' => $b->scholarship_id,
             'batch_number' => $b->batch_number,
-            'term' => $b->semester->term ?? null,
-            'academic_year' => $b->semester->academic_year ?? null,
         ];
     })->values();
 @endphp
@@ -214,8 +231,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         filtered.forEach(b => {
             const sem = `${b.term ?? ''} ${b.academic_year ?? ''}`.trim();
-            const label = `Batch ${b.batch_number}${sem ? ' (' + sem + ')' : ''}`;
-
+            const label = `Batch ${b.batch_number}`;
+            
             const opt = document.createElement('option');
             opt.value = b.id;
             opt.textContent = label;

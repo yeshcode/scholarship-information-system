@@ -139,6 +139,40 @@ unset($__errorArgs, $__bag); ?>
                 </div>
 
                 
+                <div class="col-12 col-md-6">
+                    <label class="form-label-bisu">Release Semester (For Record)</label>
+                    <select name="semester_id"
+                            class="form-select form-select-sm <?php $__errorArgs = ['semester_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                            required>
+                        <option value="">Select semester…</option>
+                        <?php $__currentLoopData = $semesters; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sem): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($sem->id); ?>" <?php echo e(old('semester_id') == $sem->id ? 'selected' : ''); ?>>
+                                <?php echo e($sem->term ?? $sem->semester_name); ?> <?php echo e($sem->academic_year); ?>
+
+                            </option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                    <?php $__errorArgs = ['semester_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <div class="invalid-feedback"><?php echo e($message); ?></div> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                    <div class="form-text">
+                        This is the semester the stipend is intended for (can be delayed/past semester).
+                    </div>
+                </div>
+
+                
                 <div class="col-12">
                     <label class="form-label-bisu">Schedule Title</label>
                     <input type="text" name="title"
@@ -259,8 +293,6 @@ unset($__errorArgs, $__bag); ?>
             'id' => $b->id,
             'scholarship_id' => $b->scholarship_id,
             'batch_number' => $b->batch_number,
-            'term' => $b->semester->term ?? null,
-            'academic_year' => $b->semester->academic_year ?? null,
         ];
     })->values();
 ?>
@@ -300,8 +332,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         filtered.forEach(b => {
             const sem = `${b.term ?? ''} ${b.academic_year ?? ''}`.trim();
-            const label = `Batch ${b.batch_number}${sem ? ' (' + sem + ')' : ''}`;
-
+            const label = `Batch ${b.batch_number}`;
+            
             const opt = document.createElement('option');
             opt.value = b.id;
             opt.textContent = label;

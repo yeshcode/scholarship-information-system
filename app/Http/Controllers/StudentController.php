@@ -23,13 +23,27 @@ use UsesActiveSemester;
         $announcements = Announcement::where('audience', 'all_students')
             ->orWhere(function($query) {
                 $query->where('audience', 'specific_scholars')
-                      ->whereHas('notifications', function($q) {
-                          $q->where('recipient_user_id', Auth::id());  // Use Auth::id()
-                      });
-            })->latest()->get();
+                    ->whereHas('notifications', function($q) {
+                        $q->where('recipient_user_id', Auth::id());
+                    });
+            })
+            ->latest()
+            ->take(5)
+            ->get();
 
-        return view('student.dashboard', compact('announcements'));
+        // ✅ Add this
+        $notifications = Notification::where('recipient_user_id', Auth::id())
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $unreadCount = Notification::where('recipient_user_id', Auth::id())
+            ->where('is_read', false)
+            ->count();
+
+        return view('student.dashboard', compact('announcements', 'notifications', 'unreadCount'));
     }
+
 
     public function announcements()
     {
@@ -104,25 +118,29 @@ use UsesActiveSemester;
     }
 
 
-    public function open($id)
+public function open($id)
 {
     $notification = Notification::where('id', $id)
-        ->where('recipient_user_id', Auth::id()) // ✅ correct
+        ->where('recipient_user_id', Auth::id())
         ->firstOrFail();
 
-    // ✅ mark as read (highlight gone, notification still displayed)
     if (!$notification->is_read) {
         $notification->update(['is_read' => true]);
     }
 
-    // ✅ go to the specific announcement
-    if ($notification->related_type === Announcement::class && $notification->related_id) {
-        return redirect()->route('student.announcements.show', $notification->related_id);
+    // ✅ Use 'type' because that's what exists in your DB
+    if ($notification->type === 'announcement') {
+        // You can redirect to announcements list (safe)
+        return redirect()->route('student.announcements');
     }
 
-    // fallback
-    return redirect()->route('student.announcements');
+    if ($notification->type === 'stipend') {
+        return redirect()->route('student.stipend-history');
+    }
+
+    return redirect()->route('student.notifications');
 }
+
 
 
 }

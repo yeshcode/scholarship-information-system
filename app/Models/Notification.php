@@ -11,19 +11,19 @@ class Notification extends Model
         'created_by',
         'type',
         'title',
-        'message',  // Fixed typo
+        'message',
         'related_type',
         'related_id',
+        'link',
         'is_read',
         'sent_at',
     ];
 
     protected $casts = [
-        'sent_at' => 'datetime',  // Add this line to cast sent_at to Carbon
         'is_read' => 'boolean',
-        // Add other casts if needed
+        'sent_at' => 'datetime',
     ];
-
+    
     // Relationships
     public function recipient()
     {

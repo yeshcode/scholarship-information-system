@@ -3,35 +3,64 @@
 <?php $__env->startSection('page-content'); ?>
 
 <style>
-:root{
-    --bisu-blue:#003366;
-    --bisu-blue-2:#0b4a85;
-}
-.page-title-bisu{ font-weight:800; font-size:1.6rem; color:var(--bisu-blue); margin:0; }
-.subtext{ color:#6b7280; font-size:.9rem; }
+    :root{
+        --bisu-blue:#003366;
+        --bisu-blue-2:#0b4a85;
+    }
+    .page-title-bisu{ font-weight:800; font-size:1.6rem; color:var(--bisu-blue); margin:0; }
+    .subtext{ color:#6b7280; font-size:.9rem; }
 
-.btn-bisu{
-    background:var(--bisu-blue)!important;
-    border-color:var(--bisu-blue)!important;
-    color:#fff!important;
-    font-weight:700;
-}
-.btn-bisu:hover{ background:var(--bisu-blue-2)!important; border-color:var(--bisu-blue-2)!important; }
+    .btn-bisu{
+        background:var(--bisu-blue)!important;
+        border-color:var(--bisu-blue)!important;
+        color:#fff!important;
+        font-weight:700;
+    }
+    .btn-bisu:hover{ background:var(--bisu-blue-2)!important; border-color:var(--bisu-blue-2)!important; }
 
-.card-bisu{ border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }
-.card-bisu .card-header{ background:#fff; border-bottom:1px solid #eef2f7; }
+    .card-bisu{ border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }
+    .card-bisu .card-header{ background:#fff; border-bottom:1px solid #eef2f7; }
 
-.thead-bisu th{
-    background:var(--bisu-blue)!important;
-    color:#fff!important;
-    font-size:.78rem;
-    letter-spacing:.03em;
-    text-transform:uppercase;
-    white-space:nowrap;
-}
-.table td{ vertical-align:middle; white-space:nowrap; font-size:.9rem; }
-.filter-label{ font-weight:700; color:#475569; margin-bottom:.35rem; font-size:.85rem; }
+    .thead-bisu th{
+        background:var(--bisu-blue)!important;
+        color:#fff!important;
+        font-size:.78rem;
+        letter-spacing:.03em;
+        text-transform:uppercase;
+        white-space:nowrap;
+    }
+    .table td{ vertical-align:middle; white-space:nowrap; font-size:.9rem; }
+    .filter-label{ font-weight:700; color:#475569; margin-bottom:.35rem; font-size:.85rem; }
+
+    .row-disabled{
+    background:#f1f5f9 !important;
+    color:#94a3b8;
+    }
+    .row-disabled input[type="checkbox"]{
+        pointer-events:none;
+    }
+    .sticky-actions{
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        border-top: 1px solid #e5e7eb;
+        padding: .75rem;
+        z-index: 5;
+    }
+
 </style>
+
+<?php if($errors->any()): ?>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <strong>Action failed:</strong>
+        <ul class="mb-0">
+            <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $e): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <li><?php echo e($e); ?></li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </ul>
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
 
 <?php if(session('success')): ?>
 <div class="alert alert-success alert-dismissible fade show">
@@ -67,7 +96,7 @@
     </div>
 
     <div class="d-flex gap-2">
-        <button class="btn btn-bisu btn-sm" data-bs-toggle="modal" data-bs-target="#bulkStipendModal">
+        <button class="btn btn-bisu btn-sm" data-bs-toggle="modal" data-bs-target="#bulkSelectModal">
             + Bulk Assign Stipend
         </button>
     </div>
@@ -113,16 +142,14 @@
 
                 <div class="col-12 col-md-3">
                     <label class="filter-label">Release Schedule</label>
-                    <select name="stipend_release_id" id="stipend_release_id" class="form-select form-select-sm">
-                        <option value="">All releases</option>
-                        <?php $__currentLoopData = $releases; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <option value="<?php echo e($r->id); ?>" <?php echo e((string)request('stipend_release_id')===(string)$r->id?'selected':''); ?>>
-                                <?php echo e($r->title); ?>
+                    <input type="hidden" name="stipend_release_id" id="s2_release_id_hidden">
 
-                                (<?php echo e(strtoupper(str_replace('_',' ', $r->status ?? ''))); ?>)
-                            </option>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                    </select>
+                        <div class="col-12">
+                        <label class="filter-label">Stipend Release Schedule</label>
+                        <input type="text" id="s2_release_title" class="form-control form-control-sm" readonly>
+                        <div class="form-text">Chosen from Step 1 (Set A / Set B).</div>
+                        </div>
+
                 </div>
 
                 <div class="col-12 col-md-3">
@@ -130,6 +157,16 @@
                     <input type="text" name="q" id="q" class="form-control form-control-sm"
                            value="<?php echo e(request('q')); ?>" placeholder="Lastname / Firstname / Student ID">
                 </div>
+
+                <div class="col-12 col-md-3">
+                <label class="filter-label">Stipend Status</label>
+                <select name="stipend_status" class="form-select form-select-sm">
+                    <option value="">All</option>
+                    <option value="for_release" <?php echo e(request('stipend_status')==='for_release'?'selected':''); ?>>For Release</option>
+                    <option value="received" <?php echo e(request('stipend_status')==='received'?'selected':''); ?>>Received</option>
+                </select>
+                </div>
+
 
             </div>
         </form>
@@ -191,7 +228,7 @@
                             <?php endif; ?>
                         </td>
 
-                        <td><?php echo e($stipend->amount_received); ?></td>
+                        <td><?php echo e(number_format((float)$stipend->amount_received, 2)); ?></td>
                         <td><?php echo e(strtoupper(str_replace('_',' ', $stipend->status))); ?></td>
 
                         <td class="text-end">
@@ -215,172 +252,571 @@
 </div>
 
 
-<div class="modal fade" id="bulkStipendModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
 
-            <div class="modal-header bg-dark text-white">
-                <div>
-                    <div class="fw-bold">Bulk Assign Stipend</div>
-                    <small class="opacity-75">Pick scholarship + batch, choose a release schedule, set release datetime, amount, then choose scholars.</small>
-                </div>
-                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="bulkSelectModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header" style="background:var(--bisu-blue); color:#fff;">
+        <div>
+          <div class="fw-bold">Bulk Assign Stipend — Step 1</div>
+          <small class="opacity-75">Filter & select scholars. Eligible records appear first.</small>
+        </div>
+        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-4">
+            <label class="filter-label">Scholarship</label>
+            <select id="m_scholarship_id" class="form-select form-select-sm">
+              <option value="">Select scholarship…</option>
+              <?php $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($s->id); ?>"><?php echo e($s->scholarship_name); ?></option>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <label class="filter-label">Batch</label>
+            <select id="m_batch_id" class="form-select form-select-sm">
+              <option value="">Select batch…</option>
+              <?php $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($b->id); ?>" data-sch="<?php echo e($b->scholarship_id); ?>">
+                    Batch <?php echo e($b->batch_number); ?>
+
+                    </option>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+            <div class="form-text">Batch dropdown will be filtered by scholarship.</div>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <label class="filter-label">Release Schedule</label>
+            <select id="m_release_id" class="form-select form-select-sm" disabled>
+                <option value="">Select batch first…</option>
+            </select>
+            <div class="form-text">Select the schedule you are filling (Set A / Set B).</div>
             </div>
 
-            <form method="POST" action="<?php echo e(route('coordinator.stipends.bulk-assign')); ?>">
-                <?php echo csrf_field(); ?>
 
-                <div class="modal-body">
+          <div class="col-12 col-md-4">
+            <label class="filter-label">Search scholar</label>
+            <input type="text" id="m_q" class="form-control form-control-sm" placeholder="Lastname / Firstname / Student ID">
+          </div>
 
-                    <div class="row g-3 mb-3">
+          <div class="col-12">
+            <div class="alert alert-info small mb-0">
+              Eligible = <strong>ENROLLED or GRADUATED</strong> in the <strong>active semester</strong>.
+              Ineligible records are shown but disabled (gray) and placed at the bottom.
+            </div>
+          </div>
+        </div>
 
-                        <div class="col-12 col-md-3">
-                            <label class="filter-label">Scholarship</label>
-                            <select name="scholarship_id" class="form-select form-select-sm" required>
-                                <option value="">Select scholarship…</option>
-                                <?php $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($s->id); ?>"><?php echo e($s->scholarship_name); ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                        </div>
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover mb-0" id="scholarsPickTable">
+            <thead class="thead-bisu">
+              <tr>
+                <th style="width:70px;">
+                  <input type="checkbox" id="checkAllEligible">
+                </th>
+                <th>Student ID</th>
+                <th>Last Name</th>
+                <th>First Name</th>
+                <th>Enrollment Status</th>
+                <th>Scholarship</th>
+                <th>Batch</th>
+                <th>Note</th>
+              </tr>
+            </thead>
 
-                        <div class="col-12 col-md-3">
-                            <label class="filter-label">Batch</label>
-                            <select name="batch_id" class="form-select form-select-sm" required>
-                                <option value="">Select batch…</option>
-                                <?php $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($b->id); ?>">
-                                        Batch <?php echo e($b->batch_number); ?> (<?php echo e($b->semester->term ?? ''); ?> <?php echo e($b->semester->academic_year ?? ''); ?>)
-                                    </option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                        </div>
+            <tbody>
+              <?php $__currentLoopData = $eligibleScholars; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php
+                  // expected fields from controller:
+                  // $row->is_selectable (bool)
+                  // $row->enrollment_status_label (string)
+                  // $row->note (string)
+                ?>
 
-                        <div class="col-12 col-md-3">
-                            <label class="filter-label">Stipend Release Schedule</label>
-                            <select name="stipend_release_id" class="form-select form-select-sm" required>
-                                <option value="">Select release…</option>
-                                <?php $__currentLoopData = $releases; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($r->id); ?>" data-status="<?php echo e($r->status); ?>">
-                                        <?php echo e($r->title); ?>
+                <tr class="<?php echo e($row->is_selectable && !$row->has_stipend_in_batch ? '' : 'row-disabled'); ?>"
+                    data-sch="<?php echo e($row->scholarship_id); ?>"
+                    data-batch="<?php echo e($row->batch_id); ?>"
+                    data-scholar-id="<?php echo e($row->id); ?>"
+                    data-hasstipend="<?php echo e($row->has_stipend_in_batch ? '1' : '0'); ?>"
+                    data-name="<?php echo e(strtolower(($row->user->lastname ?? '').' '.($row->user->firstname ?? ''))); ?>"
+                    data-studentid="<?php echo e(strtolower($row->user->student_id ?? '')); ?>"
+                    data-selectable="<?php echo e(($row->is_selectable && !$row->has_stipend_in_batch) ? '1' : '0'); ?>">
 
-                                    </option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                            <div class="form-text" id="releaseNote">Select a release to see its status.</div>
-                        </div>
+                                    
 
-                        <div class="col-12 col-md-3">
-                            <label class="filter-label">Release Date & Time</label>
-                            <input type="datetime-local" name="release_at" class="form-control form-control-sm" required>
-                        </div>
+                  <td class="text-center">
+                    <?php if($row->is_selectable && !$row->has_stipend_in_batch): ?>
+                        <input type="checkbox" class="pickScholar" value="<?php echo e($row->id); ?>">
+                    <?php else: ?>
+                        <span class="text-muted small">—</span>
+                    <?php endif; ?>
+                    </td>
 
-                        <div class="col-12 col-md-3">
-                            <label class="filter-label">Amount</label>
-                            <input type="number" step="0.01" name="amount_received" class="form-control form-control-sm" required>
-                        </div>
 
-                        <div class="col-12 col-md-3">
-                            <label class="filter-label">Status</label>
-                            <select name="status" class="form-select form-select-sm" required>
-                                <option value="for_billing">For Billing</option>
-                                <option value="for_check">For Check</option>
-                                <option value="for_release">For Release</option>
-                                <option value="received">Received</option>
-                            </select>
-                        </div>
+                  <td><?php echo e($row->user->student_id ?? ''); ?></td>
+                  <td><?php echo e($row->user->lastname ?? ''); ?></td>
+                  <td><?php echo e($row->user->firstname ?? ''); ?></td>
+                  <td>
+                    <span class="badge <?php echo e($row->is_selectable ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'); ?>">
+                      <?php echo e($row->enrollment_status_label); ?>
 
-                        <div class="col-12">
-                            <div class="alert alert-info small mb-0">
-                                Eligible scholars shown below are those who are <strong>ENROLLED or GRADUATED</strong> in the <strong>current semester</strong>.
-                            </div>
-                        </div>
+                    </span>
+                  </td>
 
-                    </div>
+                  <td><?php echo e($row->scholarship->scholarship_name ?? ''); ?></td>
+                  <td>Batch <?php echo e($row->scholarshipBatch->batch_number ?? ''); ?></td>
 
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover mb-0">
-                            <thead class="thead-bisu">
-                                <tr>
-                                    <th style="width:70px;">Select</th>
-                                    <th>Student ID</th>
-                                    <th>Last Name</th>
-                                    <th>First Name</th>
-                                    <th>Scholarship</th>
-                                    <th>Batch</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php $__empty_1 = true; $__currentLoopData = $eligibleScholars; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sc): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                                    <tr>
-                                        <td class="text-center">
-                                            <input type="checkbox" name="scholar_ids[]" value="<?php echo e($sc->id); ?>">
-                                        </td>
-                                        <td><?php echo e($sc->user->student_id ?? 'N/A'); ?></td>
-                                        <td><?php echo e($sc->user->lastname ?? 'N/A'); ?></td>
-                                        <td><?php echo e($sc->user->firstname ?? 'N/A'); ?></td>
-                                        <td><?php echo e($sc->scholarship->scholarship_name ?? 'N/A'); ?></td>
-                                        <td>Batch <?php echo e($sc->scholarshipBatch->batch_number ?? 'N/A'); ?></td>
-                                    </tr>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted py-3">
-                                            No eligible scholars found. Select filters above first.
-                                        </td>
-                                    </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                  <td class="small <?php echo e($row->has_stipend_in_batch ? 'text-secondary fst-italic' : 'text-muted'); ?>">
+                    <?php echo e($row->note); ?>
 
-                </div>
+                    </td>
 
-                <div class="modal-footer">
-                    <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" type="button">Close</button>
-                    <button class="btn btn-bisu btn-sm" type="submit">Save Bulk Stipends</button>
-                </div>
+                    <td class="small">
+                        <span class="noteText"><?php echo e($row->note); ?></span>
+                        </td>
 
-            </form>
+
+                </tr>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <div class="sticky-actions d-flex justify-content-between align-items-center">
+        <div class="small text-muted">
+          Selected scholars: <span class="fw-bold" id="selectedCount">0</span>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" type="button">Close</button>
+          <button class="btn btn-bisu btn-sm" id="proceedToSchedule" type="button" disabled>
+            Proceed →
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="bulkScheduleModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header" style="background:var(--bisu-blue); color:#fff;">
+        <div>
+          <div class="fw-bold">Bulk Assign Stipend — Step 2</div>
+          <small class="opacity-75">Set release schedule & date/time. Status will be set to FOR RELEASE automatically.</small>
+        </div>
+        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="POST" action="<?php echo e(route('coordinator.stipends.bulk-assign-v2')); ?>" id="bulkScheduleForm">
+        <?php echo csrf_field(); ?>
+
+        <div class="modal-body">
+
+          <input type="hidden" name="scholarship_id" id="s2_scholarship_id">
+          <input type="hidden" name="batch_id" id="s2_batch_id">
+
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="alert alert-info small mb-0">
+                Selected scholars: <strong id="s2_selectedCount">0</strong>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label class="filter-label">Stipend Release Schedule (must match batch)</label>
+              <select name="stipend_release_id" id="s2_release_id" class="form-select form-select-sm" required>
+                <option value="">Select release…</option>
+                <?php $__currentLoopData = $releases; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                  <option value="<?php echo e($r->id); ?>" data-batch="<?php echo e($r->batch_id); ?>">
+                    <?php echo e($r->title); ?> (<?php echo e(strtoupper(str_replace('_',' ', $r->status ?? ''))); ?>)
+                  </option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+              </select>
+              <div class="form-text">Only schedules for the selected batch should remain selectable.</div>
+            </div>
+
+            <div class="col-12">
+              <label class="filter-label">Release Date & Time</label>
+              <input type="datetime-local" name="release_at" class="form-control form-control-sm" required>
+            </div>
+
+            <div class="col-12">
+              <div class="alert alert-warning small mb-0">
+                Amount will be taken from the selected release schedule. (No manual amount input.)
+              </div>
+            </div>
+
+          </div>
+
+          <hr class="my-3">
+
+          <div class="fw-bold mb-2">Selected scholars preview</div>
+          <div class="small text-muted mb-2">This is a quick preview; the final list will be submitted.</div>
+          <ul class="small" id="selectedPreviewList"></ul>
+
+          
+          <div id="selectedInputs"></div>
 
         </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" type="button">Back</button>
+          <button class="btn btn-bisu btn-sm" type="submit">Submit & Notify Scholars</button>
+        </div>
+      </form>
+
     </div>
+  </div>
 </div>
+
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('filterForm');
 
-    const scholarship = document.getElementById('scholarship_id');
-    const batch = document.getElementById('batch_id');
-    const release = document.getElementById('stipend_release_id');
-    const q = document.getElementById('q');
+  const selectModalEl = document.getElementById('bulkSelectModal');
+  const scheduleModalEl = document.getElementById('bulkScheduleModal');
 
-    scholarship?.addEventListener('change', () => form.submit());
-    batch?.addEventListener('change', () => form.submit());
-    release?.addEventListener('change', () => form.submit());
+  const mScholarship = document.getElementById('m_scholarship_id');
+  const mBatch = document.getElementById('m_batch_id');
+  const mRelease = document.getElementById('m_release_id');
+  const mQ = document.getElementById('m_q');
 
-    let t=null;
-    q?.addEventListener('input', () => {
-        clearTimeout(t);
-        t=setTimeout(()=>form.submit(), 400);
+  const proceedBtn = document.getElementById('proceedToSchedule');
+  const selectedCountEl = document.getElementById('selectedCount');
+
+  const checkAllEligible = document.getElementById('checkAllEligible');
+  const table = document.getElementById('scholarsPickTable');
+
+  // Step 2 fields
+  const s2ScholarshipId = document.getElementById('s2_scholarship_id');
+  const s2BatchId = document.getElementById('s2_batch_id');
+  const s2ReleaseHidden = document.getElementById('s2_release_id_hidden');
+  const s2ReleaseTitle = document.getElementById('s2_release_title');
+  const s2SelectedCount = document.getElementById('s2_selectedCount');
+
+  // endpoints
+  const urlReleasesByBatch = <?php echo json_encode(route('coordinator.stipend-releases.by-batch'), 15, 512) ?>;
+  const urlPickMeta = <?php echo json_encode(route('coordinator.stipends.pick-meta'), 15, 512) ?>;
+
+  function getRows(){
+    return Array.from(table.querySelectorAll('tbody tr'));
+  }
+
+  // ---------- Scholarship -> Batch filtering (your current behavior)
+  function filterBatchOptions(){
+    const sch = mScholarship.value;
+    Array.from(mBatch.options).forEach(opt => {
+      if (!opt.value) return;
+      const optSch = opt.getAttribute('data-sch');
+      opt.hidden = sch && optSch !== sch;
+    });
+    if (mBatch.selectedOptions[0]?.hidden) mBatch.value = '';
+  }
+
+  // ---------- Apply search/batch/sch filters to row visibility
+  function applyRowFilters(){
+    const sch = mScholarship.value;
+    const batchVal = mBatch.value;
+    const search = (mQ.value || '').trim().toLowerCase();
+
+    getRows().forEach(tr => {
+      const trSch = tr.getAttribute('data-sch');
+      const trBatch = tr.getAttribute('data-batch');
+      const name = tr.getAttribute('data-name') || '';
+      const sid = tr.getAttribute('data-studentid') || '';
+
+      let ok = true;
+      if (sch && trSch !== sch) ok = false;
+      if (batchVal && trBatch !== batchVal) ok = false;
+      if (search && !(name.includes(search) || sid.includes(search))) ok = false;
+
+      tr.style.display = ok ? '' : 'none';
     });
 
-    // Modal release note
-    const modal = document.getElementById('bulkStipendModal');
-    modal?.addEventListener('shown.bs.modal', function(){
-        const releaseSelect = modal.querySelector('select[name="stipend_release_id"]');
-        const note = document.getElementById('releaseNote');
+    applyEligibilityAndBlock(); // ✅ re-apply disable state after filters
+    syncSelected();
+  }
 
-        function syncNote(){
-            const opt = releaseSelect.options[releaseSelect.selectedIndex];
-            const status = (opt?.getAttribute('data-status') || '').toUpperCase().replaceAll('_',' ');
-            note.textContent = status ? `This stipend release schedule is ${status} pa.` : 'Select a release to see its status.';
-        }
-        releaseSelect.addEventListener('change', syncNote);
-        syncNote();
+  // ---------- Enable/disable rows based on release meta
+  let metaEligible = new Set();
+  let metaBlocked = new Set();
+  let metaLoaded = false;
+
+  function setRowDisabled(tr, reasonText){
+    tr.classList.add('row-disabled');
+    tr.setAttribute('data-selectable', '0');
+
+    const cb = tr.querySelector('.pickScholar');
+    if (cb) cb.checked = false;
+
+    const note = tr.querySelector('.noteText');
+    if (note) note.textContent = reasonText || 'Not selectable';
+
+    // Hide checkbox cell if you want, but simplest: keep it and just disable
+    const cell = tr.querySelector('td:first-child');
+    if (cell) {
+      cell.innerHTML = '<span class="text-muted small">—</span>';
+    }
+  }
+
+  function setRowEnabled(tr){
+    tr.classList.remove('row-disabled');
+    tr.setAttribute('data-selectable', '1');
+
+    const sid = tr.getAttribute('data-scholar-id');
+    const cell = tr.querySelector('td:first-child');
+    if (cell) {
+      cell.innerHTML = `<input type="checkbox" class="pickScholar" value="${sid}">`;
+    }
+
+    const note = tr.querySelector('.noteText');
+    if (note) note.textContent = 'Selectable';
+  }
+
+  function applyEligibilityAndBlock(){
+    const batchVal = mBatch.value;
+    const releaseVal = mRelease.value;
+
+    // If no release chosen yet, don't allow selections
+    if (!batchVal || !releaseVal || !metaLoaded) {
+      getRows().forEach(tr => {
+        if (tr.style.display === 'none') return;
+        setRowDisabled(tr, 'Select a release schedule first.');
+      });
+      return;
+    }
+
+    getRows().forEach(tr => {
+      if (tr.style.display === 'none') return;
+
+      // only rows of chosen batch should remain visible already; still safe:
+      if (tr.getAttribute('data-batch') !== batchVal) return;
+
+      const scholarId = tr.getAttribute('data-scholar-id');
+      if (!scholarId) return;
+
+      if (!metaEligible.has(scholarId)) {
+        setRowDisabled(tr, 'Not eligible in this release semester.');
+        return;
+      }
+
+      if (metaBlocked.has(scholarId)) {
+        setRowDisabled(tr, 'Already scheduled for this batch & semester.');
+        return;
+      }
+
+      setRowEnabled(tr);
     });
+  }
+
+  // ---------- selection counting
+  function syncSelected(){
+    const checked = Array.from(table.querySelectorAll('.pickScholar:checked'));
+    selectedCountEl.textContent = checked.length;
+
+    // Proceed requires: at least 1 selected + release chosen
+    const okRelease = !!mRelease.value;
+    proceedBtn.disabled = checked.length === 0 || !okRelease;
+  }
+
+  // Select all eligible visible
+  checkAllEligible?.addEventListener('change', () => {
+    const visibleEligibleRows = getRows().filter(tr =>
+      tr.style.display !== 'none' && tr.getAttribute('data-selectable') === '1'
+    );
+
+    visibleEligibleRows.forEach(tr => {
+      const cb = tr.querySelector('.pickScholar');
+      if (cb) cb.checked = checkAllEligible.checked;
+    });
+
+    syncSelected();
+  });
+
+  // Checkbox changes (event delegation)
+  table.addEventListener('change', (e) => {
+    if (e.target.classList.contains('pickScholar')) {
+      syncSelected();
+    }
+  });
+
+  // ---------- AJAX: load releases when batch changes
+  async function loadReleasesForBatch(batchId){
+    mRelease.innerHTML = '<option value="">Loading…</option>';
+    mRelease.disabled = true;
+    metaLoaded = false;
+    metaEligible = new Set();
+    metaBlocked = new Set();
+
+    if (!batchId) {
+      mRelease.innerHTML = '<option value="">Select batch first…</option>';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${urlReleasesByBatch}?batch_id=${encodeURIComponent(batchId)}`);
+      const data = await res.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        mRelease.innerHTML = '<option value="">No release schedules found</option>';
+        return;
+      }
+
+      mRelease.innerHTML = '<option value="">Select release…</option>';
+      data.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = r.title;
+        opt.dataset.semesterId = r.semester_id;
+        opt.dataset.amount = r.amount;
+        mRelease.appendChild(opt);
+      });
+
+      mRelease.disabled = false;
+
+    } catch (err) {
+      console.error(err);
+      mRelease.innerHTML = '<option value="">Failed to load releases</option>';
+    }
+  }
+
+  // ---------- AJAX: load eligible/blocked when release changes
+  async function loadPickMeta(releaseId){
+    metaLoaded = false;
+    metaEligible = new Set();
+    metaBlocked = new Set();
+
+    if (!releaseId) {
+      applyEligibilityAndBlock();
+      syncSelected();
+      return;
+    }
+
+    try {
+      const res = await fetch(`${urlPickMeta}?release_id=${encodeURIComponent(releaseId)}`);
+      const meta = await res.json();
+
+      metaEligible = new Set((meta.eligible_ids || []).map(String));
+      metaBlocked = new Set((meta.blocked_ids || []).map(String));
+      metaLoaded = true;
+
+      applyEligibilityAndBlock();
+      syncSelected();
+
+    } catch (err) {
+      console.error(err);
+      metaLoaded = false;
+      applyEligibilityAndBlock();
+      syncSelected();
+    }
+  }
+
+  // ---------- events
+  mScholarship.addEventListener('change', () => {
+    filterBatchOptions();
+    // Reset release if scholarship changes
+    mRelease.innerHTML = '<option value="">Select batch first…</option>';
+    mRelease.disabled = true;
+    applyRowFilters();
+  });
+
+  mBatch.addEventListener('change', async () => {
+    await loadReleasesForBatch(mBatch.value);
+    applyRowFilters();
+  });
+
+  mRelease.addEventListener('change', async () => {
+    await loadPickMeta(mRelease.value);
+  });
+
+  let tt=null;
+  mQ.addEventListener('input', () => {
+    clearTimeout(tt);
+    tt=setTimeout(applyRowFilters, 200);
+  });
+
+  // ---------- Proceed to step 2
+  proceedBtn.addEventListener('click', () => {
+    const checked = Array.from(table.querySelectorAll('.pickScholar:checked'));
+    const ids = checked.map(cb => cb.value);
+
+    if (!mRelease.value) {
+      alert('Please select a Release Schedule first.');
+      return;
+    }
+    if (ids.length === 0) {
+      alert('No scholars selected.');
+      return;
+    }
+
+    // Step 2 hidden fields
+    s2ScholarshipId.value = mScholarship.value || '';
+    s2BatchId.value = mBatch.value || '';
+
+    // release
+    const selectedOpt = mRelease.selectedOptions[0];
+    s2ReleaseHidden.value = mRelease.value;
+    s2ReleaseTitle.value = selectedOpt ? selectedOpt.textContent : '';
+
+    // count
+    s2SelectedCount.textContent = ids.length;
+
+    // build hidden inputs
+    const inputsWrap = document.getElementById('selectedInputs');
+    inputsWrap.innerHTML = '';
+    ids.forEach(id => {
+      const inp = document.createElement('input');
+      inp.type = 'hidden';
+      inp.name = 'scholar_ids[]';
+      inp.value = id;
+      inputsWrap.appendChild(inp);
+    });
+
+    // preview list
+    const preview = document.getElementById('selectedPreviewList');
+    preview.innerHTML = '';
+    checked.slice(0, 10).forEach(cb => {
+      const tr = cb.closest('tr');
+      const lname = tr.children[2].textContent.trim();
+      const fname = tr.children[3].textContent.trim();
+      const li = document.createElement('li');
+      li.textContent = `${lname}, ${fname}`;
+      preview.appendChild(li);
+    });
+
+    if (checked.length > 10) {
+      const li = document.createElement('li');
+      li.className = 'text-muted';
+      li.textContent = `+ ${checked.length - 10} more…`;
+      preview.appendChild(li);
+    }
+
+    bootstrap.Modal.getOrCreateInstance(selectModalEl).hide();
+    bootstrap.Modal.getOrCreateInstance(scheduleModalEl).show();
+  });
+
+  // ---------- init
+  filterBatchOptions();
+  applyRowFilters();
+
 });
 </script>
+
 
 <?php $__env->stopSection(); ?>
 

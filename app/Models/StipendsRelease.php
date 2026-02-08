@@ -11,6 +11,7 @@ class StipendsRelease extends Model
     protected $fillable = [
         'title',
         'batch_id',       // FK to scholarship_batches table
+        'semester_id',
         'created_by',     // FK to users table (as creator)
         'updated_by',     // FK to users table (as updater)
         'date_release',   // e.g., '2023-10-01'
@@ -48,5 +49,10 @@ class StipendsRelease extends Model
     public function notifications()
     {
         return $this->morphMany(Notification::class, 'related');  // Assuming 'related' is the morph name; adjust if your table uses different column names (e.g., 'notifiable')
+    }
+
+    public function semester()
+    {
+        return $this->belongsTo(\App\Models\Semester::class, 'semester_id');
     }
 }

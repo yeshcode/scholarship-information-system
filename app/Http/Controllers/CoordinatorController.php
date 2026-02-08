@@ -688,61 +688,139 @@ public function confirmDeleteScholarshipBatch($id)
     // Manage Stipends
   public function manageStipends(Request $request)
 {
-    $activeSemesterId = $this->activeSemesterId(); // ✅ session semester
+    $activeSemesterId = $this->activeSemesterId();
 
     $scholarshipId = $request->get('scholarship_id');
     $batchId       = $request->get('batch_id');
     $releaseId     = $request->get('stipend_release_id');
     $q             = trim((string) $request->get('q', ''));
+    $stipendStatus = $request->get('stipend_status');
 
     $scholarships = Scholarship::orderBy('scholarship_name')->get();
 
-    // ✅ Batches list (FILTERED by ACTIVE SEMESTER)
-    $batchesQuery = ScholarshipBatch::with(['semester','scholarship'])
+    // ✅ Batches list (optional filter by active semester)
+    $batchesQuery = ScholarshipBatch::with(['semester', 'scholarship'])
         ->when($activeSemesterId, fn($x) => $x->where('semester_id', $activeSemesterId))
+        ->when($scholarshipId, fn($x) => $x->where('scholarship_id', $scholarshipId))
+        ->whereHas('stipendReleases', function ($r) {
+            $r->where('status', 'for_release');
+        })
         ->orderByDesc('batch_number');
 
-    if ($scholarshipId) $batchesQuery->where('scholarship_id', $scholarshipId);
     $batches = $batchesQuery->get();
 
-    // ✅ Releases list (FILTERED by ACTIVE SEMESTER via batch)
+    // ✅ Releases list
     $releasesQuery = StipendsRelease::with(['scholarshipBatch.semester'])
-        ->when($activeSemesterId, function($x) use ($activeSemesterId){
+        ->where('status', 'for_release')
+        ->when($activeSemesterId, function ($x) use ($activeSemesterId) {
             $x->whereHas('scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
         })
         ->orderByDesc('id');
 
-    if ($batchId) $releasesQuery->where('batch_id', $batchId);
+    if ($batchId) {
+        $releasesQuery->where('batch_id', $batchId);
+    }
+
     $releases = $releasesQuery->get();
 
-    // ✅ Eligible scholars modal (FILTERED by ACTIVE SEMESTER via batch + enrollment)
-    $eligibleScholars = Scholar::query()
-        ->with(['user','scholarship','scholarshipBatch'])
-        ->when($activeSemesterId, function($x) use ($activeSemesterId){
+    // ✅ Current semester badge (optional)
+    $currentSemester = $activeSemesterId ? Semester::find($activeSemesterId) : null;
+
+    // ===============================
+    // ✅ MODAL SCHOLARS LIST (Step 1)
+    // ===============================
+    // IMPORTANT:
+    // We DO NOT exclude scholars here using $batchId from page,
+    // because the modal batch is chosen via JS dropdown.
+    //
+    // Instead: we add a computed column "has_stipend_in_batch_db"
+    // and let JS hide them when a batch is selected inside the modal.
+
+    $modalScholarsQuery = Scholar::query()
+        ->with(['user', 'scholarship', 'scholarshipBatch'])
+
+        // optional scope: only show scholars whose batch belongs to active semester
+        ->when($activeSemesterId, function ($x) use ($activeSemesterId) {
             $x->whereHas('scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
         })
-        ->when($scholarshipId, fn($x) => $x->where('scholars.scholarship_id', $scholarshipId))
-        ->when($batchId, fn($x) => $x->where('scholars.batch_id', $batchId))
-        ->whereHas('user.enrollments', function ($e) use ($activeSemesterId) {
-            // must be enrolled/graduated in the ACTIVE SEM
-            $e->where('semester_id', $activeSemesterId)
-              ->whereIn('enrollments.status', ['enrolled','graduated']);
+
+        ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+
+        ->leftJoin('enrollments', function ($join) use ($activeSemesterId) {
+            $join->on('enrollments.user_id', '=', 'users.id')
+                ->where('enrollments.semester_id', '=', $activeSemesterId);
         })
-        ->when($q !== '', function($x) use ($q){
-            $x->whereHas('user', function($u) use ($q){
-                $u->where('firstname', 'ILIKE', "%{$q}%")
-                  ->orWhere('lastname', 'ILIKE', "%{$q}%")
-                  ->orWhere('student_id', 'ILIKE', "%{$q}%");
+
+        ->select([
+            'scholars.*',
+
+            // enrollment status
+            DB::raw("COALESCE(enrollments.status::text, 'not_existing') as enrollment_status_db"),
+
+            // selectable = enrolled or graduated
+            DB::raw("CASE WHEN enrollments.status::text IN ('enrolled','graduated') THEN 1 ELSE 0 END as is_selectable_db"),
+
+            // ✅ NEW: already has stipend scheduled in scholar's OWN batch?
+            // (any stipend row under any release schedule of that same batch)
+            DB::raw("CASE WHEN EXISTS (
+                SELECT 1
+                FROM stipends
+                JOIN stipend_releases ON stipend_releases.id = stipends.stipend_release_id
+                WHERE stipends.scholar_id = scholars.id
+                  AND stipend_releases.batch_id = scholars.batch_id
+            ) THEN 1 ELSE 0 END as has_stipend_in_batch_db"),
+
+            // sorting buckets: eligible first
+            DB::raw("CASE
+                WHEN enrollments.status::text IN ('enrolled','graduated') THEN 1
+                WHEN enrollments.status::text = 'dropped' THEN 2
+                WHEN enrollments.status IS NULL THEN 3
+                ELSE 4
+            END as sort_bucket")
+        ])
+
+        // page search q affects modal too
+        ->when($q !== '', function ($x) use ($q) {
+            $x->where(function ($w) use ($q) {
+                $w->where('users.firstname', 'ILIKE', "%{$q}%")
+                    ->orWhere('users.lastname', 'ILIKE', "%{$q}%")
+                    ->orWhere('users.student_id', 'ILIKE', "%{$q}%");
             });
         })
-        ->join('users', 'users.id', '=', 'scholars.student_id')
-        ->orderBy('users.lastname')
-        ->orderBy('users.firstname')
-        ->select('scholars.*')
-        ->limit(300)
-        ->get();
 
-    // ✅ Stipends rows list (FILTERED by ACTIVE SEMESTER via stipendRelease->batch->semester)
+        ->orderBy('sort_bucket')
+        ->orderByDesc('is_selectable_db')
+        ->orderBy('users.lastname')
+        ->orderBy('users.firstname');
+
+    $eligibleScholars = $modalScholarsQuery
+        ->limit(300)
+        ->get()
+        ->map(function ($s) {
+            $status = $s->enrollment_status_db;
+
+            $s->is_selectable = ((int) $s->is_selectable_db) === 1;
+            $s->has_stipend_in_batch = ((int) $s->has_stipend_in_batch_db) === 1;
+
+            if ($status === 'not_existing') {
+                $s->enrollment_status_label = 'NOT EXISTING';
+                $s->note = 'No enrollment record for active semester.';
+            } else {
+                $s->enrollment_status_label = strtoupper(str_replace('_', ' ', $status));
+                $s->note = $s->is_selectable ? 'Selectable' : 'Not selectable for stipend scheduling.';
+            }
+
+            // extra note if already scheduled
+            if ($s->has_stipend_in_batch) {
+                $s->note = 'Already scheduled in this batch.';
+            }
+
+            return $s;
+        });
+
+    // ===============================
+    // ✅ STIPENDS TABLE (main list)
+    // ===============================
     $stipendsQuery = Stipend::query()
         ->with([
             'scholar.user',
@@ -750,18 +828,22 @@ public function confirmDeleteScholarshipBatch($id)
             'scholar.scholarshipBatch.semester',
             'stipendRelease.scholarshipBatch.semester'
         ])
-        ->when($activeSemesterId, function($x) use ($activeSemesterId){
+        ->when($activeSemesterId, function ($x) use ($activeSemesterId) {
             $x->whereHas('stipendRelease.scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
         })
         ->when($scholarshipId, fn($x) => $x->whereHas('scholar', fn($s) => $s->where('scholarship_id', $scholarshipId)))
         ->when($batchId, fn($x) => $x->whereHas('scholar', fn($s) => $s->where('batch_id', $batchId)))
         ->when($releaseId, fn($x) => $x->where('stipend_release_id', $releaseId));
 
+    if (!empty($stipendStatus)) {
+        $stipendsQuery->where('status', $stipendStatus);
+    }
+
     if ($q !== '') {
-        $stipendsQuery->whereHas('scholar.user', function($u) use ($q){
+        $stipendsQuery->whereHas('scholar.user', function ($u) use ($q) {
             $u->where('firstname', 'ILIKE', "%{$q}%")
-              ->orWhere('lastname', 'ILIKE', "%{$q}%")
-              ->orWhere('student_id', 'ILIKE', "%{$q}%");
+                ->orWhere('lastname', 'ILIKE', "%{$q}%")
+                ->orWhere('student_id', 'ILIKE', "%{$q}%");
         });
     }
 
@@ -769,6 +851,7 @@ public function confirmDeleteScholarshipBatch($id)
 
     return view('coordinator.manage-stipends', compact(
         'activeSemesterId',
+        'currentSemester',
         'scholarships',
         'batches',
         'releases',
@@ -776,10 +859,6 @@ public function confirmDeleteScholarshipBatch($id)
         'stipends'
     ));
 }
-
-
-
-
 
 
 public function bulkAssignStipends(Request $request)
@@ -874,6 +953,155 @@ public function bulkAssignStipends(Request $request)
 }
 
 
+public function bulkAssignStipendsV2(Request $request)
+{
+    $request->validate([
+        'scholarship_id'     => 'required|exists:scholarships,id',
+        'batch_id'           => 'required|exists:scholarship_batches,id',
+        'stipend_release_id' => 'required|exists:stipend_releases,id',
+        'release_at'         => 'required|date',
+        'scholar_ids'        => 'required|array|min:1',
+        'scholar_ids.*'      => 'exists:scholars,id',
+    ]);
+
+    $creatorId = Auth::id();
+    if (!$creatorId) {
+        return back()->with('error', 'Session expired. Please login again.');
+    }
+
+    // ✅ Get release + batch + semester
+    $release = StipendsRelease::with('scholarshipBatch')->findOrFail($request->stipend_release_id);
+    $targetSemesterId = $release->scholarshipBatch?->semester_id;
+
+    if (!$targetSemesterId) {
+        return back()->with('error', 'Release has no semester assigned.');
+    }
+
+    $added = 0;
+    $skipped = 0;
+
+    DB::transaction(function () use (
+        $request, $release, $creatorId, $targetSemesterId, &$added, &$skipped
+    ) {
+        foreach ($request->scholar_ids as $sid) {
+
+            $scholar = Scholar::find($sid);
+            if (!$scholar) {
+                $skipped++;
+                continue;
+            }
+
+            // ✅ 1. Must be enrolled or graduated in the RELEASE semester
+            $isEligible = Enrollment::query()
+                ->where('user_id', $scholar->student_id)
+                ->where('semester_id', $targetSemesterId)
+                ->whereIn('status', ['enrolled', 'graduated'])
+                ->exists();
+
+            if (!$isEligible) {
+                $skipped++;
+                continue;
+            }
+
+            // ==================================================
+            // ✅ 2. PREVENT DUPLICATE STIPEND IN SAME SEMESTER
+            // ==================================================
+            $alreadyScheduledThisBatchThisSem = Stipend::query()
+                ->where('stipends.scholar_id', $scholar->id)
+                ->join('stipend_releases', 'stipend_releases.id', '=', 'stipends.stipend_release_id')
+                ->where('stipend_releases.batch_id', $release->batch_id)
+                ->where('stipend_releases.semester_id', $targetSemesterId)
+                ->exists();
+
+            if ($alreadyScheduledThisBatchThisSem) { $skipped++; continue; }
+
+
+            // ✅ 3. Create stipend (SAFE now)
+            $stipend = Stipend::create([
+                'scholar_id'         => $scholar->id,
+                'student_id'         => $scholar->student_id,
+                'stipend_release_id' => $release->id,
+                'created_by'         => $creatorId,
+                'updated_by'         => $creatorId,
+                'amount_received'    => $release->amount,
+                'status'             => 'for_release',
+                'release_at'         => $request->release_at,
+                'received_at'        => null,
+            ]);
+
+            $added++;
+        }
+    });
+
+    return redirect()->route('coordinator.manage-stipends', [
+            'scholarship_id'     => $request->scholarship_id,
+            'batch_id'           => $request->batch_id,
+            'stipend_release_id' => $request->stipend_release_id,
+        ])
+        ->with('success', "Scheduled stipends saved. Added: {$added} | Skipped: {$skipped}");
+}
+
+public function releasesByBatch(Request $request)
+{
+    $request->validate([
+        'batch_id' => 'required|exists:scholarship_batches,id',
+    ]);
+
+    $releases = StipendsRelease::query()
+        ->where('batch_id', $request->batch_id)
+        ->where('status', 'for_release') // optional: keep only schedulable releases
+        ->orderByDesc('id')
+        ->get(['id', 'title', 'semester_id', 'amount', 'status', 'batch_id']);
+
+    return response()->json($releases);
+}
+
+public function stipendPickMeta(Request $request)
+{
+    $request->validate([
+        'release_id' => 'required|exists:stipend_releases,id',
+    ]);
+
+    $release = StipendsRelease::query()->findOrFail($request->release_id);
+
+    $semesterId = (int) $release->semester_id; // ✅ release-for semester
+    $batchId    = (int) $release->batch_id;
+
+    // Scholars in this batch
+    $scholars = Scholar::query()
+        ->where('batch_id', $batchId)
+        ->get(['id', 'student_id']);
+
+    $studentIds = $scholars->pluck('student_id')->values();
+
+    // Eligible students (enrolled/graduated) in RELEASE semester
+    $eligibleStudentIds = Enrollment::query()
+        ->where('semester_id', $semesterId)
+        ->whereIn('user_id', $studentIds)
+        ->whereIn('status', ['enrolled', 'graduated'])
+        ->pluck('user_id')
+        ->toArray();
+
+    $eligibleScholarIds = $scholars
+        ->filter(fn ($s) => in_array($s->student_id, $eligibleStudentIds))
+        ->pluck('id')
+        ->values();
+
+    // Blocked = already has stipend in SAME batch + SAME release semester
+    $blockedScholarIds = Stipend::query()
+        ->join('stipend_releases', 'stipend_releases.id', '=', 'stipends.stipend_release_id')
+        ->where('stipend_releases.batch_id', $batchId)
+        ->where('stipend_releases.semester_id', $semesterId)
+        ->pluck('stipends.scholar_id')
+        ->unique()
+        ->values();
+
+    return response()->json([
+        'semester_id'  => $semesterId,
+        'eligible_ids' => $eligibleScholarIds,
+        'blocked_ids'  => $blockedScholarIds,
+    ]);
+}
 
 
     public function createStipend()
@@ -935,6 +1163,45 @@ public function bulkAssignStipends(Request $request)
         ->with('success', 'Stipend created successfully.');
 }
 
+public function eligibleScholarsForRelease(Request $request)
+{
+    $request->validate([
+        'release_id' => 'required|exists:stipend_releases,id',
+    ]);
+
+    $release = StipendsRelease::with('scholarshipBatch')->findOrFail($request->release_id);
+
+    // only allow for_release schedules
+    if ($release->status !== 'for_release') {
+        return response()->json(['eligible_ids' => []]);
+    }
+
+    $targetSemesterId = $release->semester_id;   // ✅ release semester (NOT current)
+    $batchId = $release->batch_id;
+
+    // scholars in this batch
+    $scholars = Scholar::where('batch_id', $batchId)->get(['id','student_id']);
+
+    $studentIds = $scholars->pluck('student_id');
+
+    // which students are enrolled/graduated in that semester
+    $eligibleStudentIds = Enrollment::query()
+        ->where('semester_id', $targetSemesterId)
+        ->whereIn('user_id', $studentIds)
+        ->whereIn('status', ['enrolled','graduated'])
+        ->pluck('user_id')
+        ->toArray();
+
+    // convert to scholar ids
+    $eligibleScholarIds = $scholars
+        ->filter(fn($s) => in_array($s->student_id, $eligibleStudentIds))
+        ->pluck('id')
+        ->values();
+
+    return response()->json(['eligible_ids' => $eligibleScholarIds]);
+}
+
+
 
     public function editStipend($id)
 {
@@ -972,20 +1239,29 @@ public function confirmDeleteStipend($id)
 }
 
     // Manage Stipend Releases
-    public function manageStipendReleases()
+    public function manageStipendReleases(Request $request)
 {
-    $activeSemesterId = $this->activeSemesterId();
+    $semesterId = $request->get('semester_id');
 
-    $releases = StipendsRelease::with('scholarshipBatch.semester')
-        ->when($activeSemesterId, function($q) use ($activeSemesterId){
-            $q->whereHas('scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
-        })
+    $semesters = Semester::orderByDesc('start_date')->get();
+
+    $releases = StipendsRelease::query()
+        ->with([
+            'semester', // ✅ release-for semester
+            'scholarshipBatch.scholarship', // ✅ scholarship name
+        ])
+        ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
         ->orderByDesc('id')
         ->paginate(10)
         ->withQueryString();
 
-    return view('coordinator.manage-stipend-releases', compact('releases', 'activeSemesterId'));
+    return view('coordinator.manage-stipend-releases', compact(
+        'releases',
+        'semesters',
+        'semesterId'
+    ));
 }
+
 
 
     public function createStipendRelease()
@@ -999,27 +1275,33 @@ public function confirmDeleteStipend($id)
         ->orderBy('scholarship_name')
         ->get();
 
-    // ✅ Batches include semester for labels
-    $batches = ScholarshipBatch::with(['semester', 'scholarship'])
+    // ✅ Batches (no need to show semester here in UI later)
+    $batches = ScholarshipBatch::with(['scholarship'])
         ->orderByDesc('id')
         ->get();
 
-    return view('coordinator.create-stipend-release', compact('scholarships', 'batches'));
+    // ✅ Semester dropdown for RELEASE-FOR semester (can be past)
+    $semesters = Semester::orderByDesc('start_date')->get();
+
+    return view('coordinator.create-stipend-release', compact(
+        'scholarships',
+        'batches',
+        'semesters'
+    ));
 }
 
-
-    public function storeStipendRelease(Request $request)
+   public function storeStipendRelease(Request $request)
 {
     $request->validate([
         'scholarship_id' => 'required|exists:scholarships,id',
-        'batch_id' => 'required|exists:scholarship_batches,id',
-        'title' => 'required|string|max:255',
-        'amount' => 'required|numeric|min:0',
-        'status' => 'required|in:for_billing,for_check,for_release,received',
-        'notes' => 'nullable|string',
+        'batch_id'       => 'required|exists:scholarship_batches,id',
+        'semester_id'    => 'required|exists:semesters,id',
+        'title'          => 'required|string|max:255',
+        'amount'         => 'required|numeric|min:0',
+        'status'         => 'required|in:for_billing,for_check,for_release,received',
+        'notes'          => 'nullable|string',
     ]);
 
-    // ✅ Ensure batch belongs to selected scholarship (important)
     $batch = ScholarshipBatch::where('id', $request->batch_id)
         ->where('scholarship_id', $request->scholarship_id)
         ->first();
@@ -1029,20 +1311,19 @@ public function confirmDeleteStipend($id)
     }
 
     StipendsRelease::create([
-        'batch_id' => $batch->id,
-        'created_by' => Auth::id(),
-        'updated_by' => Auth::id(),
-        'title' => $request->title,
-        'amount' => $request->amount,
-        'status' => $request->status,
-       'notes' => $request->notes,  
-        // ✅ removed date_release
+        'batch_id'    => $batch->id,
+        'semester_id' => (int) $request->semester_id, // ✅ ensure numeric
+        'title'       => $request->title,
+        'amount'      => $request->amount,
+        'status'      => $request->status,
+        'notes'       => $request->notes,
+        'created_by'  => Auth::id(),
+        'updated_by'  => Auth::id(),
     ]);
 
     return redirect()->route('coordinator.manage-stipend-releases')
         ->with('success', 'Schedule created successfully.');
 }
-
 
     public function editStipendRelease($id)
 {
@@ -1054,19 +1335,30 @@ public function confirmDeleteStipend($id)
 public function updateStipendRelease(Request $request, $id)
 {
     $request->validate([
-        'batch_id' => 'required|exists:scholarship_batches,id',
-        'title' => 'required|string',
-        'amount' => 'required|numeric',
-        'status' => 'required|in:for_billing,for_check,for_release,received',   
-        'date_release' => 'required|date',
-        'notes' => 'nullable|string',
+        'batch_id'    => 'required|exists:scholarship_batches,id',
+        'semester_id' => 'required|exists:semesters,id', // ✅ NEW
+        'title'       => 'required|string',
+        'amount'      => 'required|numeric',
+        'status'      => 'required|in:for_billing,for_check,for_release,received',
+        'notes'       => 'nullable|string',
     ]);
 
     $release = StipendsRelease::findOrFail($id);
-    $release->update($request->only(['batch_id', 'title', 'amount', 'status', 'date_release', 'notes']));
-    $release->update(['updated_by' => Auth::id()]);
-    return redirect()->route('coordinator.manage-stipend-releases')->with('success', 'Release updated successfully.');
+
+    $release->update([
+        'batch_id'    => $request->batch_id,
+        'semester_id' => $request->semester_id, // ✅ NEW
+        'title'       => $request->title,
+        'amount'      => $request->amount,
+        'status'      => $request->status,
+        'notes'       => $request->notes,
+        'updated_by'  => Auth::id(),
+    ]);
+
+    return redirect()->route('coordinator.manage-stipend-releases')
+        ->with('success', 'Release updated successfully.');
 }
+
 
 public function destroyStipendRelease($id)
 {
