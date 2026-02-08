@@ -25,17 +25,24 @@ class SemesterFilterController extends Controller
             'semester_id' => 'required|integer|exists:semesters,id',
         ]);
 
-        session(['active_semester_id' => (int) $request->semester_id]);
+        session([
+            'active_semester_id' => (int) $request->semester_id,
+            'semester_filter_mode' => 'manual', // ✅ user explicitly selected
+        ]);
 
         return redirect()->back()->with('success', 'Semester filter updated.');
     }
 
+
     public function clear()
     {
+        // ✅ back to “auto follow current”
         session()->forget('active_semester_id');
+        session(['semester_filter_mode' => 'auto']);
 
         return redirect()->back()->with('success', 'Semester filter cleared.');
     }
+
 
     public function search(Request $request)
 {

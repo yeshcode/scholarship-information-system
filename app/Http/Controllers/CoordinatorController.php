@@ -803,8 +803,8 @@ public function confirmDeleteScholarshipBatch($id)
             $s->has_stipend_in_batch = ((int) $s->has_stipend_in_batch_db) === 1;
 
             if ($status === 'not_existing') {
-                $s->enrollment_status_label = 'NOT EXISTING';
-                $s->note = 'No enrollment record for active semester.';
+                $s->enrollment_status_label = 'NOT ENROLLED';
+                $s->note = 'Not enrolled in the release semester.';
             } else {
                 $s->enrollment_status_label = strtoupper(str_replace('_', ' ', $status));
                 $s->note = $s->is_selectable ? 'Selectable' : 'Not selectable for stipend scheduling.';
@@ -1685,30 +1685,57 @@ public function processUploadedScholars(Request $request)
             }
         }
 
-        $results[] = [
-            'row' => $rIndex + 2, // excel row number (headers = row 1)
+        $verified = !empty($user);
+        $canSelect = $verified && ($dbEnrollStatus === 'enrolled') && !$isScholar;
 
-            // Show only the important extracted fields
+        $sortLast  = mb_strtolower($last);
+        $sortFirst = mb_strtolower($first);
+
+
+        $results[] = [
+            'row' => $rIndex + 2,
             'data' => [
                 'first_name' => $first,
                 'last_name' => $last,
                 'year_level' => $yearUploaded,
-                'uploaded_status' => $statusUploaded, // optional
+                'uploaded_status' => $statusUploaded,
             ],
-
-            // Used in Blade for verified check
             'user' => $user ? [
                 'id' => $user->id,
                 'firstname' => $user->firstname,
                 'lastname' => $user->lastname,
             ] : null,
-
-            'enrollment_status' => $dbEnrollStatus, // DB CURRENT sem enrollment status
-
+            'enrollment_status' => $dbEnrollStatus,
             'is_scholar' => $isScholar,
             'existing_scholarship_name' => $existingScholarshipName,
+
+            // ✅ NEW
+            'can_select' => $canSelect,
+            'sort_last'  => $sortLast,
+            'sort_first' => $sortFirst,
         ];
     }
+
+    usort($results, function ($a, $b) {
+    $aSel = !empty($a['can_select']);
+    $bSel = !empty($b['can_select']);
+
+    // 1) selectable first
+    if ($aSel !== $bSel) return $aSel ? -1 : 1;
+
+    // 2) only enforce alphabetical priority strongly on selectable
+    if ($aSel && $bSel) {
+        $c = strcmp($a['sort_last'] ?? '', $b['sort_last'] ?? '');
+        if ($c !== 0) return $c;
+        return strcmp($a['sort_first'] ?? '', $b['sort_first'] ?? '');
+    }
+
+    // 3) (optional) keep non-selectable stable-ish by name too (looks cleaner)
+    $c = strcmp($a['sort_last'] ?? '', $b['sort_last'] ?? '');
+    if ($c !== 0) return $c;
+    return strcmp($a['sort_first'] ?? '', $b['sort_first'] ?? '');
+});
+
 
     return redirect()->route('coordinator.scholars.upload')
         ->with('results', $results)
@@ -1720,14 +1747,40 @@ public function processUploadedScholars(Request $request)
 public function addSelectedUploadedScholars(Request $request)
 {
     $request->validate([
-        'batch_id' => 'required|exists:scholarship_batches,id',
-        'status' => 'required|in:active,inactive,graduated',
-        'selected_indexes' => 'required|array|min:1',
-        'results_json' => 'required|string',
+        'scholarship_id'    => 'required|exists:scholarships,id',
+        'batch_id'          => 'nullable|exists:scholarship_batches,id',
+        'selected_indexes'  => 'required|array|min:1',
+        'results_json'      => 'required|string',
     ]);
 
-    $batch = ScholarshipBatch::findOrFail($request->batch_id);
+    // ✅ scholarship is always required
+    $scholarship = Scholarship::findOrFail($request->scholarship_id);
 
+    // ✅ Determine if this scholarship requires batch (TDP/TES only)
+    $name = strtoupper(trim($scholarship->scholarship_name ?? ''));
+    $isBatchBased = str_contains($name, 'TDP') || str_contains($name, 'TES');
+
+    // ✅ If batch-based, batch_id must be provided
+    if ($isBatchBased && empty($request->batch_id)) {
+        return back()->withInput()->with('error', 'Batch is required for TDP/TES scholarships.');
+    }
+
+    // ✅ If NOT batch-based, ignore batch_id
+    $batch = null;
+
+    if ($isBatchBased) {
+        // Validate that the selected batch belongs to the selected scholarship
+        $batch = ScholarshipBatch::query()
+            ->where('id', $request->batch_id)
+            ->where('scholarship_id', $scholarship->id)
+            ->first();
+
+        if (!$batch) {
+            return back()->withInput()->with('error', 'Selected batch does not belong to the selected scholarship.');
+        }
+    }
+
+    // ✅ decode upload results
     $results = json_decode($request->results_json, true);
     if (!is_array($results)) {
         return back()->with('error', 'Upload results invalid. Please upload the file again.');
@@ -1739,9 +1792,10 @@ public function addSelectedUploadedScholars(Request $request)
     $added = [];
     $skipped = 0;
 
-    DB::transaction(function () use ($request, $results, $batch, $dateAdded, &$added, &$skipped) {
+    DB::transaction(function () use ($request, $results, $scholarship, $batch, $isBatchBased, $dateAdded, &$added, &$skipped) {
 
         foreach ($request->selected_indexes as $i) {
+
             if (!isset($results[$i])) { $skipped++; continue; }
 
             $item = $results[$i];
@@ -1752,19 +1806,19 @@ public function addSelectedUploadedScholars(Request $request)
 
             $userId = (int) $user['id'];
 
-            // Must be enrolled in current semester
+            // Must be enrolled in current semester (based on your processed results)
             if (($item['enrollment_status'] ?? 'not_enrolled') !== 'enrolled') { $skipped++; continue; }
 
             // Must NOT already be scholar
             if (Scholar::where('student_id', $userId)->exists()) { $skipped++; continue; }
 
             Scholar::create([
-                'student_id' => $userId,
-                'batch_id' => $batch->id,
-                'scholarship_id' => $batch->scholarship_id,
-                'updated_by' => Auth::id(),
-                'date_added' => $dateAdded,          // ✅ FIXED
-                'status' => $request->status,
+                'student_id'     => $userId,
+                'scholarship_id' => $scholarship->id,     // ✅ always set
+                'batch_id'       => $isBatchBased ? $batch->id : null, // ✅ only TDP/TES
+                'updated_by'     => Auth::id(),
+                'date_added'     => $dateAdded,
+                'status'         => 'active', // forced
             ]);
 
             $added[] = trim(($user['firstname'] ?? '') . ' ' . ($user['lastname'] ?? ''));

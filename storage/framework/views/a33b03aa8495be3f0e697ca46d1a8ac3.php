@@ -140,17 +140,7 @@
                     </select>
                 </div>
 
-                <div class="col-12 col-md-3">
-                    <label class="filter-label">Release Schedule</label>
-                    <input type="hidden" name="stipend_release_id" id="s2_release_id_hidden">
-
-                        <div class="col-12">
-                        <label class="filter-label">Stipend Release Schedule</label>
-                        <input type="text" id="s2_release_title" class="form-control form-control-sm" readonly>
-                        <div class="form-text">Chosen from Step 1 (Set A / Set B).</div>
-                        </div>
-
-                </div>
+          
 
                 <div class="col-12 col-md-3">
                     <label class="filter-label">Search scholar</label>
@@ -364,24 +354,23 @@
                   <td><?php echo e($row->user->student_id ?? ''); ?></td>
                   <td><?php echo e($row->user->lastname ?? ''); ?></td>
                   <td><?php echo e($row->user->firstname ?? ''); ?></td>
-                  <td>
-                    <span class="badge <?php echo e($row->is_selectable ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'); ?>">
-                      <?php echo e($row->enrollment_status_label); ?>
 
-                    </span>
-                  </td>
+                  <td>
+  <span class="badge statusBadge <?php echo e($row->is_selectable ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'); ?>"
+        data-active-label="<?php echo e($row->enrollment_status_label); ?>">
+    <?php echo e($row->enrollment_status_label); ?>
+
+  </span>
+</td>
+
 
                   <td><?php echo e($row->scholarship->scholarship_name ?? ''); ?></td>
                   <td>Batch <?php echo e($row->scholarshipBatch->batch_number ?? ''); ?></td>
 
-                  <td class="small <?php echo e($row->has_stipend_in_batch ? 'text-secondary fst-italic' : 'text-muted'); ?>">
-                    <?php echo e($row->note); ?>
+                 <td class="small <?php echo e($row->has_stipend_in_batch ? 'text-secondary fst-italic' : 'text-muted'); ?>">
+                  <span class="noteText"><?php echo e($row->note); ?></span>
+                </td>
 
-                    </td>
-
-                    <td class="small">
-                        <span class="noteText"><?php echo e($row->note); ?></span>
-                        </td>
 
 
                 </tr>
@@ -572,6 +561,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (cell) {
       cell.innerHTML = '<span class="text-muted small">—</span>';
     }
+
+    const badge = tr.querySelector('.statusBadge');
+    if (badge) {
+      badge.textContent = 'NOT ENROLLED';
+      badge.classList.remove('bg-success-subtle', 'text-success');
+      badge.classList.add('bg-secondary-subtle', 'text-secondary');
+    }
+
   }
 
   function setRowEnabled(tr){
@@ -586,6 +583,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const note = tr.querySelector('.noteText');
     if (note) note.textContent = 'Selectable';
+
+    const badge = tr.querySelector('.statusBadge');
+    if (badge) {
+      const original = badge.getAttribute('data-active-label') || 'ENROLLED';
+      badge.textContent = original;
+
+      badge.classList.remove('bg-secondary-subtle', 'text-secondary');
+      badge.classList.add('bg-success-subtle', 'text-success');
+    }
+
   }
 
   function applyEligibilityAndBlock(){
