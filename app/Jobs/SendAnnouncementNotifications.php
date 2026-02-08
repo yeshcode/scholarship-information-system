@@ -92,11 +92,12 @@ class SendAnnouncementNotifications implements ShouldQueue
                 'type' => 'announcement',
                 'title' => $announcement->title,
                 'message' => $announcement->description,
-                'related_type' => Announcement::class,
+                'related_type' => 'announcement',
                 'related_id' => $announcement->id,
                 'is_read' => false,
                 'sent_at' => now(),
             ]);
+
 
             // ✅ Email only if valid
            $email = trim((string)($user->bisu_email ?? ''));

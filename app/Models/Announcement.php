@@ -25,10 +25,12 @@ class Announcement extends Model
         return $this->belongsTo(User::class, 'created_by', 'id');  // Use 'id' as PK
     }
 
-    public function notifications()
-    {
-        return $this->morphMany(Notification::class, 'related');
-    }
+   public function notifications()
+{
+    return $this->hasMany(Notification::class, 'related_id', 'id')
+        ->where('related_type', 'announcement');
+}
+
 
     public function views()
     {

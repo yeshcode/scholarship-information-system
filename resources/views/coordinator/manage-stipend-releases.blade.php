@@ -62,6 +62,39 @@
     </a>
 </div>
 
+<div class="card card-bisu shadow-sm mb-3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="fw-bold text-secondary">Filters</div>
+        <small class="text-muted">Semester filter is based on release record</small>
+    </div>
+
+    <div class="card-body">
+        <form method="GET" action="{{ route('coordinator.manage-stipend-releases') }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label-bisu">Release Semester</label>
+                    <select name="semester_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All semesters</option>
+                        @foreach($semesters as $sem)
+                            <option value="{{ $sem->id }}" {{ (string)$semesterId === (string)$sem->id ? 'selected' : '' }}>
+                                {{ $sem->term ?? $sem->semester_name }} {{ $sem->academic_year }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <button class="btn btn-outline-secondary btn-sm" type="submit">Apply</button>
+                    <a href="{{ route('coordinator.manage-stipend-releases') }}" class="btn btn-outline-secondary btn-sm">
+                        Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 <div class="card card-bisu shadow-sm">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <div class="fw-bold text-secondary">Release Schedule List</div>
@@ -74,6 +107,7 @@
                 <tr>
                     <th>Scholarship</th>
                     <th>Batch</th>
+                    <th>Release Semester</th>
                     <th>Title</th>
                     <th class="text-end">Amount</th>
                     <th>Status</th>
@@ -85,8 +119,10 @@
                     @php
                         $batch = $release->scholarshipBatch;
                         $schName = $batch?->scholarship?->scholarship_name ?? 'N/A';
-                        $batchLabel = $batch
-                            ? ('Batch ' . $batch->batch_number . ' • ' . ($batch->semester->term ?? '') . ' ' . ($batch->semester->academic_year ?? ''))
+                        $batchLabel = $batch ? ('Batch ' . $batch->batch_number) : 'N/A';
+
+                        $releaseSemLabel = $release->semester
+                            ? (($release->semester->term ?? $release->semester->semester_name) . ' ' . $release->semester->academic_year)
                             : 'N/A';
 
                         $status = $release->status ?? '';
@@ -110,6 +146,8 @@
                     <tr>
                         <td>{{ $schName }}</td>
                         <td>{{ $batchLabel }}</td>
+                        <td>{{ $releaseSemLabel }}</td>
+                        
                         <td class="fw-semibold">{{ $release->title }}</td>
                         <td class="text-end">₱ {{ number_format((float)$release->amount, 2) }}</td>
                         <td><span class="badge {{ $badge }}">{{ $statusLabel }}</span></td>
@@ -121,16 +159,15 @@
                                 Delete
                             </a>
                         </td>
-                    </tr>
+                    </tr>   
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">No release schedules found.</td>
+                        <td colspan="7" class="text-center text-muted py-4">No release schedules found.</td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
-
     <div class="card-body">
         {{ $releases->links() }}
     </div>

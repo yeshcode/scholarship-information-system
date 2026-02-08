@@ -54,10 +54,10 @@
                 </div>
             </div>
             <div class="p-5">
-                @forelse($recentAnnouncements ?? [] as $a)
+                @forelse($announcements ?? [] as $a)
                     <div class="py-3 border-b last:border-b-0 border-slate-100">
                         <div class="font-semibold text-slate-800">{{ $a->title }}</div>
-                        <div class="text-sm text-slate-600 line-clamp-2">{{ $a->content }}</div>
+                        <div class="text-sm text-slate-600 line-clamp-2">{{ $a->description }}</div>
                         <div class="text-xs text-slate-500 mt-1">
                             Posted: {{ optional($a->created_at)->format('M d, Y') }}
                         </div>
@@ -93,6 +93,68 @@
                 @endforelse
             </div>
         </div>
+
+        {{-- Notifications --}}
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm">
+    <div class="p-5 border-b border-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="font-bold text-slate-800">Notifications</h2>
+
+            <a class="text-sm text-blue-700 hover:underline"
+               href="{{ route('student.notifications') }}">
+                View all
+                @if(($unreadCount ?? 0) > 0)
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs bg-blue-700 text-white">
+                        {{ $unreadCount }}
+                    </span>
+                @endif
+            </a>
+        </div>
+        <p class="text-slate-600 text-sm mt-1">Latest updates (stipend & announcements)</p>
+    </div>
+
+    <div class="p-5">
+        @forelse($notifications ?? [] as $notification)
+            @php
+                $isUnread = !$notification->is_read;
+                $openUrl = route('student.notifications.open', $notification->id);
+            @endphp
+
+            <a href="{{ $openUrl }}" class="block rounded-lg border border-slate-200 p-3 mb-2 hover:bg-slate-50 transition
+                {{ $isUnread ? 'bg-blue-50 border-blue-200' : '' }}">
+                <div class="flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold"
+                         style="background:#003366;">
+                        🔔
+                    </div>
+
+                    <div class="flex-1">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="font-semibold text-slate-800">
+                                {{ $notification->title }}
+                            </div>
+
+                            @if($isUnread)
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-blue-700 text-white">New</span>
+                            @endif
+                        </div>
+
+                        <div class="text-sm text-slate-600 mt-1" style="white-space: pre-line;">
+                            {{ \Illuminate\Support\Str::limit($notification->message, 90) }}
+                        </div>
+
+                        <div class="text-xs text-slate-500 mt-1">
+                            {{ $notification->sent_at ? $notification->sent_at->format('M d, Y • h:i A') : 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        @empty
+            <p class="text-slate-600 text-sm">No notifications yet.</p>
+        @endforelse
+    </div>
+</div>
+
 
     </div>
 </div>

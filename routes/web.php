@@ -193,6 +193,11 @@
         Route::get('/manage-stipends/create', [CoordinatorController::class, 'createStipend'])->name('coordinator.stipends.create');
         Route::post('/manage-stipends', [CoordinatorController::class, 'storeStipend'])->name('coordinator.stipends.store');
 
+        Route::post('/manage-stipends/bulk-assign-v2', [CoordinatorController::class, 'bulkAssignStipendsV2'])->name('coordinator.stipends.bulk-assign-v2');
+        Route::get('/coordinator/stipends/eligible-for-release', [CoordinatorController::class, 'eligibleScholarsForRelease'])->name('coordinator.stipends.eligible-for-release');
+
+        Route::get('/coordinator/stipend-releases/by-batch', [CoordinatorController::class, 'releasesByBatch'])->name('coordinator.stipend-releases.by-batch');
+        Route::get('/coordinator/stipends/pick-meta', [CoordinatorController::class, 'stipendPickMeta'])->name('coordinator.stipends.pick-meta');
 
         // Stipend Releases
         Route::get('/manage-stipend-releases', [CoordinatorController::class, 'manageStipendReleases'])->name('coordinator.manage-stipend-releases');
@@ -238,6 +243,8 @@
             Route::get('/notifications', [StudentController::class, 'notifications'])->name('student.notifications');
 
             Route::get('/notifications/{id}/open', [StudentController::class, 'open'])->name('student.notifications.open');
+           
+
 
             Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
             Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
