@@ -1029,6 +1029,24 @@ public function bulkAssignStipendsV2(Request $request)
                 'received_at'        => null,
             ]);
 
+            Notification::create([
+                'recipient_user_id' => $scholar->student_id,
+                'created_by'        => $creatorId,
+                'type'              => 'stipend', // ok (if your DB allows this column too)
+                'title'             => 'Stipend Scheduled: ' . ($release->title ?? 'Stipend Release'),
+                'message'           => 'You have a scheduled stipend release for ' . ($release->title ?? 'a release schedule') .
+                                    '. Release date: ' . \Carbon\Carbon::parse($request->release_at)->format('M d, Y h:i A') . '.',
+
+                // ✅ MUST be one of: announcement, stipend, scholarship
+                'related_type'      => 'stipend',
+
+                // ✅ You can keep this as the stipend_release id (since it’s the thing related)
+                'related_id'        => $release->id,
+
+                'link'              => route('student.notifications'),
+                'is_read'           => false,
+                'sent_at'           => now(),
+            ]);
             $added++;
         }
     });
@@ -1064,7 +1082,7 @@ public function stipendPickMeta(Request $request)
 
     $release = StipendsRelease::query()->findOrFail($request->release_id);
 
-    $semesterId = (int) $release->semester_id; // ✅ release-for semester
+    $semesterId = (int) $release->semester_id;  // release-for semester
     $batchId    = (int) $release->batch_id;
 
     // Scholars in this batch
@@ -1074,20 +1092,35 @@ public function stipendPickMeta(Request $request)
 
     $studentIds = $scholars->pluck('student_id')->values();
 
-    // Eligible students (enrolled/graduated) in RELEASE semester
-    $eligibleStudentIds = Enrollment::query()
+    // Enrollment status in RELEASE semester
+    // user_id => status (enrolled/graduated/dropped) ; missing => not_enrolled
+    $enrollmentStatusByUser = Enrollment::query()
         ->where('semester_id', $semesterId)
         ->whereIn('user_id', $studentIds)
-        ->whereIn('status', ['enrolled', 'graduated'])
-        ->pluck('user_id')
+        ->pluck('status', 'user_id')
         ->toArray();
 
+    // Build status_map per scholar_id
+    $statusMap = [];
+    foreach ($scholars as $s) {
+        $raw = $enrollmentStatusByUser[$s->student_id] ?? 'not_enrolled';
+
+        $label = strtoupper(str_replace('_', ' ', (string)$raw));
+        if ($raw === 'not_enrolled') $label = 'NOT ENROLLED';
+
+        $statusMap[(string)$s->id] = $label;
+    }
+
+    // Eligible scholar ids = enrolled/graduated only
     $eligibleScholarIds = $scholars
-        ->filter(fn ($s) => in_array($s->student_id, $eligibleStudentIds))
+        ->filter(function ($s) use ($enrollmentStatusByUser) {
+            $st = $enrollmentStatusByUser[$s->student_id] ?? 'not_enrolled';
+            return in_array($st, ['enrolled', 'graduated']);
+        })
         ->pluck('id')
         ->values();
 
-    // Blocked = already has stipend in SAME batch + SAME release semester
+    // Blocked = already has stipend in SAME batch + SAME semester
     $blockedScholarIds = Stipend::query()
         ->join('stipend_releases', 'stipend_releases.id', '=', 'stipends.stipend_release_id')
         ->where('stipend_releases.batch_id', $batchId)
@@ -1100,8 +1133,10 @@ public function stipendPickMeta(Request $request)
         'semester_id'  => $semesterId,
         'eligible_ids' => $eligibleScholarIds,
         'blocked_ids'  => $blockedScholarIds,
+        'status_map'   => $statusMap, // ✅ NEW
     ]);
 }
+
 
 
     public function createStipend()
@@ -1214,17 +1249,26 @@ public function eligibleScholarsForRelease(Request $request)
 public function updateStipend(Request $request, $id)
 {
     $request->validate([
-        'scholar_id' => 'required|exists:scholars,id',
-        'stipend_release_id' => 'required|exists:stipend_releases,id',
-        'amount_received' => 'required|numeric',
-        'status' => 'required|in:for_release,released,returned,waiting',
+        'status'      => 'required|in:for_release,released,returned,waiting',
+        'received_at' => 'nullable|date',
     ]);
 
     $stipend = Stipend::findOrFail($id);
-    $stipend->update($request->only(['scholar_id', 'stipend_release_id', 'amount_received', 'status']));
-    $stipend->update(['updated_by' => Auth::id()]);
-    return redirect()->route('coordinator.manage-stipends')->with('success', 'Stipend updated successfully.');
+
+    $stipend->update([
+        'status'      => $request->status,
+        'received_at' => $request->status === 'released'
+            ? $request->received_at
+            : null,
+        'updated_by'  => Auth::id(),
+    ]);
+
+    return redirect()
+        ->route('coordinator.manage-stipends')
+        ->with('success', 'Stipend updated successfully.');
 }
+
+
 
 public function destroyStipend($id)
 {

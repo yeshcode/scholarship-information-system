@@ -196,8 +196,9 @@
         Route::post('/manage-stipends/bulk-assign-v2', [CoordinatorController::class, 'bulkAssignStipendsV2'])->name('coordinator.stipends.bulk-assign-v2');
         Route::get('/coordinator/stipends/eligible-for-release', [CoordinatorController::class, 'eligibleScholarsForRelease'])->name('coordinator.stipends.eligible-for-release');
 
-        Route::get('/coordinator/stipend-releases/by-batch', [CoordinatorController::class, 'releasesByBatch'])->name('coordinator.stipend-releases.by-batch');
-        Route::get('/coordinator/stipends/pick-meta', [CoordinatorController::class, 'stipendPickMeta'])->name('coordinator.stipends.pick-meta');
+        Route::get('/stipend-releases/by-batch', [CoordinatorController::class, 'releasesByBatch'])->name('coordinator.stipend-releases.by-batch');
+        Route::get('/stipends/pick-meta', [CoordinatorController::class, 'stipendPickMeta'])->name('coordinator.stipends.pick-meta');
+
 
         // Stipend Releases
         Route::get('/manage-stipend-releases', [CoordinatorController::class, 'manageStipendReleases'])->name('coordinator.manage-stipend-releases');
