@@ -27,26 +27,148 @@ use App\Http\Controllers\Concerns\UsesActiveSemester;
 
 
 
-
-
-
-
-
-
-
-
 class CoordinatorController extends Controller
 {
 
-use UsesActiveSemester;
+    use UsesActiveSemester;
 
     public function dashboard()
     {
-        return view('coordinator.dashboard');
+        $activeSemesterId = $this->activeSemesterId(); // from UsesActiveSemester
+        $activeSemester = $activeSemesterId ? Semester::find($activeSemesterId) : null;
+
+        /**
+         * FILTER RULE:
+         * - If active semester is selected:
+         *   ✅ Include non-batch scholars ALWAYS (batch_id is NULL)
+         *   ✅ Include batch scholars ONLY if batch.semester_id = activeSemesterId
+         * - If no active semester:
+         *   ✅ Include all scholars
+         */
+        $scholarScope = Scholar::query()
+            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
+                $q->where(function ($w) use ($activeSemesterId) {
+                    $w->whereNull('scholars.batch_id')
+                    ->orWhereHas('scholarshipBatch', function ($b) use ($activeSemesterId) {
+                        $b->where('semester_id', $activeSemesterId);
+                    });
+                });
+            });
+
+        // ✅ COUNTS (Filtered)
+        $totalScholars = (clone $scholarScope)->count();
+
+        // Students are not semester-tied (keep overall)
+        $totalStudents = User::whereHas('userType', fn($t) => $t->where('name', 'Student'))->count();
+
+        // Scholarships are not semester-tied (keep overall)
+        $totalScholarships = Scholarship::count();
+
+        // Batches are semester-tied: follow active semester when selected
+        $totalBatches = ScholarshipBatch::query()
+            ->when($activeSemesterId, fn($q) => $q->where('semester_id', $activeSemesterId))
+            ->count();
+
+        // Recent scholars (filtered too)
+        $recentScholars = (clone $scholarScope)
+            ->where('scholars.created_at', '>=', now()->subDays(7))
+            ->count();
+
+        // ✅ PIE (Filtered): scholars per scholarship
+        $scholarsByScholarship = Scholarship::query()
+            ->leftJoin('scholars', 'scholars.scholarship_id', '=', 'scholarships.id')
+            ->leftJoin('scholarship_batches', 'scholarship_batches.id', '=', 'scholars.batch_id')
+            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
+                $q->where(function ($w) use ($activeSemesterId) {
+                    $w->whereNull('scholars.batch_id')
+                    ->orWhere('scholarship_batches.semester_id', $activeSemesterId);
+                });
+            })
+            ->select(
+                'scholarships.id',
+                'scholarships.scholarship_name',
+                DB::raw('COUNT(scholars.id) as total')
+            )
+            ->groupBy('scholarships.id', 'scholarships.scholarship_name')
+            ->orderByDesc('total')
+            ->get();
+
+        $pieLabels = $scholarsByScholarship->pluck('scholarship_name')->values();
+        $pieData   = $scholarsByScholarship->pluck('total')->values();
+
+        // ✅ LINE (Filtered): scholars per course (top 10 for readability)
+        $scholarsByCourse = Scholar::query()
+            ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+            ->leftJoin('courses', 'courses.id', '=', 'users.course_id')
+            ->leftJoin('scholarship_batches', 'scholarship_batches.id', '=', 'scholars.batch_id')
+            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
+                $q->where(function ($w) use ($activeSemesterId) {
+                    $w->whereNull('scholars.batch_id')
+                    ->orWhere('scholarship_batches.semester_id', $activeSemesterId);
+                });
+            })
+            ->select(
+                DB::raw("COALESCE(courses.course_name, 'No Course') as course_name"),
+                DB::raw('COUNT(scholars.id) as total')
+            )
+            ->groupBy('course_name')
+            ->orderByDesc('total')
+            ->get();
+
+        $topCourseRows = $scholarsByCourse->take(10);
+        $lineLabels = $topCourseRows->pluck('course_name')->values();
+        $lineData   = $topCourseRows->pluck('total')->values();
+
+        // ✅ NEW LINE (Filtered): scholars per college (top 10)
+        $scholarsByCollege = Scholar::query()
+            ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+            ->leftJoin('colleges', 'colleges.id', '=', 'users.college_id')
+            ->leftJoin('scholarship_batches', 'scholarship_batches.id', '=', 'scholars.batch_id')
+            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
+                $q->where(function ($w) use ($activeSemesterId) {
+                    $w->whereNull('scholars.batch_id')
+                    ->orWhere('scholarship_batches.semester_id', $activeSemesterId);
+                });
+            })
+            ->select(
+                DB::raw("COALESCE(colleges.college_name, 'No College') as college_name"),
+                DB::raw('COUNT(scholars.id) as total')
+            )
+            ->groupBy('college_name')
+            ->orderByDesc('total')
+            ->get();
+
+        $topCollegeRows = $scholarsByCollege->take(10);
+        $collegeLabels = $topCollegeRows->pluck('college_name')->values();
+        $collegeData   = $topCollegeRows->pluck('total')->values();
+
+        // ✅ TABLE rows (same as pie but add percent)
+        $grandTotal = max(1, (int) $pieData->sum());
+        $tableRows = $scholarsByScholarship->map(function ($r) use ($grandTotal) {
+            $r->percent = round(((int)$r->total / $grandTotal) * 100, 1);
+            return $r;
+        });
+
+        return view('coordinator.dashboard', compact(
+            'activeSemester',
+            'activeSemesterId',
+            'totalScholars',
+            'totalStudents',
+            'totalScholarships',
+            'totalBatches',
+            'recentScholars',
+            'pieLabels',
+            'pieData',
+            'lineLabels',
+            'lineData',
+            'collegeLabels',
+            'collegeData',
+            'tableRows'
+        ));
     }
 
-    // Manage Scholars
 
+    // Manage Scholars
     private function isBatchBasedScholarship(Scholarship $scholarship): bool
     {
         // You can change the logic here anytime
