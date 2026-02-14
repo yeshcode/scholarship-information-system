@@ -354,6 +354,11 @@ class CoordinatorController extends Controller
     // Current semester
     $currentSemester = Semester::where('is_current', true)->first();
 
+     // ✅ Scholarships (for the new Scholarship dropdown in modal)
+    $scholarships = Scholarship::query()
+        ->orderBy('scholarship_name')
+        ->get();
+
     // Batches (for dropdown in modal)
     $batches = ScholarshipBatch::with(['semester', 'scholarship'])
         ->orderByDesc('id')
@@ -424,19 +429,20 @@ class CoordinatorController extends Controller
     return view('coordinator.create-scholar', compact(
         'q',
         'currentSemester',
+        'scholarships',   
         'batches',
         'scholars',
         'candidates'
     ));
 }
 
-    public function storeScholar(Request $request)
+   public function storeScholar(Request $request)
 {
     $request->validate([
-        'student_id' => 'required|exists:users,id',
-        'batch_id' => 'required|exists:scholarship_batches,id',
-        'date_added' => 'required|date',
-        'status' => 'required|in:active,inactive,graduated',
+        'student_id'     => 'required|exists:users,id',
+        'scholarship_id' => 'required|exists:scholarships,id',   // ✅ NEW
+        'batch_id'       => 'nullable|exists:scholarship_batches,id', // ✅ optional now
+        'date_added'     => 'required|date',
     ]);
 
     $currentSemester = Semester::where('is_current', true)->first();
@@ -460,21 +466,46 @@ class CoordinatorController extends Controller
         return back()->with('error', 'This student is already a scholar.');
     }
 
-    // Get scholarship_id from batch
-    $batch = ScholarshipBatch::findOrFail($request->batch_id);
+    // Scholarship picked by user
+    $scholarship = Scholarship::findOrFail($request->scholarship_id);
+
+    // Detect if scholarship is batch-based (TES/TDP)
+    $name = strtoupper(trim($scholarship->scholarship_name ?? ''));
+    $isBatchBased = str_contains($name, 'TDP') || str_contains($name, 'TES');
+
+    // If TES/TDP, batch is required
+    if ($isBatchBased && empty($request->batch_id)) {
+        return back()->withInput()->with('error', 'Batch is required for TES/TDP scholarships.');
+    }
+
+    // If batch is present, validate it belongs to scholarship
+    $batchId = null;
+    if (!empty($request->batch_id)) {
+        $batch = ScholarshipBatch::query()
+            ->where('id', $request->batch_id)
+            ->where('scholarship_id', $scholarship->id)
+            ->first();
+
+        if (!$batch) {
+            return back()->withInput()->with('error', 'Selected batch does not belong to the selected scholarship.');
+        }
+
+        $batchId = $batch->id;
+    }
 
     Scholar::create([
-        'student_id' => $request->student_id,
-        'batch_id' => $request->batch_id,
-        'scholarship_id' => $batch->scholarship_id,
-        'updated_by' => Auth::id(),
-        'date_added' => $request->date_added,
-        'status' => $request->status,
+        'student_id'     => $request->student_id,
+        'scholarship_id' => $scholarship->id, // ✅ from scholarship dropdown
+        'batch_id'       => $isBatchBased ? $batchId : null, // ✅ only for TES/TDP
+        'updated_by'     => Auth::id(),
+        'date_added'     => $request->date_added,
+        'status'         => 'active', // ✅ auto
     ]);
 
     return redirect()->route('coordinator.scholars.create')
         ->with('success', 'Scholar added successfully.');
 }
+
 
     //new/from superadmin
    public function enrollmentRecords(Request $request)

@@ -105,6 +105,50 @@
     @media (max-width: 768px){
         .chart-canvas{ height: 280px !important; }
     }
+
+    /* Bigger pie area */
+.pie-wrap{
+    position: relative;
+    height: 380px; /* bigger circle */
+}
+
+@media (max-width:768px){
+    .pie-wrap{ height: 320px; }
+}
+
+/* Modern legend style */
+.chart-legend-modern{
+    margin-top: 10px;
+    text-align: center;
+}
+
+.chart-legend-modern ul{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+}
+
+.chart-legend-modern li{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.chart-legend-modern span{
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+
 </style>
 
 <div class="dash-wrap">
@@ -314,29 +358,93 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    // ✅ PIE CHART: scholars by scholarship
-    const pieLabels = <?php echo json_encode($pieLabels, 15, 512) ?>;
-    const pieData   = <?php echo json_encode($pieData, 15, 512) ?>;
+    // ✅ MODERN DONUT PIE + MODERN TOOLTIP FORMAT
+const pieLabels = <?php echo json_encode($pieLabels, 15, 512) ?>;
+const pieData   = <?php echo json_encode($pieData, 15, 512) ?>;
 
-    const pieCtx = document.getElementById('pieScholarship');
-    if (pieCtx) {
-        new Chart(pieCtx, {
-            type: 'pie',
-            data: {
-                labels: pieLabels,
-                datasets: [{
-                    data: pieData,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: { enabled: true }
+const pieCtx = document.getElementById('pieScholarship');
+if (pieCtx) {
+
+    const palette = [
+        '#2563eb', '#22c55e', '#f59e0b', '#a855f7',
+        '#ef4444', '#14b8a6', '#3b82f6', '#f97316',
+        '#6366f1', '#84cc16'
+    ];
+
+    const bgColors = pieLabels.map((_, i) => palette[i % palette.length]);
+
+    const total = pieData.reduce((a,b) => a + (Number(b) || 0), 0) || 1;
+
+    const chart = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: pieLabels,
+            datasets: [{
+                data: pieData,
+                backgroundColor: bgColors,
+                borderColor: '#ffffff',
+                borderWidth: 6,
+                borderRadius: 8,
+                hoverOffset: 14
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '68%',
+            plugins: {
+                legend: { display: false }, // ✅ keep custom legend
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)', // slate-900
+                    borderColor: 'rgba(255,255,255,0.12)',
+                    borderWidth: 1,
+                    cornerRadius: 12,
+                    displayColors: false, // ✅ remove small color box (modern)
+                    padding: 12,
+                    titleFont: { size: 13, weight: '700' },
+                    bodyFont: { size: 12, weight: '600' },
+                    callbacks: {
+                        // ✅ we don't need separate title line
+                        title: () => '',
+                        // ✅ Tooltip format: TDP: 23 (82.1%)
+                        label: function(context){
+                            const label = context.label || '';
+                            const value = Number(context.raw || 0);
+                            const pct = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} (${pct}%)`;
+                        }
+                    }
                 }
             }
-        });
-    }
+        }
+    });
+
+    // ✅ Create modern custom legend (same as before)
+    const oldLegend = pieCtx.parentNode.querySelector('.chart-legend-modern');
+    if (oldLegend) oldLegend.remove();
+
+    const legendContainer = document.createElement('div');
+    legendContainer.classList.add('chart-legend-modern');
+
+    const ul = document.createElement('ul');
+
+    pieLabels.forEach((label, i) => {
+        const li = document.createElement('li');
+
+        const dot = document.createElement('span');
+        dot.style.backgroundColor = bgColors[i];
+
+        li.appendChild(dot);
+        li.appendChild(document.createTextNode(label));
+
+        ul.appendChild(li);
+    });
+
+    legendContainer.appendChild(ul);
+    pieCtx.parentNode.appendChild(legendContainer);
+}
+
+
 
     // ✅ LINE CHART: scholars by course
     const lineLabels = <?php echo json_encode($lineLabels, 15, 512) ?>;
