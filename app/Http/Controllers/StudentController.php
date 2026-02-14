@@ -10,6 +10,7 @@ use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;  // Add this import
 use App\Http\Controllers\Concerns\UsesActiveSemester;
 use App\Models\AnnouncementView;
+use App\Models\Scholar;
 
 
 
@@ -19,44 +20,77 @@ class StudentController extends Controller
 use UsesActiveSemester;
 
     public function dashboard()
-    {
-        $announcements = Announcement::where('audience', 'all_students')
-            ->orWhere(function($query) {
-                $query->where('audience', 'specific_scholars')
-                    ->whereHas('notifications', function($q) {
-                        $q->where('recipient_user_id', Auth::id());
-                    });
-            })
-            ->latest()
-            ->take(5)
-            ->get();
+{
+    $userId = Auth::id();
 
-        // ✅ Add this
-        $notifications = Notification::where('recipient_user_id', Auth::id())
-            ->latest()
-            ->take(5)
-            ->get();
+    // ✅ Is the logged-in student a scholar?
+    $isScholar = Scholar::where('student_id', $userId)->exists();
 
-        $unreadCount = Notification::where('recipient_user_id', Auth::id())
-            ->where('is_read', false)
-            ->count();
+    // ✅ Show announcements if:
+    // - audience = all_students
+    // - audience = all_scholars (ONLY if the student is a scholar)
+    // - OR targeted via notifications (specific_students / specific_scholars)
+    // ✅ Also only show posts that are already "posted" (posted_at <= now)
+    $announcements = Announcement::query()
+        ->whereNotNull('posted_at')
+        ->where('posted_at', '<=', now())
+        ->where(function ($q) use ($userId, $isScholar) {
+            $q->where('audience', 'all_students');
 
-        return view('student.dashboard', compact('announcements', 'notifications', 'unreadCount'));
-    }
+            if ($isScholar) {
+                $q->orWhere('audience', 'all_scholars');
+            }
+
+            $q->orWhereHas('notifications', function ($n) use ($userId) {
+                $n->where('recipient_user_id', $userId)
+                  ->where('type', 'announcement'); // ✅ ensures it's announcement notification
+            });
+        })
+        ->orderByDesc('posted_at')
+        ->take(5)
+        ->get();
+
+    $notifications = Notification::where('recipient_user_id', $userId)
+        ->orderByDesc('id')
+        ->take(5)
+        ->get();
+
+    $unreadCount = Notification::where('recipient_user_id', $userId)
+        ->where('is_read', false)
+        ->count();
+
+    return view('student.dashboard', compact('announcements', 'notifications', 'unreadCount'));
+}
 
 
-    public function announcements()
-    {
-        $announcements = Announcement::where('audience', 'all_students')
-            ->orWhere(function($query) {
-                $query->where('audience', 'specific_scholars')
-                      ->whereHas('notifications', function($q) {
-                          $q->where('recipient_user_id', Auth::id());  // Use Auth::id()
-                      });
-            })->latest()->paginate(10);
 
-        return view('student.announcements', compact('announcements'));
-    }
+   public function announcements()
+{
+    $userId = Auth::id();
+
+    $isScholar = Scholar::where('student_id', $userId)->exists();
+
+    $announcements = Announcement::query()
+        ->whereNotNull('posted_at')
+        ->where('posted_at', '<=', now())
+        ->where(function ($q) use ($userId, $isScholar) {
+            $q->where('audience', 'all_students');
+
+            if ($isScholar) {
+                $q->orWhere('audience', 'all_scholars');
+            }
+
+            $q->orWhereHas('notifications', function ($n) use ($userId) {
+                $n->where('recipient_user_id', $userId)
+                  ->where('type', 'announcement');
+            });
+        })
+        ->orderByDesc('posted_at')
+        ->paginate(10);
+
+    return view('student.announcements', compact('announcements'));
+}
+
 
 
     public function scholarships()

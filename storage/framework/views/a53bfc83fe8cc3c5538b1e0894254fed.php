@@ -10,6 +10,9 @@
         --line:#e5e7eb;
         --bg:#f8fafc;
         --card:#ffffff;
+        --warn:#9a3412;
+        --warn-bg:#fff7ed;
+        --warn-line:#fed7aa;
     }
 
     .wrap{ max-width: 980px; margin:0 auto; padding: 10px; }
@@ -67,6 +70,12 @@
         color:#374151;
         white-space:nowrap;
     }
+    .pill-scheduled{
+        background: var(--warn-bg);
+        border-color: var(--warn-line);
+        color: var(--warn);
+        font-weight:900;
+    }
 
     .post-title{ font-weight:950; font-size:16px; color:var(--ink); margin-top:12px; }
     .post-body{
@@ -78,10 +87,67 @@
         line-height:1.6;
     }
 
-
     .divider{ border-top:1px solid #eef2f7; margin: 12px 0; }
 
-    /* Modal */
+    /* Tabs */
+    .tabs{
+        display:flex; gap:8px; flex-wrap:wrap;
+        padding:10px;
+        border:1px solid var(--line);
+        border-radius:16px;
+        background: var(--card);
+        box-shadow: 0 1px 2px rgba(0,0,0,.06);
+        margin-bottom: 12px;
+    }
+    .tab{
+        text-decoration:none;
+        border:1px solid var(--line);
+        background:#fff;
+        color:#111827;
+        border-radius:12px;
+        padding:10px 14px;
+        font-weight:900;
+        display:inline-flex; align-items:center; gap:8px;
+    }
+    .tab.active-posted{
+        background:#eef2ff;
+        border-color:#c7d2fe;
+        color:#1d4ed8;
+    }
+    .tab.active-scheduled{
+        background: var(--warn-bg);
+        border-color: var(--warn-line);
+        color: var(--warn);
+    }
+
+    .btn-ghost{
+        border:1px solid var(--line);
+        background:#fff;
+        color:#111827;
+        border-radius:12px;
+        padding:10px 14px;
+        font-weight:900;
+        cursor:pointer;
+        white-space:nowrap;
+    }
+
+    .post-body.clamp{
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+        overflow: hidden;
+    }
+    .see-more{
+        border:none;
+        background:transparent;
+        color: var(--brand-600);
+        font-weight:900;
+        padding: 0;
+        cursor:pointer;
+        margin-top:8px;
+    }
+
+    /* Modal (existing) */
     .modal-backdrop-custom{
         position:fixed; inset:0; background:rgba(17,24,39,.45);
         display:none; align-items:center; justify-content:center;
@@ -89,12 +155,16 @@
     }
     .modal-custom{
         width:min(820px, 100%);
+        max-height: 90vh;
         background:var(--card);
         border:1px solid var(--line);
         border-radius:18px;
         box-shadow: 0 16px 40px rgba(0,0,0,.25);
         overflow:hidden;
+        display:flex;
+        flex-direction:column;
     }
+
     .modal-head{
         padding:14px 16px;
         display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -105,7 +175,11 @@
         border:none; background:#f3f4f6; color:#111827;
         border-radius:10px; padding:8px 10px; cursor:pointer; font-weight:900;
     }
-    .modal-body{ padding:16px; }
+    .modal-body{
+        padding:16px;
+        overflow:auto;
+        flex:1 1 auto;
+    }
     .input, .select, .textarea{
         width:100%;
         border:1px solid var(--line);
@@ -177,17 +251,24 @@
     .res b{ color:var(--ink); }
     .res small{ color:var(--muted); }
 
-    .footer-actions{ margin-top:12px; display:flex; justify-content:flex-end; gap:10px; }
-    .btn-ghost{
-        border:1px solid var(--line);
-        background:#fff;
-        color:#111827;
-        border-radius:12px;
-        padding:10px 14px;
-        font-weight:900;
-        cursor:pointer;
+    .footer-actions{
+        margin-top:12px;
+        display:flex;
+        justify-content:flex-end;
+        gap:10px;
+
+        position: sticky;
+        bottom: 0;
+        background: var(--card);
+        padding: 12px 0 0;
+        border-top: 1px solid #eef2f7;
     }
 </style>
+
+<?php
+    // ✅ pick which list to show
+    $list = ($tab ?? 'posted') === 'scheduled' ? $scheduledAnnouncements : $postedAnnouncements;
+?>
 
 <div class="wrap">
     <div class="header">
@@ -206,21 +287,39 @@
     <?php endif; ?>
 
     
-    <?php $__empty_1 = true; $__currentLoopData = $announcements; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $post): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-        <div class="card">
+    <div class="tabs">
+        <a href="<?php echo e(route('coordinator.manage-announcements', ['tab' => 'posted'])); ?>"
+           class="tab <?php echo e(($tab ?? 'posted') === 'posted' ? 'active-posted' : ''); ?>">
+            ✅ Posted
+        </a>
+
+        <a href="<?php echo e(route('coordinator.manage-announcements', ['tab' => 'scheduled'])); ?>"
+           class="tab <?php echo e(($tab ?? 'posted') === 'scheduled' ? 'active-scheduled' : ''); ?>">
+            🕒 Scheduled Posts
+        </a>
+    </div>
+
+    
+    <?php $__empty_1 = true; $__currentLoopData = $list; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $post): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+        <?php
+            $isScheduled = $post->posted_at && $post->posted_at->isFuture();
+        ?>
+
+        <div class="card" style="<?php echo e($isScheduled ? 'border-color:var(--warn-line);' : ''); ?>">
             <div class="space">
                 <div class="row">
                     <div class="avatar" style="background:#f3f4f6;color:#374151;">
                         <?php echo e(strtoupper(substr($post->creator->firstname ?? 'C', 0, 1))); ?>
 
                     </div>
+
                     <div>
                         <p class="name"><?php echo e($post->creator->firstname ?? 'Coordinator'); ?> <?php echo e($post->creator->lastname ?? ''); ?></p>
+
                         <p class="sub">
-                           <span class="js-timeago"
-                                data-time="<?php echo e($post->posted_at?->toIso8601String()); ?>"
-                                title="<?php echo e($post->posted_at?->format('M d, Y h:i A')); ?>"
-                                <?php echo e($post->posted_at?->diffForHumans()); ?>>
+                            <span class="js-timeago"
+                                  data-time="<?php echo e($post->posted_at?->toIso8601String()); ?>"
+                                  title="<?php echo e($post->posted_at?->format('M d, Y h:i A')); ?>">
                             </span>
 
                             <span class="pill">
@@ -233,30 +332,93 @@
                                 }); ?>
 
                             </span>
-                            •
-                            <span class="pill" title="Views">
-                                👁️ <?php echo e($post->views_count ?? 0); ?>
 
-                            </span>
+                            <?php if($isScheduled): ?>
+                                <span class="pill pill-scheduled">🕒 Scheduled</span>
+                            <?php endif; ?>
+
+                            •
+                            <span class="pill" title="Views">👁️ <?php echo e($post->views_count ?? 0); ?></span>
                         </p>
                     </div>
                 </div>
+
+                
+                <div class="d-flex gap-2 flex-wrap ms-auto">
+    <?php if($isScheduled): ?>
+        <button type="button"
+                class="btn btn-outline-primary btn-sm rounded-3 fw-semibold"
+                onclick="openEditSchedule(<?php echo e($post->id); ?>, '<?php echo e($post->posted_at->format('Y-m-d\TH:i')); ?>')">
+            ✏️ Edit Time
+        </button>
+
+        <form action="<?php echo e(route('coordinator.announcements.cancel-schedule', $post->id)); ?>"
+              method="POST"
+              onsubmit="return confirm('Cancel this scheduled post?')">
+            <?php echo csrf_field(); ?>
+            <?php echo method_field('PATCH'); ?>
+            <button class="btn btn-outline-warning btn-sm rounded-3 fw-semibold" type="submit">
+                ⛔ Cancel
+            </button>
+        </form>
+    <?php endif; ?>
+
+    <form action="<?php echo e(route('coordinator.announcements.destroy', $post->id)); ?>"
+          method="POST"
+          onsubmit="return confirm('Delete this announcement? This cannot be undone.')">
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('DELETE'); ?>
+        <button class="btn btn-outline-danger btn-sm rounded-3 fw-semibold" type="submit">
+            🗑 Delete
+        </button>
+    </form>
+</div>
+
             </div>
 
             <div class="post-title"><?php echo e($post->title); ?></div>
-            <div class="post-body"><?php echo e($post->description); ?></div>
+            <div class="post-body clamp" id="body-<?php echo e($post->id); ?>"><?php echo e($post->description); ?></div>
+
+            <?php if(mb_strlen($post->description ?? '') > 220): ?>
+                <button type="button" class="see-more" data-target="<?php echo e($post->id); ?>">See more</button>
+            <?php endif; ?>
         </div>
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <div class="card" style="text-align:center; color:#6b7280;">
-            No announcements yet.
+            No <?php echo e(($tab ?? 'posted') === 'scheduled' ? 'scheduled posts' : 'announcements'); ?> yet.
         </div>
     <?php endif; ?>
 
     <div style="margin-top:14px;">
-        <?php echo e($announcements->links()); ?>
+        <?php echo e($list->links()); ?>
 
     </div>
 </div>
+
+
+
+<div class="modal-backdrop-custom" id="editModal">
+    <div class="modal-custom" style="width:min(520px, 100%);">
+        <div class="modal-head">
+            <h3>Edit Scheduled Time</h3>
+            <button class="modal-close" type="button" onclick="closeEditModal()">✕</button>
+        </div>
+
+        <form class="modal-body" method="POST" id="editScheduleForm">
+            <?php echo csrf_field(); ?>
+            <?php echo method_field('PATCH'); ?>
+
+            <label class="sub" style="font-weight:900;">New Schedule Date & Time</label>
+            <input type="datetime-local" name="posted_at" class="input" id="editPostedAt" required>
+
+            <div class="footer-actions">
+                <button type="button" class="btn-ghost" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn-brand">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 
 
 <div class="modal-backdrop-custom" id="createModal">
@@ -276,7 +438,9 @@
                 </div>
                 <div>
                     <label class="sub" style="font-weight:900;">Posting Time</label>
-                    <input class="input" value="<?php echo e(now()->format('M d, Y h:i A')); ?> (auto)" disabled>
+                    <input class="input" type="datetime-local" name="posted_at"
+                           value="<?php echo e(now()->format('Y-m-d\TH:i')); ?>" required>
+                    <small class="sub">Default is current date/time, but you can schedule it.</small>
                 </div>
             </div>
 
@@ -338,6 +502,7 @@
 
 <script>
 (function(){
+    // ===== create modal (your existing logic) =====
     const modal = document.getElementById('createModal');
     const openBtn = document.getElementById('openModalBtn');
     const closeBtn = document.getElementById('closeModalBtn');
@@ -349,9 +514,8 @@
     const chips = document.getElementById('chips');
     const pickedCount = document.getElementById('pickedCount');
 
-    // store selected
-    let selected = new Map(); // key -> object
-    let currentType = null;   // students | scholars
+    let selected = new Map();
+    let currentType = null;
     let debounce = null;
 
     function openModal(){
@@ -366,36 +530,31 @@
         document.body.style.overflow = 'hidden';
     }
 
-   function closeModal(){
+    function closeModal(){
         modal.style.display = 'none';
         document.body.style.overflow = '';
 
-        // ✅ reset normal fields
         const form = document.getElementById('announceForm');
         form.reset();
 
-        // ✅ reset picker area
         results.innerHTML = '';
         searchInput.value = '';
         selected.clear();
         updatePickedUI();
-        setPickerVisibility(); // hides picker if not specific
+        setPickerVisibility();
     }
 
-    openBtn.addEventListener('click', openModal);
-    closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
+    openBtn?.addEventListener('click', openModal);
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
 
     function updatePickedUI(){
         chips.innerHTML = '';
         selected.forEach((v, k) => {
             const el = document.createElement('span');
             el.className = 'chip';
-            el.innerHTML = `
-                ${v.label}
-                <button type="button" aria-label="remove">×</button>
-            `;
+            el.innerHTML = `${v.label}<button type="button" aria-label="remove">×</button>`;
             el.querySelector('button').addEventListener('click', ()=>{
                 selected.delete(k);
                 updatePickedUI();
@@ -404,10 +563,8 @@
         });
         pickedCount.textContent = `${selected.size} selected`;
 
-        // remove old hidden inputs
         document.querySelectorAll('.dyn-picked').forEach(x => x.remove());
 
-        // add hidden inputs (based on current audience)
         const aud = document.querySelector('input[name="audience"]:checked')?.value;
         const form = document.getElementById('announceForm');
 
@@ -439,7 +596,6 @@
         const needsPicker = (aud === 'specific_students' || aud === 'specific_scholars');
         pickerBox.style.display = needsPicker ? 'block' : 'none';
 
-        // reset selection when switching type
         if (needsPicker) {
             currentType = (aud === 'specific_students') ? 'students' : 'scholars';
         } else {
@@ -476,13 +632,9 @@
         }
 
         list.forEach(item=>{
-            // students: id is user id
-            // scholars: id is scholar id
             const id = item.id;
-
             const fullName = `${item.firstname ?? ''} ${item.lastname ?? ''}`.trim();
             const meta = `${item.student_id ?? ''}${item.bisu_email ? ' • ' + item.bisu_email : ''}`.trim();
-
             const key = currentType + ':' + id;
 
             const card = document.createElement('div');
@@ -509,12 +661,45 @@
         });
     }
 
-     function timeAgoText(date){
+    searchInput?.addEventListener('input', ()=>{
+        clearTimeout(debounce);
+        debounce = setTimeout(async ()=>{
+            const q = searchInput.value.trim();
+            if(q.length < 2){
+                results.innerHTML = `<div class="sub">Type at least 2 characters…</div>`;
+                return;
+            }
+            results.innerHTML = `<div class="sub">Searching…</div>`;
+            const data = await fetchRecipients(q);
+            renderResults(data);
+        }, 250);
+    });
+
+    document.getElementById('announceForm')?.addEventListener('submit', (e)=>{
+        const aud = document.querySelector('input[name="audience"]:checked')?.value;
+        if ((aud === 'specific_students' || aud === 'specific_scholars') && selected.size === 0) {
+            e.preventDefault();
+            alert('Please select at least 1 recipient.');
+        }
+    });
+
+    // ===== timeago =====
+    function timeAgoText(date){
         const now = new Date();
         const then = new Date(date);
-        if (isNaN(then.getTime())) return ''; // invalid date, do nothing
+        if (isNaN(then.getTime())) return '';
 
-        const diff = Math.floor((now - then) / 1000); // seconds
+        const diff = Math.floor((now - then) / 1000);
+
+        // ✅ if scheduled (future)
+        if (diff < 0) {
+            const mins = Math.ceil(Math.abs(diff) / 60);
+            if (mins < 60) return `scheduled in ${mins}m`;
+            const hrs = Math.ceil(mins / 60);
+            if (hrs < 24) return `scheduled in ${hrs}h`;
+            const days = Math.ceil(hrs / 24);
+            return `scheduled in ${days}d`;
+        }
 
         if (diff < 5) return 'just now';
         if (diff < 60) return `${diff}s ago`;
@@ -529,7 +714,6 @@
         if (days === 1) return 'yesterday';
         if (days < 7) return `${days}d ago`;
 
-        // fallback: show actual date like Feb 1, 2026
         return then.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
     }
 
@@ -542,38 +726,60 @@
         });
     }
 
-    // run now + repeat
     refreshTimeago();
     setInterval(refreshTimeago, 30000);
 
+    document.querySelectorAll('.see-more').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-target');
+            const body = document.getElementById('body-' + id);
+            if (!body) return;
 
-    searchInput.addEventListener('input', ()=>{
-        clearTimeout(debounce);
-        debounce = setTimeout(async ()=>{
-            const q = searchInput.value.trim();
-            if(q.length < 2){
-                results.innerHTML = `<div class="sub">Type at least 2 characters…</div>`;
-                return;
+            const isClamped = body.classList.contains('clamp');
+            if (isClamped) {
+                body.classList.remove('clamp');
+                btn.textContent = 'Show less';
+            } else {
+                body.classList.add('clamp');
+                btn.textContent = 'See more';
             }
-            results.innerHTML = `<div class="sub">Searching…</div>`;
-            const data = await fetchRecipients(q);
-            renderResults(data);
-        }, 250);
+        });
     });
 
-    // basic guard: if specific audience, must pick at least 1
-    document.getElementById('announceForm').addEventListener('submit', (e)=>{
-        const aud = document.querySelector('input[name="audience"]:checked')?.value;
-        if ((aud === 'specific_students' || aud === 'specific_scholars') && selected.size === 0) {
-            e.preventDefault();
-            alert('Please select at least 1 recipient.');
-        }
-    });
-
-
-   
 })();
 </script>
+
+<script>
+    // ===== edit schedule modal =====
+    function openEditSchedule(id, value){
+        const modal = document.getElementById('editModal');
+        const input = document.getElementById('editPostedAt');
+        const form  = document.getElementById('editScheduleForm');
+
+        input.value = value;
+
+        // build URL: .../manage-announcements/{id}/reschedule
+        let url = "<?php echo e(route('coordinator.announcements.reschedule', ['announcement' => '__ID__'])); ?>";
+        url = url.replace('__ID__', id);
+
+        form.action = url;
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal(){
+        const modal = document.getElementById('editModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    // click backdrop to close
+    document.getElementById('editModal')?.addEventListener('click', (e)=>{
+        if(e.target.id === 'editModal') closeEditModal();
+    });
+</script>
+
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/manage-announcements.blade.php ENDPATH**/ ?>

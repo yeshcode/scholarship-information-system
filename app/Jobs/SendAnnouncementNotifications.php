@@ -15,8 +15,10 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
+
 class SendAnnouncementNotifications implements ShouldQueue
 {
+     
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct(

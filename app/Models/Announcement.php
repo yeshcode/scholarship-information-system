@@ -36,4 +36,11 @@ class Announcement extends Model
     {
         return $this->hasMany(AnnouncementView::class);
     }
+
+    public function recipients()
+{
+    return $this->belongsToMany(\App\Models\User::class, 'announcement_recipients')
+        ->withTimestamps();
+}
+
 }
