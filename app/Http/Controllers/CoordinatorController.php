@@ -1570,27 +1570,37 @@ public function confirmDeleteStipendRelease($id)
 }
 
     // Manage Announcements
-        public function manageAnnouncements()
-        {
-            $scholars = Scholar::with('user')->get();
+       public function manageAnnouncements(Request $request)
+{
+    $tab = $request->get('tab', 'posted'); // posted | scheduled
 
-        $announcements = Announcement::with('creator')
+    $base = Announcement::with('creator')
         ->withCount('views')
-
-        // ✅ Put NULL posted_at at the bottom
-        ->orderByRaw('posted_at IS NULL')
-
-        // ✅ Latest announcements first
         ->orderByDesc('posted_at')
+        ->orderByDesc('id');
 
-        // ✅ Fallback ordering
-        ->orderByDesc('id')
+    // ✅ POSTED = posted_at is now or past
+    $postedAnnouncements = (clone $base)
+        ->whereNotNull('posted_at')
+        ->where('posted_at', '<=', now())
+        ->paginate(10, ['*'], 'posted_page')
+        ->withQueryString();
 
-        ->paginate(10);
+    // ✅ SCHEDULED = posted_at is future
+    $scheduledAnnouncements = (clone $base)
+        ->whereNotNull('posted_at')
+        ->where('posted_at', '>', now())
+        ->paginate(10, ['*'], 'scheduled_page')
+        ->withQueryString();
+
+    return view('coordinator.manage-announcements', compact(
+        'tab',
+        'postedAnnouncements',
+        'scheduledAnnouncements'
+    ));
+}
 
 
-        return view('coordinator.manage-announcements', compact('scholars', 'announcements'));
-    }
 
 
  
@@ -1598,33 +1608,74 @@ public function confirmDeleteStipendRelease($id)
 public function storeAnnouncement(Request $request)
 {
     $request->validate([
-        'title' => 'required|string|max:255',
-        'description' => 'required|string',
-        'audience' => 'required|in:all_students,all_scholars,specific_students,specific_scholars',
-        'selected_users' => 'nullable|array',
-        'selected_scholars' => 'nullable|array',
+        'title'               => 'required|string|max:255',
+        'description'         => 'required|string',
+        'audience'            => 'required|in:all_students,all_scholars,specific_students,specific_scholars',
+        'posted_at'           => 'required|date',
+        'selected_users'      => 'nullable|array',
+        'selected_users.*'    => 'integer|exists:users,id',
+        'selected_scholars'   => 'nullable|array',
+        'selected_scholars.*' => 'integer|exists:scholars,id',
     ]);
+
+    // If specific audience, require at least 1 recipient
+    if (in_array($request->audience, ['specific_students', 'specific_scholars'])) {
+        $count = $request->audience === 'specific_students'
+            ? count($request->selected_users ?? [])
+            : count($request->selected_scholars ?? []);
+
+        if ($count < 1) {
+            return back()->withInput()->with('error', 'Please select at least 1 recipient.');
+        }
+    }
+
+    $postedAt = \Carbon\Carbon::parse($request->posted_at);
 
     $announcement = Announcement::create([
-        'created_by' => Auth::id(),
-        'title' => $request->title,
+        'created_by'  => Auth::id(),
+        'title'       => $request->title,
         'description' => $request->description,
-        'audience' => $request->audience,
-        'posted_at' => now(),
+        'audience'    => $request->audience,
+        'posted_at'   => $postedAt,     // scheduled/posted time
+        'notified_at' => null,          // not yet sent
     ]);
 
-    // ✅ ONLY dispatch ONCE (no loop)
-    SendAnnouncementNotifications::dispatch(
-        $announcement->id,
-        Auth::id(),
-        $request->audience,
-        $request->selected_users ?? [],
-        $request->selected_scholars ?? []
-    );
+    if ($request->audience === 'specific_students') {
+         $announcement->recipients()->sync($request->selected_users ?? []);
+    }
 
-    return redirect()->route('coordinator.manage-announcements', ['page' => 1])
-        ->with('success', 'Announcement posted. Notifications + emails are being sent in the background.');
+    if ($request->audience === 'specific_scholars') {
+        $userIds = \App\Models\Scholar::whereIn('id', $request->selected_scholars ?? [])
+            ->pluck('student_id')
+            ->toArray();
+
+        $announcement->recipients()->sync($userIds);
+    }
+
+
+    // ✅ If posted time is NOW or past → send now
+    if ($postedAt->lte(now())) {
+        // Use dispatchSync for testing, switch to dispatch later if you want
+        SendAnnouncementNotifications::dispatchSync(
+            $announcement->id,
+            Auth::id(),
+            $request->audience,
+            $request->selected_users ?? [],
+            $request->selected_scholars ?? []
+        );
+
+        $announcement->update(['notified_at' => now()]);
+
+        return redirect()->route('coordinator.manage-announcements')
+            ->with('success', 'Announcement posted and notifications sent.');
+    }
+
+    // ✅ If future → scheduled only
+    return redirect()->route('coordinator.manage-announcements')
+        ->with('success', 'Announcement scheduled successfully.');
 }
+
+
 
 
 public function searchAnnouncementRecipients(Request $request)
@@ -1678,6 +1729,56 @@ public function searchAnnouncementRecipients(Request $request)
 
     return response()->json([]);
 }
+
+public function destroyAnnouncement(Announcement $announcement)
+{
+    // Optional: only allow owner or coordinator role checks here
+    // if ($announcement->created_by !== Auth::id()) abort(403);
+
+    DB::transaction(function () use ($announcement) {
+        // delete related notifications (if you want cleanup)
+        Notification::where('related_type', 'announcement')
+            ->where('related_id', $announcement->id)
+            ->delete();
+
+        $announcement->delete();
+    });
+
+    return redirect()->route('coordinator.manage-announcements')
+        ->with('success', 'Announcement deleted successfully.');
+}
+
+public function cancelAnnouncementSchedule(Announcement $announcement)
+{
+    // Safety: only allow cancel if it's still future
+    if ($announcement->posted_at && $announcement->posted_at->isFuture()) {
+        // Option A: cancel schedule => post NOW
+        // $announcement->update(['posted_at' => now()]);
+
+        // Option B: cancel schedule => remove schedule (it will not show in posted/scheduled)
+        $announcement->update(['posted_at' => null]);
+    }
+
+    return back()->with('success', 'Schedule cancelled.');
+}
+
+public function rescheduleAnnouncement(Request $request, Announcement $announcement)
+{
+    $request->validate([
+        'posted_at' => ['required', 'date', 'after:now'],
+    ]);
+
+    $announcement->update([
+        'posted_at' => $request->posted_at,
+        // optional: if you use notified_at to ensure re-send only once,
+        // set it back to null when rescheduling so it can notify again at new time:
+        'notified_at' => null,
+    ]);
+
+    return back()->with('success', 'Scheduled time updated.');
+}
+
+
 
 
 
