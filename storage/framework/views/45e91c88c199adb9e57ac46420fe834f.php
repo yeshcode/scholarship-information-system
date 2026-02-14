@@ -252,56 +252,94 @@
 
 
 <div class="modal fade" id="addScholarModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <form method="POST" action="<?php echo e(route('coordinator.scholars.store')); ?>" class="modal-content">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <form method="POST" action="<?php echo e(route('coordinator.scholars.store')); ?>" class="modal-content border-0 shadow">
             <?php echo csrf_field(); ?>
 
-            <div class="modal-header bg-dark text-white">
-                <div>
-                    <div class="fw-bold">Add Scholar</div>
-                    <small class="opacity-75">Confirm details then submit</small>
+            <div class="modal-header" style="background:#003366; color:#fff;">
+                <div class="d-flex flex-column">
+                    <div class="fw-bold fs-5">Add Scholar</div>
+                    <small class="opacity-75">Select scholarship + batch, then confirm details</small>
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <input type="hidden" name="student_id" id="modal_student_id">
 
-                <div class="mb-2">
-                    <label class="form-label fw-semibold text-secondary mb-1">Student</label>
-                    <input type="text" id="modal_student_name" class="form-control form-control-sm" readonly>
+                
+                <div class="p-3 rounded-3 border mb-3" style="background:#f8fafc;">
+                    <div class="small text-muted mb-1">Selected Student</div>
+                    <input type="text" id="modal_student_name"
+                           class="form-control form-control-sm fw-semibold"
+                           readonly>
                 </div>
 
-                <div class="row g-2">
+                <div class="row g-3">
+                    
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary mb-1">Batch</label>
-                        <select name="batch_id" class="form-select form-select-sm" required>
-                            <option value="">Select batch</option>
-                            <?php $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($b->id); ?>">
-                                    <?php echo e($b->scholarship->scholarship_name ?? 'Scholarship'); ?> - Batch <?php echo e($b->batch_number); ?>
+                        <label class="form-label fw-semibold text-secondary mb-1">
+                            Scholarship <span class="text-danger">*</span>
+                        </label>
+                        <select name="scholarship_id" id="modal_scholarship_id" class="form-select form-select-sm" required>
+                            <option value="">Select scholarship...</option>
+                            <?php $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sch): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($sch->id); ?>">
+                                    <?php echo e($sch->scholarship_name); ?>
 
-                                    (<?php echo e($b->semester->term ?? ''); ?> <?php echo e($b->semester->academic_year ?? ''); ?>)
+                                </option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                        <div class="form-text">Example: DOST, DOST-JLSS, TES, TDP</div>
+                    </div>
+
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary mb-1">
+                            Batch <span class="text-danger">*</span>
+                        </label>
+
+                        
+                        <select name="batch_id" id="modal_batch_id" class="form-select form-select-sm" required disabled>
+                            <option value="">Select scholarship first...</option>
+                        </select>
+
+                        <div class="form-text">Batch list changes based on selected scholarship.</div>
+
+                        
+                        <select id="__all_batches" class="d-none">
+                            <?php $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option
+                                    value="<?php echo e($b->id); ?>"
+                                    data-scholarship-id="<?php echo e($b->scholarship_id); ?>"
+                                >
+                                    Batch <?php echo e($b->batch_number); ?>
+
                                 </option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold text-secondary mb-1">Date Added</label>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary mb-1">
+                            Date Added <span class="text-danger">*</span>
+                        </label>
                         <input type="date" name="date_added" class="form-control form-control-sm" required>
+                        <div class="form-text">This will be saved as the scholar’s official start date.</div>
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold text-secondary mb-1">Status</label>
-                        <select name="status" class="form-select form-select-sm" required>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="graduated">Graduated</option>
-                        </select>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary mb-1">Note</label>
+                        <div class="alert alert-info py-2 mb-0 small">
+                            <strong>Reminder:</strong> Semester and Status are removed here.
+                            This modal is only for linking the student to a scholarship + batch.
+                        </div>
                     </div>
                 </div>
 
+                
                 <?php if($errors->any()): ?>
                     <div class="alert alert-danger mt-3 mb-0">
                         <div class="fw-semibold">Please fix the errors:</div>
@@ -314,29 +352,85 @@
                 <?php endif; ?>
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-bisu-primary btn-sm">Save Scholar</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-bisu-primary btn-sm">
+                    Save Scholar
+                </button>
             </div>
         </form>
     </div>
 </div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('addScholarModal');
     if (!modal) return;
 
+    const studentIdEl   = document.getElementById('modal_student_id');
+    const studentNameEl = document.getElementById('modal_student_name');
+
+    const scholarshipEl = document.getElementById('modal_scholarship_id');
+    const batchEl       = document.getElementById('modal_batch_id');
+    const allBatchesEl  = document.getElementById('__all_batches');
+
+    function resetBatchSelect(message = 'Select scholarship first...') {
+        batchEl.innerHTML = `<option value="">${message}</option>`;
+        batchEl.disabled = true;
+    }
+
+    function loadBatchesForScholarship(scholarshipId) {
+        resetBatchSelect('Select batch...');
+
+        if (!scholarshipId) {
+            resetBatchSelect('Select scholarship first...');
+            return;
+        }
+
+        const options = Array.from(allBatchesEl.options)
+            .filter(opt => opt.dataset.scholarshipId === scholarshipId);
+
+        if (options.length === 0) {
+            resetBatchSelect('No batches found for this scholarship');
+            return;
+        }
+
+        // Populate
+        batchEl.innerHTML = `<option value="">Select batch...</option>`;
+        options.forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt.value;
+            o.textContent = opt.textContent; // "Batch X"
+            batchEl.appendChild(o);
+        });
+
+        batchEl.disabled = false;
+    }
+
+    // When opening modal: set student data + reset scholarship/batch
     modal.addEventListener('show.bs.modal', function (event) {
         const btn = event.relatedTarget;
         const studentId = btn.getAttribute('data-student-id');
         const studentName = btn.getAttribute('data-student-name');
 
-        document.getElementById('modal_student_id').value = studentId;
-        document.getElementById('modal_student_name').value = studentName;
+        studentIdEl.value = studentId || '';
+        studentNameEl.value = studentName || '';
+
+        // reset fields every open
+        scholarshipEl.value = '';
+        resetBatchSelect('Select scholarship first...');
+    });
+
+    // Scholarship change => reload batch list
+    scholarshipEl.addEventListener('change', function () {
+        loadBatchesForScholarship(this.value);
     });
 });
 </script>
+
 
 <?php $__env->stopSection(); ?>
 

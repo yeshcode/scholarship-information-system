@@ -389,21 +389,21 @@
                                 </svg>
                             </button>
                             <div id="coord-scholars-menu" class="hidden absolute left-0 mt-0 w-72 dropdown-bg">
+                                <a href="<?php echo e(route('coordinator.scholarship-batches')); ?>"
+                                   class="dropdown-square <?php echo e((request()->routeIs('coordinator.scholarship-batches') || request()->routeIs('coordinator.scholarship-batches.*')) ? 'dropdown-square-active' : ''); ?>">
+                                    Scholarship Batches
+                                </a>
                                 <a href="<?php echo e(route('coordinator.manage-scholars')); ?>"
                                    class="dropdown-square <?php echo e((request()->routeIs('coordinator.manage-scholars') || request()->routeIs('coordinator.scholars.*')) ? 'dropdown-square-active' : ''); ?>">
                                     Scholars
-                                </a>
-                                <a href="<?php echo e(route('coordinator.enrollment-records')); ?>"
-                                   class="dropdown-square <?php echo e(request()->routeIs('coordinator.enrollment-records') ? 'dropdown-square-active' : ''); ?>">
-                                    Students Record
                                 </a>
                                 <a href="<?php echo e(route('coordinator.manage-scholarships')); ?>"
                                    class="dropdown-square <?php echo e((request()->routeIs('coordinator.manage-scholarships') || request()->routeIs('coordinator.scholarships.*')) ? 'dropdown-square-active' : ''); ?>">
                                     Scholarships
                                 </a>
-                                <a href="<?php echo e(route('coordinator.scholarship-batches')); ?>"
-                                   class="dropdown-square <?php echo e((request()->routeIs('coordinator.scholarship-batches') || request()->routeIs('coordinator.scholarship-batches.*')) ? 'dropdown-square-active' : ''); ?>">
-                                    Scholarship Batches
+                                 <a href="<?php echo e(route('coordinator.enrollment-records')); ?>"
+                                   class="dropdown-square <?php echo e(request()->routeIs('coordinator.enrollment-records') ? 'dropdown-square-active' : ''); ?>">
+                                    Students Record
                                 </a>
                             </div>
                         </div>

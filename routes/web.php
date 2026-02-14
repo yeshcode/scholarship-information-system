@@ -245,10 +245,6 @@
 
             Route::get('/notifications/{id}/open', [StudentController::class, 'open'])->name('student.notifications.open');
            
-
-
-            Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
-            Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
             Route::post('/profile/update-contact', [ProfileController::class, 'updateContact'])->name('profile.update-contact');
 
             //Questions
