@@ -229,8 +229,9 @@
         Route::get('/clusters', [QuestionClusterController::class, 'index'])->name('clusters.index');
         Route::get('/clusters/{cluster}', [QuestionClusterController::class, 'show'])->name('clusters.show');
         Route::post('/clusters/{cluster}/answer', [QuestionClusterController::class, 'answer'])->name('clusters.answer');
+        Route::post('/clusters/{cluster}/answer-selected', [QuestionClusterController::class, 'answerSelected'])->name('clusters.answer-selected');
         Route::post('/clusters/questions/{question}/answer', [QuestionClusterController::class, 'answerOne'])->name('clusters.questions.answer');
-
+        
 
         // Reports
         Route::get('/reports', [CoordinatorController::class, 'reports'])->name('coordinator.reports');

@@ -11,6 +11,10 @@ class Question extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'answered_at' => 'datetime',
+    ];
+
     protected $fillable = [
         'user_id',
         'cluster_id',
