@@ -231,7 +231,9 @@
         Route::post('/clusters/{cluster}/answer', [QuestionClusterController::class, 'answer'])->name('clusters.answer');
         Route::post('/clusters/{cluster}/answer-selected', [QuestionClusterController::class, 'answerSelected'])->name('clusters.answer-selected');
         Route::post('/clusters/questions/{question}/answer', [QuestionClusterController::class, 'answerOne'])->name('clusters.questions.answer');
-        
+        Route::post('/clusters/{cluster}/bulk-answer', [QuestionClusterController::class, 'bulkAnswer'])->name('clusters.bulk-answer');
+        Route::post('/clusters/{cluster}/rename', [QuestionClusterController::class, 'rename'])->name('clusters.rename');
+
 
         // Reports
         Route::get('/reports', [CoordinatorController::class, 'reports'])->name('coordinator.reports');

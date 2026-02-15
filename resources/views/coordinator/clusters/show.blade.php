@@ -82,11 +82,89 @@
 
             <div class="text-end">
                 <div class="small text-muted">Thread ID</div>
-                <div class="fw-semibold" style="color:#003366;">#{{ $cluster->id }}</div>
+                <div class="fw-semibold mb-2" style="color:#003366;">
+                    #{{ $cluster->id }}
+                </div>
+
+                {{-- Edit Topic Button --}}
+                <button class="btn btn-outline-secondary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editLabelModal">
+                    ✏ Edit Topic
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+@php
+    // Unanswered questions in this cluster
+    $unansweredQuestions = collect($cluster->questions)->filter(function($x){
+        return empty($x->answer) || trim((string)$x->answer) === '';
+    });
+@endphp
+
+@if(!$isAnswered)
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex align-items-start justify-content-between gap-3">
+                <div>
+                    <h5 class="fw-semibold mb-1" style="color:#003366;">Answer selected questions</h5>
+                    <div class="text-muted">
+                        Select the questions that mean the same thing, then answer them all at once.
+                    </div>
+                </div>
+                <div class="text-end small text-muted">
+                    {{ $unansweredQuestions->count() }} unanswered
+                </div>
+            </div>
+
+            @if($unansweredQuestions->count() > 0)
+                <form method="POST" action="{{ route('clusters.bulk-answer', $cluster->id) }}">
+                    @csrf
+
+                    <div class="mt-3">
+                        <textarea name="answer"
+                                  rows="4"
+                                  class="form-control @error('answer') is-invalid @enderror"
+                                  placeholder="Type one answer that will apply to the selected questions..."
+                                  required>{{ old('answer') }}</textarea>
+
+                        @error('answer')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mt-3 d-flex flex-column gap-2">
+                        @foreach($unansweredQuestions as $uq)
+                            <label class="d-flex gap-2 align-items-start p-2 rounded border bg-light">
+                                <input type="checkbox"
+                                       name="question_ids[]"
+                                       value="{{ $uq->id }}"
+                                       class="form-check-input mt-1">
+                                <div class="flex-grow-1">
+                                    <div class="small text-muted mb-1">
+                                        Posted {{ $uq->created_at ? \Carbon\Carbon::parse($uq->created_at)->format('M d, Y • h:i A') : '' }}
+                                    </div>
+                                    <div style="white-space: pre-line;">{{ $uq->question_text }}</div>
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
+                        <button class="btn btn-success">
+                            Answer Selected
+                        </button>
+                    </div>
+                </form>
+            @else
+                <div class="mt-3 text-muted">No unanswered questions found.</div>
+            @endif
+        </div>
+    </div>
+@endif
+
 
 {{-- Answer Card --}}
 <div class="card border-0 shadow-sm mb-4">
@@ -203,10 +281,21 @@
         $isSimilarMarked = $sim >= (float)$threshold;
 
         // ✅ answered indicator black (dot)
-        $dot = $qAnswered ? 'background:#111827;' : 'background:#f59e0b;';
+        $dot = $qAnswered ? 'background:#198754;' : 'background:#f59e0b;';
 
-        $border = $isSimilarMarked ? 'border border-danger' : 'border';
-        $bg = $isSimilarMarked ? 'bg-danger bg-opacity-10' : 'bg-white';
+
+        // 🎯 STATUS COLORS (separate from similarity)
+        if ($qAnswered) {
+            $border = 'border border-success';
+            $bg = 'bg-success bg-opacity-10';
+        } else {
+            $border = 'border border-warning';
+            $bg = 'bg-warning bg-opacity-10';
+        }
+
+// Optional: small similarity indicator (no more red card)
+$similarBadge = $isSimilarMarked ? 'bg-info text-dark' : 'bg-light text-dark';
+
     @endphp
 
     <div class="card {{ $border }} shadow-sm mb-2 {{ $bg }}" style="border-radius:14px;">
@@ -233,7 +322,7 @@
                 </div>
 
                 <div class="text-end">
-                    <span class="badge {{ $qAnswered ? 'bg-dark' : 'bg-warning text-dark' }}">
+                    <span class="badge {{ $qAnswered ? 'bg-success' : 'bg-warning text-dark' }}">
                         {{ $qAnswered ? 'Answered' : 'Unanswered' }}
                     </span>
                 </div>
@@ -245,9 +334,19 @@
                     @csrf
 
                     <textarea name="answer"
-                              rows="3"
-                              class="form-control @error('answer') is-invalid @enderror"
-                              placeholder="Write an answer for this specific post...">{{ old('answer', $q->answer) }}</textarea>
+                            rows="3"
+                            class="form-control @error('answer') is-invalid @enderror"
+                            placeholder="Write an answer for this specific post..."
+                            {{ $qAnswered ? 'disabled' : '' }}>
+                        {{ old('answer', $q->answer) }}
+                    </textarea>
+
+                    @if($qAnswered)
+                        <div class="small text-success mt-1">
+                            🔒 This post is already answered and locked.
+                        </div>
+                    @endif
+
 
                     @error('answer')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -261,9 +360,10 @@
                                 Not answered yet
                             @endif
                         </small>
-
-                        <button type="submit" class="btn btn-bisu-primary btn-sm">
-                            Save Answer
+                        <button type="submit"
+                                class="btn btn-bisu-primary btn-sm"
+                                {{ $qAnswered ? 'disabled' : '' }}>
+                            {{ $qAnswered ? 'Locked' : 'Save Answer' }}
                         </button>
                     </div>
                 </form>
@@ -279,4 +379,37 @@
 @endforelse
 
 </div>
+
+
+{{-- Rename Topic Modal --}}
+<div class="modal fade" id="editLabelModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ route('clusters.rename', $cluster->id) }}">
+        @csrf
+
+        <div class="modal-header">
+          <h5 class="modal-title">Rename Topic</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="text"
+                 name="label"
+                 class="form-control"
+                 value="{{ $cluster->label }}"
+                 placeholder="Enter new topic title..."
+                 required>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 @endsection

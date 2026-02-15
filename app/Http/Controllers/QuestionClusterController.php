@@ -45,23 +45,22 @@ class QuestionClusterController extends Controller
         // - text mode: ILIKE like before
         // - similar mode: pg_trgm similarity() against representative_question + any question in cluster
             if ($q !== '') {
-            $clustersQuery->where(function ($sub) use ($q, $threshold) {
-            // keyword matches
-            $sub->where('label', 'ILIKE', "%{$q}%")
-                ->orWhere('representative_question', 'ILIKE', "%{$q}%")
-                ->orWhereHas('questions', function ($qq) use ($q) {
-                    $qq->where('question_text', 'ILIKE', "%{$q}%");
-                });
+                        $clustersQuery->where(function ($sub) use ($q, $threshold) {
+                        // keyword matches
+                        $sub->where('label', 'ILIKE', "%{$q}%")
+                            ->orWhere('representative_question', 'ILIKE', "%{$q}%")
+                            ->orWhereHas('questions', function ($qq) use ($q) {
+                                $qq->where('question_text', 'ILIKE', "%{$q}%");
+                            });
 
-            // similarity matches (pg_trgm)
-            $sub->orWhereRaw("similarity(representative_question, ?) >= ?", [$q, $threshold])
-                ->orWhereHas('questions', function ($qq) use ($q, $threshold) {
-                    $qq->whereRaw("similarity(question_text, ?) >= ?", [$q, $threshold]);
-                });
-    })
-    ->orderByRaw("similarity(representative_question, ?) DESC", [$q]);
-}
-
+                        // similarity matches (pg_trgm)
+                        $sub->orWhereRaw("similarity(representative_question, ?) >= ?", [$q, $threshold])
+                            ->orWhereHas('questions', function ($qq) use ($q, $threshold) {
+                                $qq->whereRaw("similarity(question_text, ?) >= ?", [$q, $threshold]);
+                            });
+                })
+                ->orderByRaw("similarity(representative_question, ?) DESC", [$q]);
+            }
 
         $clusters = $clustersQuery->paginate(10)->withQueryString();
 
@@ -163,4 +162,56 @@ class QuestionClusterController extends Controller
 
         return back()->with('success', 'Answer saved for this specific question.');
     }
+
+    public function bulkAnswer(Request $request, QuestionCluster $cluster)
+    {
+        $request->validate([
+            'answer' => 'required|string|max:2000',
+            'question_ids' => 'required|array|min:1',
+            'question_ids.*' => 'integer|exists:questions,id',
+        ]);
+
+        // Only allow answering questions that belong to this cluster
+        $ids = Question::query()
+            ->where('cluster_id', $cluster->id)
+            ->whereIn('id', $request->question_ids)
+            ->pluck('id')
+            ->toArray();
+
+        if (count($ids) === 0) {
+            return back()->with('error', 'No valid questions selected.');
+        }
+
+        // Apply answer to selected questions only
+        Question::query()
+            ->whereIn('id', $ids)
+            ->update([
+                'answer' => $request->answer,
+                'status' => 'answered',
+                'answered_at' => now(),
+                'answered_by' => Auth::id(),
+            ]);
+
+        // Optional: also save as cluster answer (so future new posts can use it)
+        $cluster->cluster_answer = $request->answer;
+        $cluster->cluster_answered_at = now();
+        $cluster->cluster_answered_by = Auth::id();
+        $cluster->save();
+
+        return back()->with('success', 'Selected questions were answered successfully.');
+    }
+
+    public function rename(Request $request, QuestionCluster $cluster)
+    {
+        $request->validate([
+            'label' => 'required|string|max:255',
+        ]);
+
+        $cluster->label = $request->label;
+        $cluster->save();
+
+        return back()->with('success', 'Topic renamed successfully.');
+    }
+
+
 }

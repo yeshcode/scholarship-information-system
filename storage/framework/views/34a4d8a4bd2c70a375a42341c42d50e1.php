@@ -82,11 +82,105 @@
 
             <div class="text-end">
                 <div class="small text-muted">Thread ID</div>
-                <div class="fw-semibold" style="color:#003366;">#<?php echo e($cluster->id); ?></div>
+                <div class="fw-semibold mb-2" style="color:#003366;">
+                    #<?php echo e($cluster->id); ?>
+
+                </div>
+
+                
+                <button class="btn btn-outline-secondary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editLabelModal">
+                    ✏ Edit Topic
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+<?php
+    // Unanswered questions in this cluster
+    $unansweredQuestions = collect($cluster->questions)->filter(function($x){
+        return empty($x->answer) || trim((string)$x->answer) === '';
+    });
+?>
+
+<?php if(!$isAnswered): ?>
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex align-items-start justify-content-between gap-3">
+                <div>
+                    <h5 class="fw-semibold mb-1" style="color:#003366;">Answer selected questions</h5>
+                    <div class="text-muted">
+                        Select the questions that mean the same thing, then answer them all at once.
+                    </div>
+                </div>
+                <div class="text-end small text-muted">
+                    <?php echo e($unansweredQuestions->count()); ?> unanswered
+                </div>
+            </div>
+
+            <?php if($unansweredQuestions->count() > 0): ?>
+                <form method="POST" action="<?php echo e(route('clusters.bulk-answer', $cluster->id)); ?>">
+                    <?php echo csrf_field(); ?>
+
+                    <div class="mt-3">
+                        <textarea name="answer"
+                                  rows="4"
+                                  class="form-control <?php $__errorArgs = ['answer'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                                  placeholder="Type one answer that will apply to the selected questions..."
+                                  required><?php echo e(old('answer')); ?></textarea>
+
+                        <?php $__errorArgs = ['answer'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                            <div class="invalid-feedback"><?php echo e($message); ?></div>
+                        <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                    </div>
+
+                    <div class="mt-3 d-flex flex-column gap-2">
+                        <?php $__currentLoopData = $unansweredQuestions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $uq): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <label class="d-flex gap-2 align-items-start p-2 rounded border bg-light">
+                                <input type="checkbox"
+                                       name="question_ids[]"
+                                       value="<?php echo e($uq->id); ?>"
+                                       class="form-check-input mt-1">
+                                <div class="flex-grow-1">
+                                    <div class="small text-muted mb-1">
+                                        Posted <?php echo e($uq->created_at ? \Carbon\Carbon::parse($uq->created_at)->format('M d, Y • h:i A') : ''); ?>
+
+                                    </div>
+                                    <div style="white-space: pre-line;"><?php echo e($uq->question_text); ?></div>
+                                </div>
+                            </label>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
+                        <button class="btn btn-success">
+                            Answer Selected
+                        </button>
+                    </div>
+                </form>
+            <?php else: ?>
+                <div class="mt-3 text-muted">No unanswered questions found.</div>
+            <?php endif; ?>
+        </div>
+    </div>
+<?php endif; ?>
+
 
 
 <div class="card border-0 shadow-sm mb-4">
@@ -218,10 +312,21 @@ unset($__errorArgs, $__bag); ?>
         $isSimilarMarked = $sim >= (float)$threshold;
 
         // ✅ answered indicator black (dot)
-        $dot = $qAnswered ? 'background:#111827;' : 'background:#f59e0b;';
+        $dot = $qAnswered ? 'background:#198754;' : 'background:#f59e0b;';
 
-        $border = $isSimilarMarked ? 'border border-danger' : 'border';
-        $bg = $isSimilarMarked ? 'bg-danger bg-opacity-10' : 'bg-white';
+
+        // 🎯 STATUS COLORS (separate from similarity)
+        if ($qAnswered) {
+            $border = 'border border-success';
+            $bg = 'bg-success bg-opacity-10';
+        } else {
+            $border = 'border border-warning';
+            $bg = 'bg-warning bg-opacity-10';
+        }
+
+// Optional: small similarity indicator (no more red card)
+$similarBadge = $isSimilarMarked ? 'bg-info text-dark' : 'bg-light text-dark';
+
     ?>
 
     <div class="card <?php echo e($border); ?> shadow-sm mb-2 <?php echo e($bg); ?>" style="border-radius:14px;">
@@ -250,7 +355,7 @@ unset($__errorArgs, $__bag); ?>
                 </div>
 
                 <div class="text-end">
-                    <span class="badge <?php echo e($qAnswered ? 'bg-dark' : 'bg-warning text-dark'); ?>">
+                    <span class="badge <?php echo e($qAnswered ? 'bg-success' : 'bg-warning text-dark'); ?>">
                         <?php echo e($qAnswered ? 'Answered' : 'Unanswered'); ?>
 
                     </span>
@@ -263,8 +368,8 @@ unset($__errorArgs, $__bag); ?>
                     <?php echo csrf_field(); ?>
 
                     <textarea name="answer"
-                              rows="3"
-                              class="form-control <?php $__errorArgs = ['answer'];
+                            rows="3"
+                            class="form-control <?php $__errorArgs = ['answer'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
@@ -272,7 +377,18 @@ $message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>"
-                              placeholder="Write an answer for this specific post..."><?php echo e(old('answer', $q->answer)); ?></textarea>
+                            placeholder="Write an answer for this specific post..."
+                            <?php echo e($qAnswered ? 'disabled' : ''); ?>>
+                        <?php echo e(old('answer', $q->answer)); ?>
+
+                    </textarea>
+
+                    <?php if($qAnswered): ?>
+                        <div class="small text-success mt-1">
+                            🔒 This post is already answered and locked.
+                        </div>
+                    <?php endif; ?>
+
 
                     <?php $__errorArgs = ['answer'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -294,9 +410,11 @@ unset($__errorArgs, $__bag); ?>
                                 Not answered yet
                             <?php endif; ?>
                         </small>
+                        <button type="submit"
+                                class="btn btn-bisu-primary btn-sm"
+                                <?php echo e($qAnswered ? 'disabled' : ''); ?>>
+                            <?php echo e($qAnswered ? 'Locked' : 'Save Answer'); ?>
 
-                        <button type="submit" class="btn btn-bisu-primary btn-sm">
-                            Save Answer
                         </button>
                     </div>
                 </form>
@@ -312,6 +430,39 @@ unset($__errorArgs, $__bag); ?>
 <?php endif; ?>
 
 </div>
+
+
+
+<div class="modal fade" id="editLabelModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="<?php echo e(route('clusters.rename', $cluster->id)); ?>">
+        <?php echo csrf_field(); ?>
+
+        <div class="modal-header">
+          <h5 class="modal-title">Rename Topic</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="text"
+                 name="label"
+                 class="form-control"
+                 value="<?php echo e($cluster->label); ?>"
+                 placeholder="Enter new topic title..."
+                 required>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/clusters/show.blade.php ENDPATH**/ ?>
