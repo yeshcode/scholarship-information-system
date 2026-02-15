@@ -3,220 +3,413 @@
 @section('content')
 <div class="mx-auto" style="max-width: 1100px;">
 
-    {{-- Header --}}
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
-        <div>
-            <h2 class="page-title-blue mb-0">Student Inquiry Thread</h2>
-            <small class="text-muted">
-                Answer once — it applies to all similar questions in this group.
-            </small>
-        </div>
+@php
+    $isAnswered = !is_null($cluster->cluster_answer) && trim($cluster->cluster_answer) !== '';
+    $badgeClass = $isAnswered ? 'bg-dark' : 'bg-warning text-dark';
+    $badgeText  = $isAnswered ? 'Answered' : 'Needs reply';
 
-        <div class="d-flex gap-2">
-            <a href="{{ route('clusters.index', request()->only('status','q')) }}"
-               class="btn btn-bisu-secondary btn-sm">
-                ← Back to Inquiries
-            </a>
-        </div>
+    $topic = $cluster->label ?: \Illuminate\Support\Str::limit($cluster->representative_question, 60);
+    $total = $cluster->questions->count();
+
+    $threshold = $threshold ?? 0.40;
+@endphp
+
+{{-- Header --}}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+    <div>
+        <h2 class="page-title-blue mb-0">Student Inquiry Thread</h2>
+        <small class="text-muted">Open forum style. Similarity threshold: <span class="fw-semibold">{{ number_format((float)$threshold, 2) }}</span></small>
     </div>
 
-    {{-- Success alert --}}
-    @if (session('success'))
-        <div class="alert alert-success border-0 shadow-sm">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    {{-- Error alert (optional, general) --}}
-    @if ($errors->any())
-        <div class="alert alert-danger border-0 shadow-sm">
-            <div class="fw-semibold mb-1">Please fix the errors below.</div>
-            <ul class="mb-0">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-    @php
-        $isAnswered = !is_null($cluster->cluster_answer) && trim($cluster->cluster_answer) !== '';
-        $badgeClass = $isAnswered ? 'bg-success' : 'bg-warning text-dark';
-        $badgeText  = $isAnswered ? 'Answered' : 'Needs reply';
-
-        $topic = $cluster->label ?: \Illuminate\Support\Str::limit($cluster->representative_question, 60);
-        $total = $cluster->questions->count();
-    @endphp
-
-    {{-- Topic Card --}}
-    <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body p-3 p-md-4">
-            <div class="d-flex align-items-start justify-content-between gap-3">
-                <div class="d-flex gap-3">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                         style="width:44px;height:44px;background:#003366;color:#fff;font-weight:700;">
-                        ?
-                    </div>
-
-                    <div>
-                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                            <h5 class="fw-semibold mb-0" style="color:#003366;">
-                                {{ $topic }}
-                            </h5>
-                            <span class="badge {{ $badgeClass }}">{{ $badgeText }}</span>
-                        </div>
-
-                        <div class="text-muted">
-                            <span class="fw-semibold">Representative question:</span><br>
-                            <span style="white-space: pre-line;">
-                                {{ $cluster->representative_question }}
-                            </span>
-                        </div>
-
-                        <div class="mt-2 d-flex flex-wrap gap-2">
-                            <span class="badge bg-light text-dark border">👥 {{ $total }} question{{ $total == 1 ? '' : 's' }}</span>
-                            <span class="badge bg-light text-dark border">🔒 Student names hidden</span>
-                            @if(!empty($cluster->created_at))
-                                <span class="badge bg-light text-dark border">🕒 Created {{ $cluster->created_at->format('M d, Y') }}</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-end">
-                    <div class="small text-muted">Group ID</div>
-                    <div class="fw-semibold" style="color:#003366;">
-                        #{{ $cluster->id }}
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="d-flex gap-2">
+        <a href="{{ route('clusters.index', request()->only('status','q','search_mode','threshold')) }}"
+           class="btn btn-bisu-secondary btn-sm">
+            ← Back
+        </a>
     </div>
+</div>
 
-    {{-- Answer Card --}}
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body p-3 p-md-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h5 class="fw-semibold mb-0" style="color:#003366;">Coordinator Answer</h5>
-                <small class="text-muted">
-                    This reply will be shown to all students in this group.
-                </small>
-            </div>
+@if (session('success'))
+    <div class="alert alert-success border-0 shadow-sm">{{ session('success') }}</div>
+@endif
 
-            <form action="{{ route('clusters.answer', $cluster->id) }}" method="POST">
-                @csrf
+@if (session('error'))
+    <div class="alert alert-danger border-0 shadow-sm">{{ session('error') }}</div>
+@endif
 
-                <div class="mb-3">
-                    <textarea
-                        name="cluster_answer"
-                        rows="5"
-                        class="form-control @error('cluster_answer') is-invalid @enderror"
-                        placeholder="Type your official answer here..."
-                        required
-                    >{{ old('cluster_answer', $cluster->cluster_answer) }}</textarea>
+@if ($errors->any())
+    <div class="alert alert-danger border-0 shadow-sm">
+        <div class="fw-semibold mb-1">Please fix the errors below.</div>
+        <ul class="mb-0">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
-                    @error('cluster_answer')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+{{-- Topic Card --}}
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body p-3 p-md-4">
+        <div class="d-flex align-items-start justify-content-between gap-3">
+            <div class="d-flex gap-3">
 
-                    <div class="form-text text-muted mt-1">
-                        Tip: Include deadlines, requirements, and where to submit documents (if applicable).
-                    </div>
+                {{-- answered dot (black if answered) --}}
+                <div class="rounded-circle flex-shrink-0"
+                     style="width:12px;height:12px;margin-top:7px; {{ $isAnswered ? 'background:#111827;' : 'background:#f59e0b;' }}">
                 </div>
 
-                <div class="d-flex justify-content-end gap-2">
-                    <a href="{{ route('clusters.index', request()->only('status','q')) }}" class="btn btn-bisu-secondary">
-                        Cancel
-                    </a>
-                    <button type="submit" class="btn btn-bisu-primary">
-                        Save Answer for All
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    {{-- Questions List --}}
-    <div class="d-flex align-items-center justify-content-between mb-2">
-        <h5 class="fw-semibold mb-0" style="color:#003366;">Questions in this Group</h5>
-        <small class="text-muted">Showing {{ $total }} total</small>
-    </div>
-
-    @forelse ($cluster->questions as $q)
-        @php
-            $qAnswered = !empty($q->answer) && trim($q->answer) !== '';
-        @endphp
-
-        <div class="card border-0 shadow-sm mb-2">
-            <div class="card-body p-3 p-md-4">
-
-                {{-- Top row: question info --}}
-                <div class="d-flex justify-content-between align-items-start gap-3">
-                    <div class="d-flex gap-2">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                             style="width:36px;height:36px;background:#eaf2ff;color:#0b3a75;font-weight:800;">
-                            {{ $loop->iteration }}
-                        </div>
-
-                        <div>
-                            <div class="small text-muted mb-1">
-                                Student #{{ $loop->iteration }} •
-                                {{ $q->created_at ? $q->created_at->format('M d, Y • h:i A') : '' }}
-                            </div>
-
-                            <div style="white-space: pre-line;">
-                                {{ $q->question_text }}
-                            </div>
-                        </div>
+                <div>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                        <h5 class="fw-semibold mb-0" style="color:#003366;">{{ $topic }}</h5>
+                        <span class="badge {{ $badgeClass }}">{{ $badgeText }}</span>
                     </div>
 
-                    <div class="text-end">
-                        @if($qAnswered)
-                            <span class="badge bg-success">Answered</span>
-                        @else
-                            <span class="badge bg-warning text-dark">Unanswered</span>
+                    <div class="text-muted">
+                        <span class="fw-semibold">Representative question:</span><br>
+                        <span style="white-space: pre-line;">{{ $cluster->representative_question }}</span>
+                    </div>
+
+                    <div class="mt-2 d-flex flex-wrap gap-2">
+                        <span class="badge bg-light text-dark border">👥 {{ $total }} post{{ $total == 1 ? '' : 's' }}</span>
+                        <span class="badge bg-light text-dark border">🔒 Anonymous</span>
+                        @if(!empty($cluster->created_at))
+                            <span class="badge bg-light text-dark border">🕒 {{ $cluster->created_at->format('M d, Y') }}</span>
                         @endif
                     </div>
                 </div>
+            </div>
 
-                {{-- Manual answer area --}}
-                <div class="mt-3">
-                    <form method="POST" action="{{ route('clusters.questions.answer', $q->id) }}">
-                        @csrf
+            <div class="text-end">
+                <div class="small text-muted">Thread ID</div>
+                <div class="fw-semibold mb-2" style="color:#003366;">
+                    #{{ $cluster->id }}
+                </div>
 
+                {{-- Edit Topic Button --}}
+                <button class="btn btn-outline-secondary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editLabelModal">
+                    ✏ Edit Topic
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@php
+    // Unanswered questions in this cluster
+    $unansweredQuestions = collect($cluster->questions)->filter(function($x){
+        return empty($x->answer) || trim((string)$x->answer) === '';
+    });
+@endphp
+
+@if(!$isAnswered)
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex align-items-start justify-content-between gap-3">
+                <div>
+                    <h5 class="fw-semibold mb-1" style="color:#003366;">Answer selected questions</h5>
+                    <div class="text-muted">
+                        Select the questions that mean the same thing, then answer them all at once.
+                    </div>
+                </div>
+                <div class="text-end small text-muted">
+                    {{ $unansweredQuestions->count() }} unanswered
+                </div>
+            </div>
+
+            @if($unansweredQuestions->count() > 0)
+                <form method="POST" action="{{ route('clusters.bulk-answer', $cluster->id) }}">
+                    @csrf
+
+                    <div class="mt-3">
                         <textarea name="answer"
-                                  rows="3"
+                                  rows="4"
                                   class="form-control @error('answer') is-invalid @enderror"
-                                  placeholder="Write an answer for this specific question...">{{ old('answer', $q->answer) }}</textarea>
+                                  placeholder="Type one answer that will apply to the selected questions..."
+                                  required>{{ old('answer') }}</textarea>
 
                         @error('answer')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                    </div>
 
-                        <div class="d-flex align-items-center justify-content-between mt-2">
-                            <small class="text-muted">
-                                @if(!empty($q->answered_at))
-                                    Answered: {{ $q->answered_at->format('M d, Y • h:i A') }}
-                                @else
-                                    Not answered yet
-                                @endif
-                            </small>
+                    <div class="mt-3 d-flex flex-column gap-2">
+                        @foreach($unansweredQuestions as $uq)
+                            <label class="d-flex gap-2 align-items-start p-2 rounded border bg-light">
+                                <input type="checkbox"
+                                       name="question_ids[]"
+                                       value="{{ $uq->id }}"
+                                       class="form-check-input mt-1">
+                                <div class="flex-grow-1">
+                                    <div class="small text-muted mb-1">
+                                        Posted {{ $uq->created_at ? \Carbon\Carbon::parse($uq->created_at)->format('M d, Y • h:i A') : '' }}
+                                    </div>
+                                    <div style="white-space: pre-line;">{{ $uq->question_text }}</div>
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
 
-                            <button type="submit" class="btn btn-bisu-primary btn-sm">
-                                Save Answer (This Question)
-                            </button>
-                        </div>
-                    </form>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button class="btn btn-success">
+                            Answer Selected
+                        </button>
+                    </div>
+                </form>
+            @else
+                <div class="mt-3 text-muted">No unanswered questions found.</div>
+            @endif
+        </div>
+    </div>
+@endif
+
+
+{{-- Answer Card --}}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3 p-md-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="fw-semibold mb-0" style="color:#003366;">Coordinator Answer</h5>
+            <small class="text-muted">Saved answer can be applied to selected new posts.</small>
+        </div>
+
+        <form action="{{ route('clusters.answer', $cluster->id) }}" method="POST">
+            @csrf
+
+            <div class="mb-3">
+                <textarea name="cluster_answer"
+                          rows="5"
+                          class="form-control @error('cluster_answer') is-invalid @enderror"
+                          placeholder="Type your official answer here..."
+                          required>{{ old('cluster_answer', $cluster->cluster_answer) }}</textarea>
+
+                @error('cluster_answer')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+
+                <div class="form-text text-muted mt-1">
+                    Tip: Put the official steps, requirements, deadlines, and where to submit.
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ route('clusters.index', request()->only('status','q','search_mode','threshold')) }}" class="btn btn-bisu-secondary">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-bisu-primary">
+                    Save / Update Answer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@php
+    $answeredAt = $cluster->cluster_answered_at ?? null;
+
+    // New questions = created AFTER cluster_answered_at (if answered exists)
+    $newQuestions = collect($cluster->questions)->filter(function($x) use ($answeredAt, $isAnswered){
+        if (!$isAnswered || !$answeredAt) return false;
+        return $x->created_at && $x->created_at->gt($answeredAt);
+    });
+@endphp
+
+{{-- New Questions (checkbox selection) --}}
+@if($isAnswered)
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex align-items-start justify-content-between gap-3">
+                <div>
+                    <h5 class="fw-semibold mb-1" style="color:#003366;">New questions after your answer</h5>
+                    <div class="text-muted">
+                        Select which ones should receive the saved answer.
+                    </div>
                 </div>
 
+                <div class="text-end small text-muted">
+                    {{ $newQuestions->count() }} new
+                </div>
             </div>
-        </div>
 
-    @empty
-        <div class="text-center py-5 text-muted">
-            No questions in this group yet.
+            @if($newQuestions->count() > 0)
+                <form method="POST" action="{{ route('clusters.answer-selected', $cluster->id) }}">
+                    @csrf
+
+                    <div class="mt-3 d-flex flex-column gap-2">
+                        @foreach($newQuestions as $nq)
+                            <label class="d-flex gap-2 align-items-start p-2 rounded border bg-light">
+                                <input type="checkbox" name="question_ids[]" value="{{ $nq->id }}" class="form-check-input mt-1">
+                                <div class="flex-grow-1">
+                                    <div class="small text-muted mb-1">
+                                        Posted {{ $nq->created_at ? $nq->created_at->format('M d, Y • h:i A') : '' }}
+                                    </div>
+                                    <div style="white-space: pre-line;">{{ $nq->question_text }}</div>
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
+                        <button class="btn btn-dark">
+                            Apply Saved Answer to Selected
+                        </button>
+                    </div>
+                </form>
+            @else
+                <div class="mt-3 text-muted">No new questions found.</div>
+            @endif
         </div>
-    @endforelse
+    </div>
+@endif
+
+{{-- Questions List (forum style) --}}
+<div class="d-flex align-items-center justify-content-between mb-2">
+    <h5 class="fw-semibold mb-0" style="color:#003366;">Thread Posts</h5>
+    <small class="text-muted">{{ $total }} total</small>
+</div>
+
+@forelse ($cluster->questions as $q)
+    @php
+        $qAnswered = !empty($q->answer) && trim($q->answer) !== '';
+
+        // ✅ similarity score from controller
+        $sim = (float) ($q->sim_score ?? 0);
+
+        // ✅ Mark "similar" in RED (adviser request)
+        // Use threshold as the cut line
+        $isSimilarMarked = $sim >= (float)$threshold;
+
+        // ✅ answered indicator black (dot)
+        $dot = $qAnswered ? 'background:#198754;' : 'background:#f59e0b;';
+
+
+        // 🎯 STATUS COLORS (separate from similarity)
+        if ($qAnswered) {
+            $border = 'border border-success';
+            $bg = 'bg-success bg-opacity-10';
+        } else {
+            $border = 'border border-warning';
+            $bg = 'bg-warning bg-opacity-10';
+        }
+
+// Optional: small similarity indicator (no more red card)
+$similarBadge = $isSimilarMarked ? 'bg-info text-dark' : 'bg-light text-dark';
+
+    @endphp
+
+    <div class="card {{ $border }} shadow-sm mb-2 {{ $bg }}" style="border-radius:14px;">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+
+                <div class="d-flex gap-3">
+                    <div class="rounded-circle flex-shrink-0" style="width:12px;height:12px;margin-top:7px; {{ $dot }}"></div>
+
+                    <div>
+                        <div class="small text-muted mb-1">
+                            Post #{{ $loop->iteration }}
+                            @if($q->created_at) • {{ $q->created_at->format('M d, Y • h:i A') }} @endif
+                            <span class="ms-2 badge bg-light text-dark border">
+                                Similarity: {{ number_format($sim, 2) }}
+                            </span>
+                            @if($isSimilarMarked)
+                                <span class="ms-1 badge bg-danger">Marked similar</span>
+                            @endif
+                        </div>
+
+                        <div style="white-space: pre-line;">{{ $q->question_text }}</div>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <span class="badge {{ $qAnswered ? 'bg-success' : 'bg-warning text-dark' }}">
+                        {{ $qAnswered ? 'Answered' : 'Unanswered' }}
+                    </span>
+                </div>
+            </div>
+
+            {{-- Manual answer --}}
+            <div class="mt-3">
+                <form method="POST" action="{{ route('clusters.questions.answer', $q->id) }}">
+                    @csrf
+
+                    <textarea name="answer"
+                            rows="3"
+                            class="form-control @error('answer') is-invalid @enderror"
+                            placeholder="Write an answer for this specific post..."
+                            {{ $qAnswered ? 'disabled' : '' }}>
+                        {{ old('answer', $q->answer) }}
+                    </textarea>
+
+                    @if($qAnswered)
+                        <div class="small text-success mt-1">
+                            🔒 This post is already answered and locked.
+                        </div>
+                    @endif
+
+
+                    @error('answer')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                        <small class="text-muted">
+                            @if(!empty($q->answered_at))
+                                Answered: {{ $q->answered_at->format('M d, Y • h:i A') }}
+                            @else
+                                Not answered yet
+                            @endif
+                        </small>
+                        <button type="submit"
+                                class="btn btn-bisu-primary btn-sm"
+                                {{ $qAnswered ? 'disabled' : '' }}>
+                            {{ $qAnswered ? 'Locked' : 'Save Answer' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+@empty
+    <div class="text-center py-5 text-muted">
+        No posts in this thread yet.
+    </div>
+@endforelse
 
 </div>
+
+
+{{-- Rename Topic Modal --}}
+<div class="modal fade" id="editLabelModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ route('clusters.rename', $cluster->id) }}">
+        @csrf
+
+        <div class="modal-header">
+          <h5 class="modal-title">Rename Topic</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="text"
+                 name="label"
+                 class="form-control"
+                 value="{{ $cluster->label }}"
+                 placeholder="Enter new topic title..."
+                 required>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 @endsection
