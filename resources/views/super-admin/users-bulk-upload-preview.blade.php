@@ -91,8 +91,19 @@
                                 </td>
 
                                 <td class="py-1">
-                                    <div class="text-truncate" title="{{ $r['lastname'] }}, {{ $r['firstname'] }}">
-                                        {{ $r['lastname'] }}, {{ $r['firstname'] }}
+                                    @php
+                                        $mi = '';
+                                        if(!empty($r['middlename'])){
+                                            $parts = preg_split('/\s+/', trim($r['middlename']));
+                                            $initial = strtoupper(substr($parts[0] ?? '', 0, 1));
+                                            $mi = $initial ? ' ' . $initial . '.' : '';
+                                        }
+                                        $suffix = !empty($r['suffix']) ? ' ' . $r['suffix'] : '';
+                                        $full = trim($r['lastname'] . ', ' . $r['firstname'] . $mi . $suffix);
+                                    @endphp
+
+                                    <div class="text-truncate" title="{{ $full }}">
+                                        {{ $full }}
                                     </div>
                                 </td>
 

@@ -438,8 +438,6 @@ public function dashboardData()
                 ->withQueryString();
         }
 
-
-
        elseif ($page === 'manage-users') {
             try {
                 $search       = request('search');
@@ -508,6 +506,10 @@ public function dashboardData()
                 $data['selectedCollegeId']   = $collegeId;
                 $data['selectedYearLevelId'] = $yearLevelId;
                 $data['selectedCourseId']    = $courseId;
+
+                $studentType = UserType::where('name', 'Student')->first();
+                $data['studentUserTypeId'] = $studentType?->id; 
+
 
             } catch (\Exception $e) {
                 $data['error'] = 'Database error: ' . $e->getMessage();
@@ -609,6 +611,39 @@ private function norm(?string $v): string
     return $v ?? '';
 }
 
+private function normHeaderKey(string $key): string
+{
+    // normalize: lowercase + remove spaces/_/-
+    $k = strtolower(trim($key));
+    $k = preg_replace('/[\s\-_]+/', '', $k); // "First Name" -> "firstname", "first_name" -> "firstname"
+    return $k;
+}
+
+private function pickFromRow(array $row, array $aliases): string
+{
+    // build a normalized lookup of the row keys (once per call)
+    static $cache = [];
+    $hash = spl_object_id((object)$row); // cheap unique-ish per call
+    if (!isset($cache[$hash])) {
+        $map = [];
+        foreach ($row as $k => $v) {
+            $map[$this->normHeaderKey((string)$k)] = $v;
+        }
+        $cache[$hash] = $map;
+    }
+
+    $map = $cache[$hash];
+
+    foreach ($aliases as $alias) {
+        $a = $this->normHeaderKey($alias);
+        if (array_key_exists($a, $map)) {
+            return $this->norm((string)$map[$a]);
+        }
+    }
+    return '';
+}
+
+
 private function resolveCollegeId(string $collegeName, array &$collegeCache): ?int
 {
     $key = Str::lower($collegeName);
@@ -683,20 +718,42 @@ public function previewBulkUploadUsers(Request $request)
         return back()->with('error', 'File is empty or invalid.');
     }
 
-    // ✅ required headers (must exist in Excel)
-    $required = ['student_id','lastname','firstname','bisu_email','college','course','year_level'];
-
-    // check first row keys
+    //headers
     $firstRow = $rows[0];
+
+    // canonical field => accepted header aliases
+    $requiredMap = [
+        'student_id' => ['student_id', 'studentid', 'student id', 'idno', 'id no', 'id_number'],
+        'lastname'   => ['lastname', 'last_name', 'last name', 'surname', 'familyname', 'family name'],
+        'firstname'  => ['firstname', 'first_name', 'first name', 'givenname', 'given name'],
+        'bisu_email' => ['bisu_email', 'bisu email', 'email', 'emailaddress', 'email address'],
+        'college'    => ['college', 'college_name', 'college name'],
+        'course'     => ['course', 'course_name', 'course name', 'program', 'program_name', 'program name'],
+        'year_level' => ['year_level', 'yearlevel', 'year level', 'year', 'yearlevel_name', 'year level name'],
+    ];
+
+    // check which required fields cannot be found in the header row
     $missing = [];
-    foreach ($required as $col) {
-        if (!array_key_exists($col, $firstRow)) {
-            $missing[] = $col;
+    foreach ($requiredMap as $field => $aliases) {
+        $found = false;
+        foreach ($aliases as $alias) {
+            $key = $this->normHeaderKey($alias);
+            // compare against actual keys in the first row
+            foreach (array_keys($firstRow) as $actualKey) {
+                if ($this->normHeaderKey((string)$actualKey) === $key) {
+                    $found = true;
+                    break 2;
+                }
+            }
         }
+        if (!$found) $missing[] = $field;
     }
+
     if (!empty($missing)) {
-        return back()->with('error', 'Missing required column(s): ' . implode(', ', $missing));
+        return back()->with('error', 'Missing required column(s): ' . implode(', ', $missing)
+            . '. Tip: allowed header formats include "First Name", "first_name", "FIRSTNAME", etc.');
     }
+
 
     $preview = [];
     $issuesCount = 0;
@@ -706,16 +763,22 @@ public function previewBulkUploadUsers(Request $request)
     $yearCache = [];
     $courseCache = [];
 
+    // ✅ allowed suffix values (optional). You can edit this list.
+    $allowedSuffix = ['JR','SR','II','III','IV','V'];
+
     foreach ($rows as $i => $r) {
         $lineNo = $i + 2; // row 1 = headers
 
-        $student_id = $this->norm($r['student_id'] ?? '');
-        $lastname   = $this->norm($r['lastname'] ?? '');
-        $firstname  = $this->norm($r['firstname'] ?? '');
-        $email      = $this->norm($r['bisu_email'] ?? '');
-        $college    = $this->norm($r['college'] ?? '');
-        $course     = $this->norm($r['course'] ?? '');
-        $yearLevel  = $this->norm($r['year_level'] ?? '');
+        $student_id = $this->pickFromRow($r, ['student_id', 'student id', 'studentid', 'idno', 'id no']);
+        $lastname   = $this->pickFromRow($r, ['lastname', 'last name', 'last_name', 'surname', 'family name']);
+        $firstname  = $this->pickFromRow($r, ['firstname', 'first name', 'first_name', 'given name']);
+        $middlename = $this->pickFromRow($r, ['middlename', 'middle name', 'middle_name', 'mi', 'm.i.']); // optional
+        $suffix     = strtoupper($this->pickFromRow($r, ['suffix', 'name suffix', 'name_suffix']));       // optional
+        $email      = $this->pickFromRow($r, ['bisu_email', 'bisu email', 'email', 'email address']);
+        $college    = $this->pickFromRow($r, ['college', 'college name', 'college_name']);
+        $course     = $this->pickFromRow($r, ['course', 'course name', 'course_name', 'program', 'program name']);
+        $yearLevel  = $this->pickFromRow($r, ['year_level', 'year level', 'yearlevel', 'year']);
+
 
         $issues = [];
 
@@ -727,6 +790,17 @@ public function previewBulkUploadUsers(Request $request)
         if (!$college)    $issues[] = 'Missing college';
         if (!$course)     $issues[] = 'Missing course';
         if (!$yearLevel)  $issues[] = 'Missing year_level';
+
+        // ✅ optional validations
+        if ($middlename && mb_strlen($middlename) > 255) $issues[] = 'middlename too long';
+        if ($suffix && mb_strlen($suffix) > 50) $issues[] = 'suffix too long';
+
+        // // normalize suffix and validate against allowed list (optional rule)
+        // $suffixUpper = $suffix ? strtoupper($suffix) : '';
+        // if ($suffixUpper && !in_array($suffixUpper, $allowedSuffix, true)) {
+        //     // not an error if you want to allow any suffix; if yes, comment this out
+        //     $issues[] = 'suffix not allowed (use Jr, Sr, II, III...)';
+        // }
 
         // Resolve IDs dynamically
         $collegeId = null;
@@ -756,6 +830,8 @@ public function previewBulkUploadUsers(Request $request)
             'student_id' => $student_id,
             'lastname' => $lastname,
             'firstname' => $firstname,
+            'middlename' => $middlename,
+            'suffix' => $suffix,
             'bisu_email' => $email,
             'college' => $college,
             'course' => $course,
@@ -833,6 +909,8 @@ public function confirmBulkUploadUsers(Request $request)
                 'student_id'    => $studentId,
                 'lastname'      => $row['lastname'],
                 'firstname'     => $row['firstname'],
+                'middlename'    => $row['middlename'] ?? null, // ✅ added
+                'suffix'        => $row['suffix'] ?? null,     // ✅ added
                 'bisu_email'    => $email,
                 'college_id'    => $row['college_id'],
                 'course_id'     => $row['course_id'],
@@ -1581,6 +1659,8 @@ public function destroyUser($id)
     User::findOrFail($id)->delete();
     return redirect()->route('admin.dashboard', ['page' => 'manage-users'])->with('success', 'User deleted successfully!');
 }
+
+
 
 public function showBulkUploadForm()
 {

@@ -93,8 +93,19 @@
                                 </td>
 
                                 <td class="py-1">
-                                    <div class="text-truncate" title="<?php echo e($r['lastname']); ?>, <?php echo e($r['firstname']); ?>">
-                                        <?php echo e($r['lastname']); ?>, <?php echo e($r['firstname']); ?>
+                                    <?php
+                                        $mi = '';
+                                        if(!empty($r['middlename'])){
+                                            $parts = preg_split('/\s+/', trim($r['middlename']));
+                                            $initial = strtoupper(substr($parts[0] ?? '', 0, 1));
+                                            $mi = $initial ? ' ' . $initial . '.' : '';
+                                        }
+                                        $suffix = !empty($r['suffix']) ? ' ' . $r['suffix'] : '';
+                                        $full = trim($r['lastname'] . ', ' . $r['firstname'] . $mi . $suffix);
+                                    ?>
+
+                                    <div class="text-truncate" title="<?php echo e($full); ?>">
+                                        <?php echo e($full); ?>
 
                                     </div>
                                 </td>

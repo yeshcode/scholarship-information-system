@@ -21,6 +21,7 @@ class User extends Authenticatable
         'firstname',
         'lastname',
         'middlename', 
+        'suffix',
         'student_id',        // For students
         'status',
         'contact_no',
