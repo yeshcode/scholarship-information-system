@@ -52,7 +52,10 @@
             Route::get('/colleges', [SuperAdminController::class, 'colleges'])->name('admin.colleges');
             Route::get('/courses', [SuperAdminController::class, 'courses'])->name('admin.courses');
             Route::get('/semesters', [SuperAdminController::class, 'semesters'])->name('admin.semesters');
-            Route::get('/enrollments', [SuperAdminController::class, 'enrollments'])->name('admin.enrollments');
+            // Route::get('/enrollments', [SuperAdminController::class, 'enrollments'])->name('admin.enrollments');
+
+            Route::get('/enrollments', [SuperAdminController::class, 'dashboard'])->name('admin.enrollments');
+
             Route::get('/manage-users', [SuperAdminController::class, 'manageUsers'])->name('admin.manage-users');
             Route::get('/user-type', [SuperAdminController::class, 'usertype'])->name('admin.user-types');
             // Add more Super Admin features here later (e.g., Route::get('/users', ...);)
@@ -112,6 +115,21 @@
             Route::get('/enrollments/records', [SuperAdminController::class, 'enrollmentRecords'])->name('admin.enrollments.records');
             Route::get('/enrollments/records/{academicYear}', [SuperAdminController::class, 'enrollmentRecordsByYear'])->name('admin.enrollments.records.year');
             
+
+            // ===========================
+            // AJAX (Manual Enrollment Modal)
+            // ===========================
+            Route::get('/ajax/courses-by-college', [SuperAdminController::class, 'ajaxCoursesByCollege'])->name('admin.ajax.coursesByCollege');
+            Route::get('/ajax/enrollment/eligible-students', [SuperAdminController::class, 'ajaxEligibleStudents'])->name('admin.ajax.eligibleStudents');
+            Route::get('/ajax/enrollment/promotion-student', [SuperAdminController::class, 'ajaxPromotionStudent'])->name('admin.ajax.promotionStudent');
+
+            // ===========================
+            // Manual enrollment actions
+            // ===========================
+            Route::post('/enrollments/manual-new', [SuperAdminController::class, 'storeManualNewEnrollment'])->name('admin.enrollments.manualNew');
+            Route::post('/enrollments/manual-promote', [SuperAdminController::class, 'storeManualPromotion'])->name('admin.enrollments.manualPromote');
+            Route::get('/admin/ajax/new-student-lookup', [SuperAdminController::class, 'ajaxNewStudentLookup'])->name('admin.ajax.newStudentLookup');
+
 
             // Users CRUD
             Route::get('/users/bulk-upload', [SuperAdminController::class, 'showBulkUploadForm'])->name('admin.users.bulk-upload-form');
