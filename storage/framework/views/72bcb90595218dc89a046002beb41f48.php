@@ -142,69 +142,116 @@
 
 
    
-<form method="GET" action="<?php echo e(route('admin.enrollments.enroll-students')); ?>" class="card shadow-sm mb-3">
+
+<form method="GET" action="<?php echo e(route('admin.enrollments.enroll-students')); ?>" class="card shadow-sm mb-3 border-0">
     <div class="card-body">
+
+        
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <div class="fw-bold" style="color:#003366;">Step 1: Choose Target Semester</div>
+                <div class="small text-muted">Select the semester where the students will be enrolled.</div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <span class="pill">
+                    Selected: <strong id="selected-count">0</strong>
+                </span>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="clear-selected">
+                    Clear Selected
+                </button>
+            </div>
+        </div>
+
+        
+        <?php $mode = request('mode','promote'); ?>
+        <ul class="nav nav-pills gap-2 mb-3" style="--bs-nav-pills-link-active-bg:#003366;">
+            <li class="nav-item">
+                <button type="button"
+                        class="nav-link <?php echo e($mode==='promote' ? 'active' : ''); ?>"
+                        onclick="setModeAndSubmit('promote')">
+                    Promote / Returning
+                </button>
+            </li>
+            <li class="nav-item">
+                <button type="button"
+                        class="nav-link <?php echo e($mode==='new' ? 'active' : ''); ?>"
+                        onclick="setModeAndSubmit('new')">
+                    New Enrollment
+                </button>
+            </li>
+        </ul>
+
+        <input type="hidden" name="mode" id="mode-field" value="<?php echo e($mode); ?>">
+
         <div class="row g-2 align-items-end">
 
             
-            <div class="col-12 col-md-3">
-                <label class="form-label mb-1">Mode</label>
-                <select name="mode" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="promote" <?php echo e(request('mode','promote') === 'promote' ? 'selected' : ''); ?>>
-                        Promote / Next Semester (returning)
-                    </option>
-                    <option value="new" <?php echo e(request('mode') === 'new' ? 'selected' : ''); ?>>
-                        New Enrollment (fresh users)
-                    </option>
-                </select>
-            </div>
+            <?php if($mode === 'promote'): ?>
+            <div class="col-12 col-md-5">
+                <label class="form-label mb-1">
+                    Source Semester (from)
+                    <span class="text-danger fw-bold">*</span>
+                </label>
 
-            
-            <div class="col-12 col-md-3">
-                <label class="form-label mb-1">Source Semester (from)</label>
                 <select name="source_semester_id"
                         class="form-select form-select-sm"
-                        onchange="this.form.submit()"
-                        <?php echo e(request('mode','promote') === 'new' ? 'disabled' : ''); ?>>
-                    <option value="">Current Semester</option>
+                        required
+                        onchange="this.form.submit()">
+                    <option value="">Select source semester</option>
                     <?php $__currentLoopData = $semesters; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <option value="<?php echo e($s->id); ?>" <?php echo e((string)request('source_semester_id') === (string)$s->id ? 'selected' : ''); ?>>
+                        <option value="<?php echo e($s->id); ?>"
+                            <?php echo e((string)request('source_semester_id') === (string)$s->id ? 'selected' : ''); ?>>
                             <?php echo e($s->term); ?> <?php echo e($s->academic_year); ?>
 
                         </option>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
-                <div class="subtext">Used only for Promote mode.</div>
+
+                <div class="small text-muted">
+                    Required for promotion.
+                </div>
             </div>
+            <?php endif; ?>
+
 
             
-            <div class="col-12 col-md-4">
-                <label class="form-label mb-1">Search Student</label>
-                <input type="text"
-                       name="search"
-                       value="<?php echo e(request('search')); ?>"
-                       class="form-control form-control-sm"
-                       placeholder="Search name, email...">
-            </div>
+            <div class="col-12 <?php echo e($mode === 'promote' ? 'col-md-5' : 'col-md-8'); ?>">
+                <label class="form-label mb-1">
+                    Target Semester (to)
+                    <span class="text-danger fw-bold">*</span>
+                </label>
 
-            
-            <div class="col-12 col-md-2">
-                <label class="form-label mb-1">Target Semester</label>
-                <select name="semester_id" id="target-semester" class="form-select form-select-sm" required>
-                    <option value="">Select target</option>
+                <select name="semester_id"
+                        id="target-semester"
+                        class="form-select form-select-sm"
+                        required
+                        onchange="this.form.submit()">
+                    <option value="">Select target semester</option>
                     <?php $__currentLoopData = $semesters; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <option value="<?php echo e($s->id); ?>" <?php echo e((string)request('semester_id') === (string)$s->id ? 'selected' : ''); ?>>
+                        <option value="<?php echo e($s->id); ?>"
+                            <?php echo e((string)request('semester_id') === (string)$s->id ? 'selected' : ''); ?>>
                             <?php echo e($s->term); ?> <?php echo e($s->academic_year); ?>
 
                         </option>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
+
+                <div class="small text-muted">
+                    Students already enrolled in this semester will be automatically excluded.
+                </div>
             </div>
 
+
             
-            <div class="col-12 d-flex gap-2 mt-2">
-                <button class="btn btn-bisu btn-sm" type="submit">Apply</button>
-                <a class="btn btn-secondary btn-sm" href="<?php echo e(route('admin.enrollments.enroll-students')); ?>">Clear</a>
+            <div class="col-12 <?php echo e($mode === 'promote' ? 'col-md-2' : 'col-md-4'); ?> d-grid">
+                <button class="btn btn-bisu btn-sm" type="submit">
+                    Apply
+                </button>
+                <a class="btn btn-link btn-sm text-muted mt-1 p-0"
+                   href="<?php echo e(route('admin.enrollments.enroll-students', ['mode' => $mode])); ?>">
+                    Reset
+                </a>
             </div>
         </div>
 
@@ -213,23 +260,28 @@
             If target is <em>1st Semester of a new academic year</em>, year level will be promoted.
             4th year students will be marked as <strong>Graduated</strong>.
         </div>
+
     </div>
-
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-            <div class="small">
-                <span class="pill">
-                    Selected: <strong id="selected-count">0</strong>
-                </span>
-                <span class="text-muted small ms-2" id="selected-hint" style="display:none;">
-                    (Selections are kept even if you change page)
-                </span>
-            </div>
-
-            <button type="button" class="btn btn-outline-secondary btn-sm" id="clear-selected">
-                Clear Selected
-            </button>
-        </div>
 </form>
+
+<script>
+    function setModeAndSubmit(mode){
+        const modeField = document.getElementById('mode-field');
+        if(modeField) modeField.value = mode;
+
+        const form = modeField?.closest('form');
+        if(!form) return;
+
+        // ✅ When switching to New Enrollment: remove source_semester_id from query completely
+        if(mode === 'new'){
+            const source = form.querySelector('[name="source_semester_id"]');
+            if(source) source.value = '';
+        }
+        form.submit();
+    }
+</script>
+
+
 
     
     <form id="selection-form">
@@ -298,14 +350,19 @@
         </div>
 
         
-        <div class="mt-3 d-flex gap-2">
-            <button type="button" id="proceed-btn" class="btn btn-bisu btn-sm">
-                Proceed to Confirm Selected
-            </button>
+        <div class="sticky-actions mt-3 d-flex gap-2 justify-content-between align-items-center flex-wrap">
+            <div class="small text-muted">
+                Step 2: Select students from the table, then proceed to confirm.
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" id="proceed-btn" class="btn btn-bisu btn-sm">
+                    Proceed to Confirm Selected
+                </button>
 
-            <a href="<?php echo e(route('admin.dashboard', ['page' => 'enrollments'])); ?>" class="btn btn-secondary btn-sm">
-                Back to Enrollments
-            </a>
+                <a href="<?php echo e(route('admin.dashboard', ['page' => 'enrollments'])); ?>" class="btn btn-secondary btn-sm">
+                    Back to Enrollments
+                </a>
+            </div>
         </div>
     </form>
 

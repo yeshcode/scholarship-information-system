@@ -16,6 +16,7 @@ class Enrollment extends Model
         'user_id',       // FK to users table (matches migration and User model)
         'semester_id',   // FK to semesters table
         'course_id',     // FK to courses table
+         'year_level_id',   // ✅ ADD THIS
         'status',       // e.g., 'active', 'inactive'
     ];
 
@@ -49,5 +50,12 @@ class Enrollment extends Model
             'college_id'  // Course.college_id
         );
     }
+
+    public function yearLevel()
+{
+    return $this->belongsTo(\App\Models\YearLevel::class, 'year_level_id');
+}
+
+
 
 }
