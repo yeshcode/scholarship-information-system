@@ -1,6 +1,6 @@
-@extends('layouts.app')
 
-@section('content')
+
+<?php $__env->startSection('content'); ?>
 
 <style>
     :root{
@@ -116,7 +116,7 @@
 
             <div class="edit-shell">
 
-                {{-- HEADER --}}
+                
                 <div class="edit-head">
                     <h2 class="edit-title">Edit User Type</h2>
                     <div class="edit-sub">
@@ -126,72 +126,73 @@
 
                 <div class="edit-body">
 
-                    {{-- SUCCESS --}}
-                    @if(session('success'))
+                    
+                    <?php if(session('success')): ?>
                         <div class="alert alert-success alert-dismissible fade show">
-                            {{ session('success') }}
+                            <?php echo e(session('success')); ?>
+
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
-                    {{-- ERRORS --}}
-                    @if($errors->any())
+                    
+                    <?php if($errors->any()): ?>
                         <div class="alert alert-danger">
                             <ul class="mb-0 ps-3">
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
+                                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <li><?php echo e($error); ?></li>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </ul>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
-                    {{-- FORM --}}
-                    <form method="POST" action="{{ route('admin.user-types.update', $userType->id) }}">
-                        @csrf
-                        @method('PUT')
+                    
+                    <form method="POST" action="<?php echo e(route('admin.user-types.update', $userType->id)); ?>">
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('PUT'); ?>
 
-                        {{-- NAME --}}
+                        
                         <div class="mb-3">
                             <label for="name" class="form-label">Name</label>
                             <input type="text"
                                    name="name"
                                    id="name"
                                    class="form-control"
-                                   value="{{ old('name', $userType->name) }}"
+                                   value="<?php echo e(old('name', $userType->name)); ?>"
                                    required>
                         </div>
 
-                        {{-- DESCRIPTION --}}
+                        
                         <div class="mb-3">
                             <label for="description" class="form-label">Description</label>
                             <textarea name="description"
                                       id="description"
                                       rows="3"
                                       class="form-control"
-                                      placeholder="Short description (optional)">{{ old('description', $userType->description) }}</textarea>
+                                      placeholder="Short description (optional)"><?php echo e(old('description', $userType->description)); ?></textarea>
                         </div>
 
-                        {{-- DASHBOARD URL --}}
+                        
                         <div class="mb-4">
                             <label for="dashboard_url" class="form-label">Dashboard URL</label>
                             <input type="text"
                                    name="dashboard_url"
                                    id="dashboard_url"
                                    class="form-control"
-                                   value="{{ old('dashboard_url', $userType->dashboard_url) }}"
+                                   value="<?php echo e(old('dashboard_url', $userType->dashboard_url)); ?>"
                                    placeholder="/coordinator/dashboard">
                             <div class="form-text">
                                 Example: <code>/coordinator/dashboard</code>
                             </div>
                         </div>
 
-                        {{-- BUTTONS --}}
+                        
                         <div class="d-flex flex-wrap gap-2">
                             <button type="submit" class="btn btn-bisu">
                                 💾 Update User Type
                             </button>
 
-                            <a href="{{ route('admin.dashboard', ['page' => 'user-type']) }}"
+                            <a href="<?php echo e(route('admin.dashboard', ['page' => 'user-type'])); ?>"
                                class="btn btn-soft">
                                 Cancel
                             </a>
@@ -199,7 +200,7 @@
 
                     </form>
 
-                    {{-- DANGER ZONE --}}
+                    
                     <div class="danger-zone">
                         <div class="danger-title">Danger Zone</div>
                         <div class="danger-text mb-3">
@@ -207,7 +208,7 @@
                             Proceed carefully.
                         </div>
 
-                        <a href="{{ route('admin.user-types.delete', $userType->id) }}"
+                        <a href="<?php echo e(route('admin.user-types.delete', $userType->id)); ?>"
                            class="btn btn-outline-danger fw-bold">
                             🗑️ Delete User Type
                         </a>
@@ -220,4 +221,5 @@
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/user-types-edit.blade.php ENDPATH**/ ?>

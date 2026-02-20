@@ -52,6 +52,7 @@
         line-height:1.1;
     }
 
+    /* Desktop center nav */
     .topnav{
         display:flex;
         align-items:center;
@@ -97,27 +98,27 @@
     .dropdown-bg{
         background: #ffffff;
         border: 1px solid var(--stroke);
-        border-radius: 0;
+        border-radius: 14px;
         box-shadow: var(--shadow);
-        padding: 0;
+        padding: 6px;
         overflow: hidden;
         z-index: 1050;
     }
 
     .dropdown-square{
         display:block;
-        padding: .75rem 1rem;
+        padding: .65rem .8rem;
         font-size: .90rem;
-        font-weight: 600;
-        color: #212529;
+        font-weight: 700;
+        color: #111827;
         text-decoration: none;
-        border-radius: 0;
+        border-radius: 10px;
         white-space: nowrap;
         transition: background .12s ease;
     }
     .dropdown-square:hover{ background: #f1f3f5; }
     .dropdown-square-active{
-        background: #e7f1ff;
+        background: rgba(11,46,94,.08);
         border-left: 4px solid var(--brand);
     }
 
@@ -141,6 +142,53 @@
         border: 0;
         border-top: 1px solid var(--stroke);
         margin: 0;
+    }
+
+    /* ✅ Mobile controls */
+    .mobile-actions{
+        display:none;
+        gap:8px;
+        align-items:center;
+    }
+    .btn-nav-ghost{
+        height:40px;
+        padding: 0 .75rem;
+        border-radius: 10px;
+        border: 1px solid var(--stroke);
+        background:#fff;
+        color: var(--text);
+        font-weight: 800;
+    }
+    .btn-nav-ghost:hover{ background:#f1f3f5; }
+
+    /* Hide center menu on small screens, show hamburger */
+    @media (max-width: 992px){
+        .center-zone{ display:none !important; }
+        .mobile-actions{ display:flex; }
+        .brand-wrap{ max-width: 220px; }
+        .brand-title{ max-width: 150px; }
+    }
+
+    /* Offcanvas links */
+    .off-link{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding: 10px 12px;
+        border-radius: 12px;
+        text-decoration:none;
+        color:#111827;
+        font-weight: 800;
+        border: 1px solid transparent;
+    }
+    .off-link:hover{
+        background:#f8fafc;
+        border-color: var(--stroke);
+    }
+    .off-link.active{
+        background: rgba(11,46,94,.08);
+        border-color: rgba(11,46,94,.18);
+        color: var(--brand);
     }
 
     /* Modal (Bootstrap-only) */
@@ -171,6 +219,11 @@
     #semesterSearchResults{
         max-height: 220px;
         overflow:auto;
+    }
+
+    /* ✅ Prevent dropdown cutoff on small screens */
+    .dropdown-bg{
+        max-width: calc(100vw - 16px);
     }
 </style>
 
@@ -240,7 +293,31 @@
             </div>
 
             
-            <div class="flex-grow-1 d-flex justify-content-center">
+            <div class="mobile-actions">
+                <?php if(auth()->guard()->check()): ?>
+                    <button type="button"
+                            class="btn-nav-ghost"
+                            data-bs-toggle="offcanvas"
+                            data-bs-target="#mainNavOffcanvas">
+                        Menu
+                    </button>
+
+                    <button type="button"
+                            class="btn-nav-ghost"
+                            data-bs-toggle="offcanvas"
+                            data-bs-target="#userOffcanvas">
+                        <?php echo e(auth()->user()->firstname); ?>
+
+                    </button>
+                <?php else: ?>
+                    <a href="<?php echo e(route('login')); ?>" class="btn-nav-ghost text-decoration-none d-inline-flex align-items-center">
+                        Login
+                    </a>
+                <?php endif; ?>
+            </div>
+
+            
+            <div class="flex-grow-1 d-flex justify-content-center center-zone">
                 <div class="topnav">
 
                     <?php if(auth()->guard()->check()): ?>
@@ -466,7 +543,7 @@
             </div>
 
             
-            <div class="d-flex justify-content-end" style="min-width:190px;">
+            <div class="d-flex justify-content-end center-zone" style="min-width:190px;">
                 <?php if(auth()->guard()->check()): ?>
                     <div class="position-relative">
                         <button class="user-btn" id="user-menu-button" type="button">
@@ -479,8 +556,10 @@
                             </svg>
                         </button>
 
-                        <div id="user-dropdown" class="d-none position-absolute start-50 translate-middle-x top-100 dropdown-bg" style="width:200px;">
-                            <a href="<?php echo e(route('profile')); ?>" class="dropdown-square">Profile</a>
+                        <div id="user-dropdown"
+                            class="d-none position-absolute end-0 top-100 dropdown-bg"
+                            style="width: 220px; margin-top: 6px;">
+                        <a href="<?php echo e(route('profile')); ?>" class="dropdown-square">Profile</a>
 
                             <?php if(auth()->user()->hasRole('Super Admin')): ?>
                                 <a href="<?php echo e(route('settings.index')); ?>" class="dropdown-square">Settings</a>
@@ -491,7 +570,6 @@
                                 <button type="submit" class="dropdown-square w-100 text-start">Logout</button>
                             </form>
                         </div>
-
                     </div>
                 <?php endif; ?>
             </div>
@@ -501,6 +579,131 @@
 </nav>
 
 <hr class="divider-line">
+
+
+<?php if(auth()->guard()->check()): ?>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mainNavOffcanvas">
+    <div class="offcanvas-header">
+        <div>
+            <div class="fw-bold" style="color:var(--brand);">Menu</div>
+            <div class="text-muted small">Quick navigation</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-2">
+
+        
+        <?php if(auth()->user()->hasRole('Scholarship Coordinator') || auth()->user()->hasRole('Super Admin')): ?>
+            <button type="button"
+                    id="semesterModalOpenBtnMobile"
+                    class="off-link w-100 border-0 bg-white">
+                <span><?php echo e($activeSemesterName); ?></span>
+                <span class="text-muted small">Filter</span>
+            </button>
+            <div class="my-2"></div>
+        <?php endif; ?>
+
+        
+        <?php if(auth()->user()->hasRole('Super Admin')): ?>
+            <a class="off-link <?php echo e((request()->routeIs('admin.dashboard') && !request('page')) ? 'active' : ''); ?>"
+               href="<?php echo e(route('admin.dashboard')); ?>">Dashboard</a>
+
+            <div class="mt-2 px-2 text-muted small fw-bold">Users & Roles</div>
+            <a class="off-link <?php echo e($page === 'manage-users' ? 'active' : ''); ?>"
+               href="<?php echo e(route('admin.dashboard', ['page' => 'manage-users'])); ?>">System Users</a>
+            <a class="off-link <?php echo e($page === 'user-type' ? 'active' : ''); ?>"
+               href="<?php echo e(route('admin.dashboard', ['page' => 'user-type'])); ?>">User Types</a>
+
+            <div class="mt-2 px-2 text-muted small fw-bold">Academic Structure</div>
+            <a class="off-link <?php echo e($page === 'colleges' ? 'active' : ''); ?>"
+               href="<?php echo e(route('admin.dashboard', ['page' => 'colleges'])); ?>">Colleges</a>
+            <a class="off-link <?php echo e($page === 'courses' ? 'active' : ''); ?>"
+               href="<?php echo e(route('admin.dashboard', ['page' => 'courses'])); ?>">Courses</a>
+            <a class="off-link <?php echo e($page === 'year-levels' ? 'active' : ''); ?>"
+               href="<?php echo e(route('admin.dashboard', ['page' => 'year-levels'])); ?>">Year Levels</a>
+            <a class="off-link <?php echo e($page === 'semesters' ? 'active' : ''); ?>"
+               href="<?php echo e(route('admin.dashboard', ['page' => 'semesters'])); ?>">Semesters</a>
+
+            <div class="mt-2 px-2 text-muted small fw-bold">Enrollment</div>
+            <a class="off-link <?php echo e($page === 'enrollments' ? 'active' : ''); ?>"
+               href="<?php echo e(route('admin.dashboard', ['page' => 'enrollments'])); ?>">Enrollment Records</a>
+
+        <?php elseif(auth()->user()->hasRole('Scholarship Coordinator')): ?>
+            <a class="off-link <?php echo e(request()->routeIs('coordinator.dashboard') ? 'active' : ''); ?>"
+               href="<?php echo e(route('coordinator.dashboard')); ?>">Dashboard</a>
+
+            <div class="mt-2 px-2 text-muted small fw-bold">Student Services</div>
+            <a class="off-link <?php echo e((request()->routeIs('coordinator.scholarship-batches') || request()->routeIs('coordinator.scholarship-batches.*')) ? 'active' : ''); ?>"
+               href="<?php echo e(route('coordinator.scholarship-batches')); ?>">Scholarship Batches</a>
+            <a class="off-link <?php echo e((request()->routeIs('coordinator.manage-scholars') || request()->routeIs('coordinator.scholars.*')) ? 'active' : ''); ?>"
+               href="<?php echo e(route('coordinator.manage-scholars')); ?>">Scholars</a>
+            <a class="off-link <?php echo e((request()->routeIs('coordinator.manage-scholarships') || request()->routeIs('coordinator.scholarships.*')) ? 'active' : ''); ?>"
+               href="<?php echo e(route('coordinator.manage-scholarships')); ?>">Scholarships</a>
+            <a class="off-link <?php echo e(request()->routeIs('coordinator.enrollment-records') ? 'active' : ''); ?>"
+               href="<?php echo e(route('coordinator.enrollment-records')); ?>">Students Record</a>
+
+            <div class="mt-2 px-2 text-muted small fw-bold">Stipends</div>
+            <a class="off-link <?php echo e((request()->routeIs('coordinator.manage-stipend-releases') || request()->routeIs('coordinator.stipend-releases.*')) ? 'active' : ''); ?>"
+               href="<?php echo e(route('coordinator.manage-stipend-releases')); ?>">Stipend Release Schedule</a>
+            <a class="off-link <?php echo e((request()->routeIs('coordinator.manage-stipends') || request()->routeIs('coordinator.stipends.*')) ? 'active' : ''); ?>"
+               href="<?php echo e(route('coordinator.manage-stipends')); ?>">Stipend Details</a>
+
+            <div class="mt-2 px-2 text-muted small fw-bold">Announcements</div>
+            <a class="off-link <?php echo e((request()->routeIs('coordinator.manage-announcements') || request()->routeIs('coordinator.announcements.*')) ? 'active' : ''); ?>"
+               href="<?php echo e(route('coordinator.manage-announcements')); ?>">Post Announcements</a>
+            <a class="off-link <?php echo e(request()->routeIs('clusters.*') ? 'active' : ''); ?>"
+               href="<?php echo e(route('clusters.index')); ?>">Student Inquiries</a>
+
+            <a class="off-link <?php echo e($coordReportsActive ? 'active' : ''); ?>"
+               href="<?php echo e(route('coordinator.reports')); ?>">Reports</a>
+
+        <?php elseif(auth()->user()->hasRole('Student')): ?>
+            <a class="off-link <?php echo e(request()->routeIs('student.dashboard') ? 'active' : ''); ?>"
+               href="<?php echo e(route('student.dashboard')); ?>">Home</a>
+            <a class="off-link <?php echo e(request()->routeIs('student.announcements') ? 'active' : ''); ?>"
+               href="<?php echo e(route('student.announcements')); ?>">Announcements</a>
+            <a class="off-link <?php echo e(request()->routeIs('student.scholarships.*') ? 'active' : ''); ?>"
+               href="<?php echo e(route('student.scholarships.index')); ?>">Scholarships</a>
+
+            <?php if(\App\Models\Scholar::where('student_id', auth()->id())->exists()): ?>
+                <a class="off-link <?php echo e(request()->routeIs('student.stipend-history') ? 'active' : ''); ?>"
+                   href="<?php echo e(route('student.stipend-history')); ?>">Stipends</a>
+            <?php endif; ?>
+
+            <a class="off-link <?php echo e(request()->routeIs('student.notifications') ? 'active' : ''); ?>"
+               href="<?php echo e(route('student.notifications')); ?>">Notifications</a>
+            <a class="off-link <?php echo e(request()->routeIs('questions.create') ? 'active' : ''); ?>"
+               href="<?php echo e(route('questions.create')); ?>">Ask</a>
+        <?php endif; ?>
+
+    </div>
+</div>
+
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="userOffcanvas">
+    <div class="offcanvas-header">
+        <div>
+            <div class="fw-bold" style="color:var(--brand);"><?php echo e(auth()->user()->firstname); ?></div>
+            <div class="text-muted small"><?php echo e(auth()->user()->email); ?></div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-2">
+        <a class="off-link" href="<?php echo e(route('profile')); ?>">Profile</a>
+
+        <?php if(auth()->user()->hasRole('Super Admin')): ?>
+            <a class="off-link" href="<?php echo e(route('settings.index')); ?>">Settings</a>
+        <?php endif; ?>
+
+        <form action="<?php echo e(route('logout')); ?>" method="POST" class="mt-2">
+            <?php echo csrf_field(); ?>
+            <button type="submit" class="btn btn-outline-danger w-100 fw-bold">
+                Logout
+            </button>
+        </form>
+    </div>
+</div>
+<?php endif; ?>
 
 
 <?php if(auth()->guard()->check()): ?>
@@ -559,6 +762,10 @@ document.addEventListener('DOMContentLoaded', function () {
     function hideMenu(menu){ menu.classList.add('d-none'); }
     function isHidden(menu){ return menu.classList.contains('d-none'); }
 
+    function closeAllDropdowns(){
+        dropdownPairs.forEach(pair => hideMenu(pair.menu));
+    }
+
     function registerDropdown(buttonId, menuId) {
         const btn = document.getElementById(buttonId);
         const menu = document.getElementById(menuId);
@@ -569,7 +776,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', function (e) {
             e.stopPropagation();
             const willOpen = isHidden(menu);
-            dropdownPairs.forEach(pair => hideMenu(pair.menu));
+            closeAllDropdowns();
             if (willOpen) showMenu(menu);
         });
     }
@@ -583,19 +790,21 @@ document.addEventListener('DOMContentLoaded', function () {
     registerDropdown('coord-announcements-menu-button', 'coord-announcements-menu');
 
     registerDropdown('user-menu-button', 'user-dropdown');
+    
 
-    document.addEventListener('click', function () {
-        dropdownPairs.forEach(pair => hideMenu(pair.menu));
-    });
+    document.addEventListener('click', closeAllDropdowns);
+
+    // ✅ If screen resized to mobile, close dropdowns (prevents floating menus)
+    window.addEventListener('resize', closeAllDropdowns);
 
     document.querySelectorAll('nav a, nav form button').forEach(el => {
-        el.addEventListener('click', function () {
-            dropdownPairs.forEach(pair => hideMenu(pair.menu));
-        });
+        el.addEventListener('click', closeAllDropdowns);
     });
 
     // SEMESTER MODAL
     const semOpenBtn = document.getElementById('semesterModalOpenBtn');
+    const semOpenBtnMobile = document.getElementById('semesterModalOpenBtnMobile');
+
     const semOverlay = document.getElementById('semesterModalOverlay');
     const semCloseBtn = document.getElementById('semesterModalCloseBtn');
 
@@ -666,10 +875,22 @@ document.addEventListener('DOMContentLoaded', function () {
             semResults.innerHTML = `<div style="padding:.8rem; color:#b91c1c; font-size:.85rem;">Error loading semesters.</div>`;
             semStatus.textContent = '';
         }
+
     }
 
     semOpenBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
+        openSemModal();
+    });
+
+    semOpenBtnMobile?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // close offcanvas if open
+        const off = document.getElementById('mainNavOffcanvas');
+        if(off){
+            const inst = bootstrap.Offcanvas.getInstance(off);
+            inst?.hide();
+        }
         openSemModal();
     });
 
@@ -699,5 +920,4 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 });
-</script>
-<?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/layouts/navigation.blade.php ENDPATH**/ ?>
+</script><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/layouts/navigation.blade.php ENDPATH**/ ?>
