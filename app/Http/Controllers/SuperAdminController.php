@@ -161,18 +161,42 @@ class SuperAdminController extends Controller
 
     /**
      * =========================
-     * CHART 2: Users by Role (based on user_types)
+     * CHART 2 (REPLACEMENT): Students by Year Level
      * =========================
      */
-    $usersByType = User::query()
-        ->join('user_types', 'user_types.id', '=', 'users.user_type_id')
-        ->select('user_types.name as label', DB::raw('COUNT(*) as total'))
-        ->groupBy('user_types.name')
-        ->orderBy('user_types.name')
+    $studentsByYearLevel = User::query()
+        ->when($studentTypeId, fn($q) => $q->where('users.user_type_id', $studentTypeId))
+        ->leftJoin('year_levels', 'year_levels.id', '=', 'users.year_level_id')
+        ->select(
+            DB::raw("COALESCE(year_levels.year_level_name, 'Unknown Year Level') as label"),
+            DB::raw('COUNT(*) as total')
+        )
+        ->groupBy('label')
+        ->orderBy('label')
         ->get();
 
-    $data['roleLabels'] = $usersByType->pluck('label');
-    $data['roleCounts'] = $usersByType->pluck('total');
+    $data['yearLevelLabels'] = $studentsByYearLevel->pluck('label');
+    $data['yearLevelCounts'] = $studentsByYearLevel->pluck('total');
+
+    /**
+     * =========================
+     * OPTIONAL: Students by College (profile-based, not enrollment-based)
+     * (nice for admin overview)
+     * =========================
+     */
+    $studentsByCollege = User::query()
+        ->when($studentTypeId, fn($q) => $q->where('users.user_type_id', $studentTypeId))
+        ->leftJoin('colleges', 'colleges.id', '=', 'users.college_id')
+        ->select(
+            DB::raw("COALESCE(colleges.college_name, 'Unknown College') as label"),
+            DB::raw('COUNT(*) as total')
+        )
+        ->groupBy('label')
+        ->orderBy('label')
+        ->get();
+
+    $data['studentCollegeLabels'] = $studentsByCollege->pluck('label');
+    $data['studentCollegeCounts'] = $studentsByCollege->pluck('total');
 
     /**
      * =========================

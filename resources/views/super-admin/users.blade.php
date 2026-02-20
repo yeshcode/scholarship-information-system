@@ -282,7 +282,7 @@
         </div>
 
         <div class="col-12 col-md-4">
-          <label class="form-label">Middle Name (optional)</label>
+          <label class="form-label">Middle Name</label>
           <input type="text" name="middlename" class="form-control form-control-sm"
                  value="{{ old('middlename') }}">
         </div>
