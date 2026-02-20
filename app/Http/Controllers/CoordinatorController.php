@@ -24,6 +24,7 @@ use App\Models\YearLevel;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Concerns\UsesActiveSemester;
+use Carbon\Carbon;
 
 
 
@@ -1459,8 +1460,67 @@ public function confirmDeleteStipend($id)
     ));
 }
 
+public function releaseStipend(Request $request, Stipend $stipend)
+{
+    $request->validate([
+        'received_at' => 'required|date', // datetime-local
+    ]);
+
+    // ✅ Allow only FOR_RELEASE to be released (avoid double release)
+    if ($stipend->status !== 'for_release') {
+        return back()->with('error', 'This stipend is not in FOR RELEASE status.');
+    }
+
+    // Load relationships for nice notification message
+    $stipend->load([
+        'scholar.user',
+        'stipendRelease',
+        'scholar.scholarship',
+        'scholar.scholarshipBatch',
+    ]);
+
+    $creatorId = Auth::id();
+
+    DB::transaction(function () use ($request, $stipend, $creatorId) {
+
+        $receivedAt = Carbon::parse($request->received_at);
+
+        // ✅ Update stipend as released
+        $stipend->update([
+            'status'     => 'released',
+            'received_at'=> $receivedAt,
+            'updated_by' => $creatorId,
+            // optional: if you want to also overwrite release_at:
+            // 'release_at' => $receivedAt,
+        ]);
+
+        // ✅ Notify student
+        $studentUserId = $stipend->scholar->student_id; // this is users.id
+
+        $releaseTitle = $stipend->stipendRelease->title ?? 'Stipend Release';
+        $amount = number_format((float) $stipend->amount_received, 2);
+
+        Notification::create([
+            'recipient_user_id' => $studentUserId,
+            'created_by'        => $creatorId,
+            'type'              => 'stipend', // your own label/category
+            'title'             => 'Stipend Released',
+            'message'           => "Your stipend has been released ({$releaseTitle}). Amount: ₱{$amount}. Released on: " .
+                                   $receivedAt->format('M d, Y h:i A') . ".",
+            // ✅ keep these consistent with your system
+            'related_type'      => 'stipend',
+            'related_id'        => $stipend->id,
+            'link'              => route('student.stipend-history'),
+            'is_read'           => false,
+            'sent_at'           => now(),
+        ]);
+    });
+
+    return back()->with('success', 'Stipend released and student notified.');
+}
 
 
+//stipend release
     public function createStipendRelease()
 {
     // ✅ Only TDP/TES scholarships

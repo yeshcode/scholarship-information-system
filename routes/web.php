@@ -216,8 +216,11 @@
 
         Route::get('/stipend-releases/by-batch', [CoordinatorController::class, 'releasesByBatch'])->name('coordinator.stipend-releases.by-batch');
         Route::get('/stipends/pick-meta', [CoordinatorController::class, 'stipendPickMeta'])->name('coordinator.stipends.pick-meta');
+        // Release stipend (per row)
+        Route::post('/manage-stipends/{stipend}/release', [CoordinatorController::class, 'releaseStipend'])->name('coordinator.stipends.release');
 
 
+        
         // Stipend Releases
         Route::get('/manage-stipend-releases', [CoordinatorController::class, 'manageStipendReleases'])->name('coordinator.manage-stipend-releases');
         Route::get('/manage-stipend-releases/create', [CoordinatorController::class, 'createStipendRelease'])->name('coordinator.stipend-releases.create');
