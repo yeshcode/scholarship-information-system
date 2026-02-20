@@ -24,6 +24,10 @@ use App\Models\YearLevel;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Concerns\UsesActiveSemester;
+use Carbon\Carbon;
+use App\Models\StipendReleaseForm;
+use App\Models\StipendReleaseFormColumn;
+use Illuminate\Support\Facades\Storage;
 
 
 
@@ -715,6 +719,7 @@ $recordsQuery->join('users', 'users.id', '=', 'enrollments.user_id')
         'user_id' => $userId,
         'semester_id' => $targetSemesterId,
         'course_id' => $courseId,
+        'year_level_id' => $user->year_level_id, // ✅ store per semester
         'status' => 'enrolled',
     ]);
 
@@ -1459,8 +1464,67 @@ public function confirmDeleteStipend($id)
     ));
 }
 
+public function releaseStipend(Request $request, Stipend $stipend)
+{
+    $request->validate([
+        'received_at' => 'required|date', // datetime-local
+    ]);
+
+    // ✅ Allow only FOR_RELEASE to be released (avoid double release)
+    if ($stipend->status !== 'for_release') {
+        return back()->with('error', 'This stipend is not in FOR RELEASE status.');
+    }
+
+    // Load relationships for nice notification message
+    $stipend->load([
+        'scholar.user',
+        'stipendRelease',
+        'scholar.scholarship',
+        'scholar.scholarshipBatch',
+    ]);
+
+    $creatorId = Auth::id();
+
+    DB::transaction(function () use ($request, $stipend, $creatorId) {
+
+        $receivedAt = Carbon::parse($request->received_at);
+
+        // ✅ Update stipend as released
+        $stipend->update([
+            'status'     => 'released',
+            'received_at'=> $receivedAt,
+            'updated_by' => $creatorId,
+            // optional: if you want to also overwrite release_at:
+            // 'release_at' => $receivedAt,
+        ]);
+
+        // ✅ Notify student
+        $studentUserId = $stipend->scholar->student_id; // this is users.id
+
+        $releaseTitle = $stipend->stipendRelease->title ?? 'Stipend Release';
+        $amount = number_format((float) $stipend->amount_received, 2);
+
+        Notification::create([
+            'recipient_user_id' => $studentUserId,
+            'created_by'        => $creatorId,
+            'type'              => 'stipend', // your own label/category
+            'title'             => 'Stipend Released',
+            'message'           => "Your stipend has been released ({$releaseTitle}). Amount: ₱{$amount}. Released on: " .
+                                   $receivedAt->format('M d, Y h:i A') . ".",
+            // ✅ keep these consistent with your system
+            'related_type'      => 'stipend',
+            'related_id'        => $stipend->id,
+            'link'              => route('student.stipend-history'),
+            'is_read'           => false,
+            'sent_at'           => now(),
+        ]);
+    });
+
+    return back()->with('success', 'Stipend released and student notified.');
+}
 
 
+//stipend release
     public function createStipendRelease()
 {
     // ✅ Only TDP/TES scholarships
@@ -1567,6 +1631,104 @@ public function confirmDeleteStipendRelease($id)
 {
     $release = StipendsRelease::findOrFail($id);
     return view('coordinator.confirm-delete-stipend-release', compact('release'));
+}
+
+
+
+//stipend release forms
+public function releaseForm(StipendsRelease $release)
+{
+    $release->load(['scholarshipBatch.scholarship', 'semester', 'forms.uploader']);
+
+    // dynamic active columns
+    $columns = StipendReleaseFormColumn::query()
+        ->where('is_active', true)
+        ->orderBy('sort_order')
+        ->get();
+
+    // Scholars under this release batch
+    $scholars = Scholar::query()
+    ->with([
+        'user.college',
+        'user.course',
+        'user.yearLevel', // fallback only
+        'enrollments' => function ($q) use ($release) {
+            $q->where('semester_id', $release->semester_id)
+              ->with('yearLevel'); // ✅ use semester-based year level
+        }
+    ])
+    ->where('batch_id', $release->batch_id)
+    ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+    ->select('scholars.*')
+    ->orderBy('users.lastname')
+    ->orderBy('users.firstname')
+    ->get();
+
+    return view('coordinator.stipend-release-form', compact('release','columns','scholars'));
+}
+
+public function releaseFormPrint(StipendsRelease $release)
+{
+    $release->load(['scholarshipBatch.scholarship', 'semester']);
+
+    $columns = StipendReleaseFormColumn::query()
+        ->where('is_active', true)
+        ->orderBy('sort_order')
+        ->get();
+
+    $scholars = Scholar::query()
+        ->with(['user.college','user.course','user.yearLevel'])
+        ->where('batch_id', $release->batch_id)
+        ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+        ->select('scholars.*')
+        ->orderBy('users.lastname')
+        ->orderBy('users.firstname')
+        ->get();
+
+    return view('coordinator.stipend-release-form-print', compact('release','columns','scholars'));
+}
+
+public function releaseFormExcel(StipendsRelease $release)
+{
+    $columns = StipendReleaseFormColumn::query()
+        ->where('is_active', true)
+        ->orderBy('sort_order')
+        ->get();
+
+    return Excel::download(
+        new \App\Exports\StipendReleaseFormExport($release->id, $columns->toArray()),
+        'stipend_release_form_'.$release->id.'.xlsx'
+    );
+}
+
+public function uploadReleaseForm(Request $request, StipendsRelease $release)
+{
+    $request->validate([
+        'file' => 'required|mimes:xlsx,xls,csv,pdf|max:10240',
+    ]);
+
+    $file = $request->file('file');
+    $path = $file->store("public/stipend-release-forms/{$release->id}");
+
+    StipendReleaseForm::create([
+        'stipend_release_id' => $release->id,
+        'original_name'      => $file->getClientOriginalName(),
+        'path'               => $path,
+        'mime'               => $file->getClientMimeType(),
+        'uploaded_by'        => Auth::id(),
+    ]);
+
+    return back()->with('success', 'Form uploaded and saved for reuse.');
+}
+
+public function downloadReleaseFormFile(StipendReleaseForm $form)
+{
+    // security: ensure coordinator only accesses via role middleware (already in your group)
+    if (!Storage::exists($form->path)) {
+        return back()->with('error', 'File not found.');
+    }
+
+    return Storage::download($form->path, $form->original_name);
 }
 
     // Manage Announcements

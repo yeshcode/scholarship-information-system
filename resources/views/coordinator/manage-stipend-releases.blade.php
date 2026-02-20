@@ -152,6 +152,9 @@
                         <td class="text-end">₱ {{ number_format((float)$release->amount, 2) }}</td>
                         <td><span class="badge {{ $badge }}">{{ $statusLabel }}</span></td>
                         <td class="text-end">
+                            <a href="{{ route('coordinator.stipend-releases.form', $release->id) }}" class="btn btn-sm btn-outline-secondary">
+                                Form
+                            </a>
                             <a href="{{ route('coordinator.stipend-releases.edit', $release->id) }}" class="btn btn-sm btn-outline-primary">
                                 Edit
                             </a>

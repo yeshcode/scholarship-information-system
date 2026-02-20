@@ -55,4 +55,10 @@ class StipendsRelease extends Model
     {
         return $this->belongsTo(\App\Models\Semester::class, 'semester_id');
     }
+
+    public function forms()
+    {
+        return $this->hasMany(\App\Models\StipendReleaseForm::class, 'stipend_release_id');
+    }
+    
 }

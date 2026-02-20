@@ -269,6 +269,28 @@
                         <td><?php echo e(strtoupper(str_replace('_',' ', $stipend->status))); ?></td>
 
                         <td class="text-end">
+                            <?php $canRelease = $stipend->status === 'for_release'; ?>
+
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-success me-2 openReleaseModal"
+                                data-bs-toggle="modal"
+                                data-bs-target="#releaseStipendModal"
+                                <?php echo e($canRelease ? '' : 'disabled'); ?>
+
+
+                                data-stipend-id="<?php echo e($stipend->id); ?>"
+                                data-student-name="<?php echo e(($stipend->scholar->user->firstname ?? 'N/A').' '.($stipend->scholar->user->lastname ?? '')); ?>"
+                                data-student-id="<?php echo e($stipend->scholar->user->student_id ?? 'N/A'); ?>"
+                                data-scholarship="<?php echo e($stipend->scholar->scholarship->scholarship_name ?? 'N/A'); ?>"
+                                data-batch="<?php echo e($stipend->scholar->scholarshipBatch->batch_number ?? 'N/A'); ?>"
+                                data-release-title="<?php echo e($stipend->stipendRelease->title ?? 'N/A'); ?>"
+                                data-amount="<?php echo e(number_format((float)$stipend->amount_received, 2)); ?>"
+                                data-default-date="<?php echo e($stipend->release_at ? \Carbon\Carbon::parse($stipend->release_at)->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i')); ?>"
+                            >
+                                Release
+                            </button>
+
                             <a href="<?php echo e(route('coordinator.stipends.edit', $stipend->id)); ?>" class="text-primary me-2">Edit</a>
                             <a href="<?php echo e(route('coordinator.stipends.confirm-delete', $stipend->id)); ?>" class="text-danger">Delete</a>
                         </td>
@@ -479,7 +501,12 @@
 
             <div class="col-12">
               <label class="filter-label">Release Date & Time <span class="req">*</span></label>
-              <input type="datetime-local" name="release_at" id="s2_release_at" class="form-control form-control-sm" required>
+              <input type="datetime-local"
+                  name="release_at"
+                  id="s2_release_at"
+                  class="form-control form-control-sm"
+                  value="<?php echo e(old('release_at')); ?>"
+                  required>
               <div class="form-text text-danger">Required.</div>
             </div>
 
@@ -506,6 +533,74 @@
         </div>
       </form>
 
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="releaseStipendModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header" style="background: var(--bisu-green); color:#fff;">
+        <div>
+          <div class="fw-bold">Release Stipend</div>
+          <small class="opacity-75">Confirm scholar details before releasing.</small>
+        </div>
+        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="POST" id="releaseStipendForm">
+        <?php echo csrf_field(); ?>
+
+        <div class="modal-body">
+          <div class="alert alert-warning small mb-3">
+            This action will mark the stipend as <strong>RELEASED</strong> and notify the student.
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="card border-0" style="background: var(--bisu-green-soft);">
+                <div class="card-body py-3">
+                  <div class="fw-bold" id="rm_student_name">—</div>
+                  <div class="small text-muted">
+                    Student ID: <span class="fw-semibold" id="rm_student_id">—</span>
+                  </div>
+                  <div class="small text-muted">
+                    Scholarship: <span class="fw-semibold" id="rm_scholarship">—</span> •
+                    Batch: <span class="fw-semibold" id="rm_batch">—</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-8">
+              <label class="filter-label">Release Schedule</label>
+              <input type="text" class="form-control form-control-sm" id="rm_release_title" readonly>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="filter-label">Amount</label>
+              <input type="text" class="form-control form-control-sm" id="rm_amount" readonly>
+            </div>
+
+            <div class="col-12">
+              <label class="filter-label">
+                Release Date & Time <span class="req">*</span>
+              </label>
+              <input type="datetime-local" name="received_at" id="rm_received_at"
+                     class="form-control form-control-sm" required>
+              <div class="form-text">Auto-filled but you can edit.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-success btn-sm" type="submit">Confirm Release & Notify</button>
+        </div>
+
+      </form>
     </div>
   </div>
 </div>
@@ -709,6 +804,11 @@ function sortRowsInModal(){
       // after you setRowEnabled / setRowDisabled for all rows
   sortRowsInModal();
 
+  }
+
+  function toLocalDatetimeValue(date = new Date()) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
   function syncSelected(){
@@ -991,6 +1091,12 @@ function sortRowsInModal(){
       preview.appendChild(li);
     }
 
+    // ✅ Default date/time in Step 2 (editable)
+    const s2ReleaseAt = document.getElementById('s2_release_at');
+    if (s2ReleaseAt && !s2ReleaseAt.value) {
+      s2ReleaseAt.value = toLocalDatetimeValue(new Date());
+    }
+
     bootstrap.Modal.getOrCreateInstance(selectModalEl).hide();
     bootstrap.Modal.getOrCreateInstance(scheduleModalEl).show();
   });
@@ -1011,6 +1117,51 @@ function sortRowsInModal(){
 
   // keep default disabled until selection
   resetBulkWizard();
+});
+
+
+
+// =========================
+// RELEASE MODAL (per stipend row)
+// =========================
+const releaseModalEl = document.getElementById('releaseStipendModal');
+const releaseForm    = document.getElementById('releaseStipendForm');
+
+const rmStudentName  = document.getElementById('rm_student_name');
+const rmStudentId    = document.getElementById('rm_student_id');
+const rmScholarship  = document.getElementById('rm_scholarship');
+const rmBatch        = document.getElementById('rm_batch');
+const rmReleaseTitle = document.getElementById('rm_release_title');
+const rmAmount       = document.getElementById('rm_amount');
+const rmReceivedAt   = document.getElementById('rm_received_at');
+
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.openReleaseModal');
+  if(!btn) return;
+
+  const stipendId   = btn.getAttribute('data-stipend-id');
+  const studentName = btn.getAttribute('data-student-name');
+  const studentId   = btn.getAttribute('data-student-id');
+  const scholarship = btn.getAttribute('data-scholarship');
+  const batch       = btn.getAttribute('data-batch');
+  const releaseTitle= btn.getAttribute('data-release-title');
+  const amount      = btn.getAttribute('data-amount');
+  const defaultDate = btn.getAttribute('data-default-date');
+
+  rmStudentName.textContent = studentName || '—';
+  rmStudentId.textContent   = studentId || '—';
+  rmScholarship.textContent = scholarship || '—';
+  rmBatch.textContent       = batch || '—';
+
+  rmReleaseTitle.value = releaseTitle || '—';
+  rmAmount.value       = amount ? `₱ ${amount}` : '—';
+
+  rmReceivedAt.value = defaultDate || '';
+
+  // ✅ Set dynamic form action
+  // We generate base URL from Laravel route with placeholder style:
+  const base = <?php echo json_encode(route('coordinator.stipends.release', ['stipend' => '___ID___']), 512) ?>;
+  releaseForm.action = base.replace('___ID___', stipendId);
 });
 </script>
 

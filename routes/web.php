@@ -11,6 +11,8 @@
     use App\Http\Controllers\QuestionClusterController;
     use App\Http\Controllers\SemesterFilterController;
     use App\Http\Controllers\LandingPageController;
+    use App\Models\StipendsRelease;
+    use App\Models\StipendReleaseForm;
 
 
 
@@ -216,6 +218,9 @@
 
         Route::get('/stipend-releases/by-batch', [CoordinatorController::class, 'releasesByBatch'])->name('coordinator.stipend-releases.by-batch');
         Route::get('/stipends/pick-meta', [CoordinatorController::class, 'stipendPickMeta'])->name('coordinator.stipends.pick-meta');
+        // Release stipend (per row)
+        Route::post('/manage-stipends/{stipend}/release', [CoordinatorController::class, 'releaseStipend'])->name('coordinator.stipends.release');
+
 
 
         // Stipend Releases
@@ -226,6 +231,14 @@
         Route::put('/manage-stipend-releases/{id}', [CoordinatorController::class, 'updateStipendRelease'])->name('coordinator.stipend-releases.update');
         Route::delete('/manage-stipend-releases/{id}', [CoordinatorController::class, 'destroyStipendRelease'])->name('coordinator.stipend-releases.destroy');
         Route::get('/manage-stipend-releases/{id}/delete', [CoordinatorController::class, 'confirmDeleteStipendRelease'])->name('coordinator.stipend-releases.confirm-delete');
+
+        //stipend release forms
+        Route::get('/stipend-releases/{release}/form', [CoordinatorController::class, 'releaseForm'])->name('coordinator.stipend-releases.form');
+        Route::get('/stipend-releases/{release}/form/print', [CoordinatorController::class, 'releaseFormPrint'])->name('coordinator.stipend-releases.form.print');
+        Route::get('/stipend-releases/{release}/form/excel', [CoordinatorController::class, 'releaseFormExcel'])->name('coordinator.stipend-releases.form.excel');
+        Route::post('/stipend-releases/{release}/form/upload', [CoordinatorController::class, 'uploadReleaseForm'])->name('coordinator.stipend-releases.form.upload');
+        Route::get('/stipend-release-forms/{form}/download', [CoordinatorController::class, 'downloadReleaseFormFile'])->name('coordinator.stipend-releases.form.file.download');
+
 
         // Announcements
         Route::get('/manage-announcements', [CoordinatorController::class, 'manageAnnouncements'])->name('coordinator.manage-announcements');
