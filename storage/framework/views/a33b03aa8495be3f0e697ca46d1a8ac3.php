@@ -7,6 +7,26 @@
         --bisu-blue:#003366;
         --bisu-blue-2:#0b4a85;
         --danger:#dc3545;
+
+         /* ✅ ADD GREEN THEME */
+      --bisu-green:#198754;        /* Bootstrap green */
+      --bisu-green-soft:#eaf7ef;   /* soft green background */
+    }
+
+    /* ✅ For Release badge - green, eye-friendly */
+    .badge-release-green{
+        background: var(--bisu-green-soft) !important;
+        color: var(--bisu-green) !important;
+        border: 1px solid rgba(25,135,84,.25);
+        font-weight: 800;
+    }
+
+    /* default (non-for-release) badge look (neutral) */
+    .badge-release-default{
+        background: #f1f5f9 !important;
+        color: #334155 !important;
+        border: 1px solid #e2e8f0;
+        font-weight: 700;
     }
     .page-title-bisu{ font-weight:800; font-size:1.6rem; color:var(--bisu-blue); margin:0; }
     .subtext{ color:#6b7280; font-size:.9rem; }
@@ -215,7 +235,17 @@
                         <td><?php echo e($stipend->scholar->scholarship->scholarship_name ?? 'N/A'); ?></td>
                         <td>Batch <?php echo e($stipend->scholar->scholarshipBatch->batch_number ?? 'N/A'); ?></td>
                         <td><?php echo e($rel->title ?? 'N/A'); ?></td>
-                        <td><span class="badge bg-info-subtle text-info"><?php echo e($relStatusLabel ?: 'N/A'); ?></span></td>
+                        <td>
+                            <?php
+                                $isForRelease = strtolower($rel->status ?? '') === 'for_release';
+                            ?>
+
+                            <span class="badge <?php echo e($isForRelease ? 'badge-release-green' : 'badge-release-default'); ?>">
+                                <?php echo e($relStatusLabel ?: 'N/A'); ?>
+
+                            </span>
+                        </td>
+
 
                         <td>
                             <?php if($stipend->release_at): ?>

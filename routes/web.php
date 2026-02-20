@@ -281,3 +281,5 @@
             Route::post('/ask', [QuestionController::class, 'store'])->name('questions.store');
         });
     });
+
+    require __DIR__.'/auth.php';
