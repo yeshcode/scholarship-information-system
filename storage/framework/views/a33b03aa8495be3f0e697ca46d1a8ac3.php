@@ -806,6 +806,11 @@ function sortRowsInModal(){
 
   }
 
+  function toLocalDatetimeValue(date = new Date()) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
   function syncSelected(){
     const checked = Array.from(table.querySelectorAll('.pickScholar:checked'));
     selectedCountEl.textContent = checked.length;
@@ -1084,6 +1089,12 @@ function sortRowsInModal(){
       li.className = 'text-muted';
       li.textContent = `+ ${checked.length - 30} more…`;
       preview.appendChild(li);
+    }
+
+    // ✅ Default date/time in Step 2 (editable)
+    const s2ReleaseAt = document.getElementById('s2_release_at');
+    if (s2ReleaseAt && !s2ReleaseAt.value) {
+      s2ReleaseAt.value = toLocalDatetimeValue(new Date());
     }
 
     bootstrap.Modal.getOrCreateInstance(selectModalEl).hide();

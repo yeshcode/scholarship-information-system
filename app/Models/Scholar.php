@@ -45,4 +45,9 @@ class Scholar extends Model
     {
         return $this->hasMany(Stipend::class, 'scholar_id', 'id');  // FK in stipends: scholar_id, local PK: id
     }
+
+    public function enrollments()
+    {
+        return $this->hasMany(\App\Models\Enrollment::class, 'user_id', 'student_id');
+    }
 }
