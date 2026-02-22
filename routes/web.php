@@ -270,6 +270,10 @@
         Route::get('/reports', [CoordinatorController::class, 'reports'])->name('coordinator.reports');
         });
 
+        //notification
+        Route::get('/stipends/claim-notifications', [CoordinatorController::class, 'claimNotifications'])->name('coordinator.stipends.claim-notifications');
+        Route::post('/notifications/{id}/read', [CoordinatorController::class, 'markNotificationRead'])->name('coordinator.notifications.read');
+
 
         // Student routes (only Students can access)
         Route::middleware('role:Student')->prefix('student')->group(function () {
@@ -282,8 +286,9 @@
             Route::get('/scholarships/{id}', [StudentController::class, 'show'])->name('student.scholarships.show');
 
             Route::get('/stipend-history', [StudentController::class, 'stipendHistory'])->name('student.stipend-history');
-            Route::get('/notifications', [StudentController::class, 'notifications'])->name('student.notifications');
+            Route::post('/stipends/{stipend}/claim', [StudentController::class, 'claimStipend'])->name('student.stipends.claim');
 
+            Route::get('/notifications', [StudentController::class, 'notifications'])->name('student.notifications');
             Route::get('/notifications/{id}/open', [StudentController::class, 'open'])->name('student.notifications.open');
            
             Route::post('/profile/update-contact', [ProfileController::class, 'updateContact'])->name('profile.update-contact');

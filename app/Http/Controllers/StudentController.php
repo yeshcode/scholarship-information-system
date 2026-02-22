@@ -14,6 +14,7 @@ use App\Models\Scholar;
 use App\Models\Enrollment;   // <-- add this
 use App\Models\Question;     // <-- add this (if not yet)
 use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 
@@ -247,6 +248,68 @@ public function open($id)
     return redirect()->route('student.notifications');
 }
 
+
+public function claimStipend(Request $request, Stipend $stipend)
+{
+    $userId = Auth::id();
+
+    // ✅ Security: stipend must belong to the logged-in student
+    if ((int)$stipend->student_id !== (int)$userId) {
+        abort(403, 'Unauthorized.');
+    }
+
+    // ✅ Only allow claim if stipend is RELEASED (coordinator already released it)
+    if ($stipend->status !== 'released') {
+        return back()->with('error', 'You can only claim a stipend that is already RELEASED.');
+    }
+
+    // ✅ Prevent double-claim
+    if (!empty($stipend->claimed_at)) {
+        return back()->with('error', 'This stipend is already marked as CLAIMED.');
+    }
+
+    // Load for better notification message
+    $stipend->load(['stipendRelease', 'scholar.user']);
+
+    $claimedAt = now();
+
+    // ✅ Coordinator receiver: use the last updater (the one who released),
+    // fallback to created_by if needed
+    $coordinatorUserId = $stipend->updated_by ?: $stipend->created_by;
+
+    DB::transaction(function () use ($stipend, $userId, $claimedAt, $coordinatorUserId) {
+
+        $stipend->update([
+            'claimed_at' => $claimedAt,
+            'claimed_by' => $userId,
+        ]);
+
+        // If no coordinator found, skip notification safely
+        if ($coordinatorUserId) {
+            $studentName = trim(($stipend->scholar->user->firstname ?? '') . ' ' . ($stipend->scholar->user->lastname ?? ''));
+            $studentId   = $stipend->scholar->user->student_id ?? 'N/A';
+            $releaseTitle= $stipend->stipendRelease->title ?? 'Stipend Release';
+            $amount      = number_format((float)$stipend->amount_received, 2);
+
+            \App\Models\Notification::create([
+                'recipient_user_id' => $coordinatorUserId,
+                'created_by' => $userId, // student created it
+                'type' => 'stipend',
+                'title' => 'Cheque Claimed',
+                'message' =>
+                    "Scholar {$studentName} (Student ID: {$studentId}) has CLAIMED the cheque for '{$releaseTitle}'. " .
+                    "Amount: ₱{$amount}. Claimed on: " . Carbon::parse($claimedAt)->format('M d, Y h:i A') . ".",
+                'related_type' => 'stipend',
+                'related_id' => $stipend->id,
+                'link' => route('coordinator.stipends.claim-notifications'),
+                'is_read' => false,
+                'sent_at' => now(),
+            ]);
+        }
+    });
+
+    return back()->with('success', 'Marked as claimed. Coordinator has been notified.');
+}
 
 
 }

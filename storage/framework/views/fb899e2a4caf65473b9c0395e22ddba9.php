@@ -1,15 +1,16 @@
-@extends('layouts.app')
 
-@section('content')
+
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid container-xl py-4">
 
-    {{-- Header --}}
+    
     <div class="bisu-hero p-4 p-md-5 rounded-4 shadow-sm mb-4">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <div>
                 <div class="text-white-50 small mb-1">Scholarship Details</div>
                 <h2 class="text-white fw-bold mb-1 wrap-anywhere">
-                    {{ $scholarship->scholarship_name }}
+                    <?php echo e($scholarship->scholarship_name); ?>
+
                 </h2>
                 <div class="text-white-50">
                     Full details, requirements, and information.
@@ -17,8 +18,8 @@
             </div>
 
             <div class="d-flex gap-2">
-                @if(!empty($scholarship->status))
-                    @php
+                <?php if(!empty($scholarship->status)): ?>
+                    <?php
                         $statusRaw = strtolower(trim((string)($scholarship->status ?? '')));
                         $badgeClass = match(true) {
                             str_contains($statusRaw, 'open') => 'bg-success-subtle text-success border border-success-subtle',
@@ -28,20 +29,21 @@
                             str_contains($statusRaw, 'pending') => 'bg-warning-subtle text-warning border border-warning-subtle',
                             default => 'bg-light text-dark border',
                         };
-                    @endphp
-                    <span class="badge rounded-pill px-3 py-2 {{ $badgeClass }} align-self-start">
-                        {{ $scholarship->status }}
-                    </span>
-                @endif
+                    ?>
+                    <span class="badge rounded-pill px-3 py-2 <?php echo e($badgeClass); ?> align-self-start">
+                        <?php echo e($scholarship->status); ?>
 
-                <a href="{{ route('student.scholarships.index') }}" class="btn btn-light rounded-pill px-3">
+                    </span>
+                <?php endif; ?>
+
+                <a href="<?php echo e(route('student.scholarships.index')); ?>" class="btn btn-light rounded-pill px-3">
                     <i class="bi bi-arrow-left me-1"></i> Back
                 </a>
             </div>
         </div>
     </div>
 
-    {{-- Info row --}}
+    
     <div class="row g-3 mb-3">
         <div class="col-12 col-lg-4">
             <div class="card border-0 rounded-4 shadow-sm h-100">
@@ -53,7 +55,8 @@
                         <div class="flex-grow-1">
                             <div class="text-muted small">Benefactor</div>
                             <div class="fw-semibold wrap-anywhere">
-                                {{ $scholarship->benefactor ?? 'N/A' }}
+                                <?php echo e($scholarship->benefactor ?? 'N/A'); ?>
+
                             </div>
                         </div>
                     </div>
@@ -61,7 +64,7 @@
             </div>
         </div>
 
-        {{-- You can reuse these slots later for deadline/contact/eligibility --}}
+        
         <div class="col-12 col-lg-4">
             <div class="card border-0 rounded-4 shadow-sm h-100">
                 <div class="card-body p-3 p-md-4">
@@ -72,7 +75,8 @@
                         <div class="flex-grow-1">
                             <div class="text-muted small">Requirements</div>
                             <div class="fw-semibold">
-                                {{ !empty($scholarship->requirements) ? 'Available' : 'Not specified' }}
+                                <?php echo e(!empty($scholarship->requirements) ? 'Available' : 'Not specified'); ?>
+
                             </div>
                         </div>
                     </div>
@@ -90,7 +94,8 @@
                         <div class="flex-grow-1">
                             <div class="text-muted small">Description</div>
                             <div class="fw-semibold">
-                                {{ !empty($scholarship->description) ? 'Available' : 'Not specified' }}
+                                <?php echo e(!empty($scholarship->description) ? 'Available' : 'Not specified'); ?>
+
                             </div>
                         </div>
                     </div>
@@ -99,7 +104,7 @@
         </div>
     </div>
 
-    {{-- Main details panels --}}
+    
     <div class="row g-3">
         <div class="col-12 col-lg-6">
             <div class="card border-0 rounded-4 shadow-sm h-100">
@@ -108,17 +113,18 @@
                     <div class="fw-bold text-bisu">Description</div>
                 </div>
                 <div class="card-body p-3 p-md-4">
-                    @if(!empty($scholarship->description))
+                    <?php if(!empty($scholarship->description)): ?>
                         <div class="text-muted" style="white-space: pre-line;">
-                            {{ $scholarship->description }}
+                            <?php echo e($scholarship->description); ?>
+
                         </div>
-                    @else
+                    <?php else: ?>
                         <div class="empty-state">
                             <div class="empty-icon"><i class="bi bi-file-text"></i></div>
                             <div class="fw-semibold">No description provided</div>
                             <div class="text-muted small">The coordinator may add details soon.</div>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -130,17 +136,18 @@
                     <div class="fw-bold text-bisu">Requirements</div>
                 </div>
                 <div class="card-body p-3 p-md-4">
-                    @if(!empty($scholarship->requirements))
+                    <?php if(!empty($scholarship->requirements)): ?>
                         <div class="text-muted" style="white-space: pre-line;">
-                            {{ $scholarship->requirements }}
+                            <?php echo e($scholarship->requirements); ?>
+
                         </div>
-                    @else
+                    <?php else: ?>
                         <div class="empty-state">
                             <div class="empty-icon"><i class="bi bi-clipboard-check"></i></div>
                             <div class="fw-semibold">No requirements listed</div>
                             <div class="text-muted small">Please check again later.</div>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -210,4 +217,5 @@
         margin-bottom: .6rem;
     }
 </style>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/student/scholarships/show.blade.php ENDPATH**/ ?>
