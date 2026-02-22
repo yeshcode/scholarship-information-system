@@ -52,22 +52,7 @@
     </div>
 
     <div class="table-responsive">
-         <?php
-            $columns = collect([
-            (object)['key'=>'student_id','label'=>'Student ID'],
-            (object)['key'=>'lastname','label'=>'Last Name'],
-            (object)['key'=>'firstname','label'=>'First Name'],
-            (object)['key'=>'middlename','label'=>'Middle Name'],
-            (object)['key'=>'year_level','label'=>'Year Level'],
-            (object)['key'=>'course','label'=>'Course'],
-            (object)['key'=>'amount','label'=>'Amount'],
-            (object)['key'=>'date_received','label'=>'Date Received'],
-            (object)['key'=>'printed_name','label'=>'Printed Name'],
-            (object)['key'=>'remarks','label'=>'Remarks'],
-            (object)['key'=>'signature','label'=>'Signature'],
-            ]);
-        ?>
-
+        
         <table class="table table-bordered table-hover mb-0">
             <thead class="thead-bisu">
                 <tr>
