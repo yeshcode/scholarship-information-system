@@ -14,6 +14,8 @@
     <!-- ✅ Bootstrap (local) -->
     <link rel="stylesheet" href="<?php echo e(asset('bootstrap/css/bootstrap.min.css')); ?>">
 
+    <link rel="stylesheet" href="<?php echo e(asset('vendor/bootstrap-icons/bootstrap-icons.css')); ?>">
+
     <style>
         :root {
             --bisu-blue: #003366;
