@@ -124,6 +124,14 @@
     </div>
 
     <div class="d-flex gap-2">
+      <a class="btn btn-outline-primary btn-sm"
+        href="<?php echo e(route('coordinator.stipends.claim-notifications')); ?>">
+          Notifications
+          <?php if(!empty($claimUnreadCount) && $claimUnreadCount > 0): ?>
+              <span class="badge bg-danger ms-1"><?php echo e($claimUnreadCount); ?></span>
+          <?php endif; ?>
+      </a>
+      
         <button class="btn btn-bisu btn-sm" id="openBulkBtn" data-bs-toggle="modal" data-bs-target="#bulkSelectModal">
             + Bulk Assign Stipend
         </button>

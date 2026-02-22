@@ -122,6 +122,14 @@
     </div>
 
     <div class="d-flex gap-2">
+      <a class="btn btn-outline-primary btn-sm"
+        href="{{ route('coordinator.stipends.claim-notifications') }}">
+          Notifications
+          @if(!empty($claimUnreadCount) && $claimUnreadCount > 0)
+              <span class="badge bg-danger ms-1">{{ $claimUnreadCount }}</span>
+          @endif
+      </a>
+      
         <button class="btn btn-bisu btn-sm" id="openBulkBtn" data-bs-toggle="modal" data-bs-target="#bulkSelectModal">
             + Bulk Assign Stipend
         </button>

@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Stipend extends Model
 {
+
+    protected $casts = [
+        'release_at'  => 'datetime',
+        'received_at' => 'datetime',
+        'claimed_at'  => 'datetime',
+    ];
         protected $fillable = [
         'scholar_id',
         'student_id',
@@ -17,6 +23,8 @@ class Stipend extends Model
         'date_release',
         'release_at',  
         'received_at',
+         'claimed_at',   // ✅ add
+        'claimed_by',   // ✅ add
     ];
 
 

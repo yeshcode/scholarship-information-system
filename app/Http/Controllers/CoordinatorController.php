@@ -1007,6 +1007,12 @@ public function confirmDeleteScholarshipBatch($id)
 
     $stipends = $stipendsQuery->orderByDesc('id')->paginate(15)->withQueryString();
 
+    $claimUnreadCount = Notification::where('recipient_user_id', Auth::id())
+    ->where('type', 'stipend')
+    ->where('title', 'Cheque Claimed')
+    ->where('is_read', false)
+    ->count();
+
     return view('coordinator.manage-stipends', compact(
         'activeSemesterId',
         'currentSemester',
@@ -1014,7 +1020,8 @@ public function confirmDeleteScholarshipBatch($id)
         'batches',
         'releases',
         'eligibleScholars',
-        'stipends'
+        'stipends',
+        'claimUnreadCount'
     ));
 }
 
@@ -1439,6 +1446,39 @@ public function confirmDeleteStipend($id)
     $stipend = Stipend::findOrFail($id);
     return view('coordinator.confirm-delete-stipend', compact('stipend'));
 }
+
+public function claimNotifications()
+{
+    $notifications = Notification::query()
+    ->where('recipient_user_id', Auth::id())
+    ->where('type', 'stipend')
+    ->where('title', 'Cheque Claimed')
+    ->orderByDesc('id')
+    ->paginate(12);
+
+    $unreadCount = Notification::where('recipient_user_id', Auth::id())
+        ->where('type', 'stipend')
+        ->where('title', 'Cheque Claimed')
+        ->where('is_read', false)
+        ->count();
+
+    return view('coordinator.stipend-claim-notifications', compact('notifications', 'unreadCount'));
+}
+
+public function markNotificationRead($id)
+{
+    $n = Notification::where('id', $id)
+        ->where('recipient_user_id', Auth::id())
+        ->firstOrFail();
+
+    if (!$n->is_read) {
+        $n->update(['is_read' => true]);
+    }
+
+    return back()->with('success', 'Notification marked as read.');
+}
+
+
 
     // Manage Stipend Releases
     public function manageStipendReleases(Request $request)
