@@ -615,22 +615,22 @@ public function dashboardData()
                                 $search = trim($search);
 
                                 $query->where(function ($q) use ($search) {
-                                    $q->where('firstname', 'like', "%{$search}%")
-                                    ->orWhere('lastname', 'like', "%{$search}%")
-                                    ->orWhere('bisu_email', 'like', "%{$search}%")
-                                    ->orWhere('status', 'like', "%{$search}%")
+                                    $q->where('firstname', 'ILIKE', "%{$search}%")
+                                    ->orWhere('lastname', 'ILIKE', "%{$search}%")
+                                    ->orWhere('student_id', 'ILIKE', "%{$search}%")
+                                    ->orWhere('bisu_email', 'ILIKE', "%{$search}%");
 
-                                    ->orWhereHas('college', function ($sub) use ($search) {
-                                        $sub->where('college_name', 'like', "%{$search}%");
+                                    // Optional: search status too
+                                    // ->orWhere('status', 'ILIKE', "%{$search}%");
+
+                                    $q->orWhereHas('college', function ($sub) use ($search) {
+                                        $sub->where('college_name', 'ILIKE', "%{$search}%");
                                     })
-
                                     ->orWhereHas('yearLevel', function ($sub) use ($search) {
-                                        $sub->where('year_level_name', 'like', "%{$search}%");
+                                        $sub->where('year_level_name', 'ILIKE', "%{$search}%");
                                     })
-
-                                    // ✅ course direct
                                     ->orWhereHas('course', function ($sub) use ($search) {
-                                        $sub->where('course_name', 'like', "%{$search}%");
+                                        $sub->where('course_name', 'ILIKE', "%{$search}%");
                                     });
                                 });
                             }
@@ -864,7 +864,7 @@ public function previewBulkUploadUsers(Request $request)
 {
     // ✅ allow Excel + CSV
     $request->validate([
-        'file' => 'required|file|mimes:xlsx,csv',
+        'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
     ]);
 
     $studentType = \App\Models\UserType::where('name', 'Student')->first();
@@ -913,7 +913,7 @@ public function previewBulkUploadUsers(Request $request)
 
     if (!empty($missing)) {
         return back()->with('error', 'Missing required column(s): ' . implode(', ', $missing)
-            . '. Tip: allowed header formats include "First Name", "first_name", "FIRSTNAME", etc.');
+            . '. Format Name Column: FIRSTNAME');
     }
 
 
@@ -979,10 +979,10 @@ public function previewBulkUploadUsers(Request $request)
 
         // Check duplicates in DB
         if ($student_id && \App\Models\User::where('student_id', $student_id)->exists()) {
-            $issues[] = 'student_id already exists';
+            $issues[] = 'Student ID exists.';
         }
         if ($email && \App\Models\User::where('bisu_email', $email)->exists()) {
-            $issues[] = 'bisu_email already exists';
+            $issues[] = 'BISU email address exists.';
         }
 
         if (!empty($issues)) $issuesCount++;
@@ -2039,99 +2039,146 @@ public function storeUser(Request $request)
     // Dynamically get the "Student" user type
     $studentUserType = \App\Models\UserType::where('name', 'Student')->first();
     $studentUserTypeId = $studentUserType ? $studentUserType->id : null;
-    
-    $isStudent = $request->user_type_id == $studentUserTypeId;
-    
-    // Validation rules (conditional for students)
+
+    $isStudent = ($studentUserTypeId && (int)$request->user_type_id === (int)$studentUserTypeId);
+
+    // ✅ Validation rules (REMOVE user_id + REMOVE status from request)
     $rules = [
-        'user_id' => 'required|string|unique:users,user_id',
-        'bisu_email' => 'required|email|unique:users,bisu_email',
-        'firstname' => 'required|string|max:255',
-        'lastname' => 'required|string|max:255',
-        'middlename' => 'nullable|string|max:255',
-        'contact_no' => 'required|string|max:255',
-        'student_id' => $isStudent ? 'required|string|max:255' : 'nullable|string|max:255',  // Required for students (for password)
-        'user_type_id' => 'required|exists:user_types,id',
-        'college_id' => $isStudent ? 'required|exists:colleges,id' : 'nullable|exists:colleges,id',
+        'bisu_email'    => 'required|email|unique:users,bisu_email',
+        'firstname'     => 'required|string|max:255',
+        'lastname'      => 'required|string|max:255',
+        'middlename'    => 'nullable|string|max:255',
+        'suffix'        => 'nullable|string|max:50',
+        'contact_no'    => 'nullable|string|max:255',
+
+        'student_id'    => $isStudent ? 'required|string|max:255' : 'nullable|string|max:255',
+        'user_type_id'  => 'required|exists:user_types,id',
+
+        'college_id'    => $isStudent ? 'required|exists:colleges,id' : 'nullable|exists:colleges,id',
         'year_level_id' => $isStudent ? 'required|exists:year_levels,id' : 'nullable|exists:year_levels,id',
-        'course_id' => $isStudent ? 'required|exists:courses,id' : 'nullable|exists:courses,id',
-        'password' => $isStudent ? 'nullable|string|min:8' : 'required|string|min:8',  // Ignored for students
+        'course_id'     => $isStudent ? 'required|exists:courses,id' : 'nullable|exists:courses,id',
+
+        'password'      => $isStudent ? 'nullable|string|min:8' : 'required|string|min:8',
     ];
-    
+
     $request->validate($rules);
-    
-    // NEW: Ensure student_id is provided for students (prevents empty password)
-    if ($isStudent && empty($request->student_id)) {
-        return redirect()->back()->with('error', 'Student ID is required for students.');
+
+    // ✅ Extra safety: course must belong to selected college (students)
+    if ($isStudent && $request->filled('college_id') && $request->filled('course_id')) {
+        $courseOk = \App\Models\Course::where('id', $request->course_id)
+            ->where('college_id', $request->college_id)
+            ->exists();
+
+        if (!$courseOk) {
+            return back()->with('error', 'Selected course does not belong to the selected college.')
+                         ->withInput();
+        }
     }
-    
+
     try {
-        // UPDATED: For students, ALWAYS use student_id as password (no fallback). For others, use manual password.
-        $password = $isStudent ? $request->student_id : $request->password;
-        
-        if (!$password) {
-            return redirect()->back()->with('error', 'Password is required. For students, ensure Student ID is provided.');
+        // ✅ Password rule:
+        // Students -> password = student_id
+        // Non-students -> password = manual password
+        $finalPassword = $isStudent ? $request->student_id : $request->password;
+
+        if (!$finalPassword) {
+            return back()->with('error', 'Password is required. For students, Student ID becomes the password.')
+                         ->withInput();
         }
 
-        // Temporary debug: Uncomment to check values (remove after testing)
-//         dd([
-//             'isStudent' => $isStudent,
-//             'request->password' => $request->password,
-//             'request->student_id' => $request->student_id,
-//             'final password' => $password,
-//         ]);
-        
-        $user = User::create([
-            'user_id' => $request->user_id,
-            'bisu_email' => $request->bisu_email,
-            'firstname' => $request->firstname,
-            'lastname' => $request->lastname,
-            'middlename' => $request->middlename,
-            'contact_no' => $request->contact_no,
-            'student_id' => $request->student_id,
-            'user_type_id' => $request->user_type_id,
-            'college_id' => $request->college_id,
+        // ✅ Generate unique user_id automatically
+        $generatedUserId = $this->generateUniqueUserId();
+
+        $user = \App\Models\User::create([
+            'user_id'       => $generatedUserId,
+            'bisu_email'    => $request->bisu_email,
+            'firstname'     => $request->firstname,
+            'lastname'      => $request->lastname,
+            'middlename'    => $request->middlename,
+            'suffix'        => $request->suffix,
+            'contact_no'    => $request->contact_no,
+            'student_id'    => $request->student_id,
+            'user_type_id'  => $request->user_type_id,
+            'college_id'    => $request->college_id,
             'year_level_id' => $request->year_level_id,
-            'course_id' => $request->course_id,
-            'password' => bcrypt($password),  // Hash it (student_id for students)
-            'status' => 'active',
+            'course_id'     => $request->course_id,
+            'password'      => bcrypt($finalPassword),
+            'status'        => 'active', // ✅ default active always
         ]);
-        
-        // Assign role
+
+        // ✅ Assign role
         if ($user->userType) {
             $roleName = $user->userType->name;
             if (\Spatie\Permission\Models\Role::where('name', $roleName)->exists()) {
                 $user->assignRole($roleName);
-            } else {
-                Log::warning("Role '$roleName' does not exist for user {$user->id}");
             }
         }
-        
-        return redirect()->route('admin.dashboard', ['page' => 'manage-users'])->with('success', 'User added successfully!');
+
+        return redirect()->route('admin.dashboard', ['page' => 'manage-users'])
+            ->with('success', 'User added successfully!');
+
     } catch (\Exception $e) {
         Log::error('User creation failed: ' . $e->getMessage());
-        return redirect()->back()->with('error', 'Failed to add user: ' . $e->getMessage());
+        return back()->with('error', 'Failed to add user: ' . $e->getMessage())
+                     ->withInput();
     }
+}
+
+/**
+ * ✅ Generate a unique user_id string
+ * Example format: U-XXXXXXXXXXXX (12 chars)
+ */
+private function generateUniqueUserId(): string
+{
+    do {
+        $id = 'U-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(12));
+    } while (\App\Models\User::where('user_id', $id)->exists());
+
+    return $id;
 }
 
 public function updateUser(Request $request, $id)
 {
     $request->validate([
-        'user_id' => 'required|string|unique:users,user_id,' . $id,
-        'bisu_email' => 'required|email|unique:users,bisu_email,' . $id,
-        'firstname' => 'required|string|max:255',
-        'lastname' => 'required|string|max:255',
-        'contact_no' => 'required|string|max:255',
-        'student_id' => 'nullable|string|max:255',
-        'user_type_id' => 'required|exists:user_types,id',
-        'college_id' => 'nullable|exists:colleges,id',
+        'bisu_email'    => 'required|email|unique:users,bisu_email,' . $id,
+        'firstname'     => 'required|string|max:255',
+        'lastname'      => 'required|string|max:255',
+        'middlename'    => 'nullable|string|max:255',
+        'suffix'        => 'nullable|string|max:50',
+        'contact_no'    => 'nullable|string|max:255',
+        'student_id'    => 'nullable|string|max:255',
+        'status'        => 'required|string|max:50',
+
+        'user_type_id'  => 'required|exists:user_types,id',
+        'college_id'    => 'nullable|exists:colleges,id',
         'year_level_id' => 'nullable|exists:year_levels,id',
-        'course_id' => 'nullable|exists:courses,id',
+        'course_id'     => 'nullable|exists:courses,id',
+
+        // password is optional
+        'password'      => 'nullable|string|min:8',
+        'reset_password_to_student_id' => 'nullable|boolean',
     ]);
-    
+
     $user = User::findOrFail($id);
-    $user->update($request->except('password'));  // Don't update password unless provided
-    return redirect()->route('admin.dashboard', ['page' => 'manage-users'])->with('success', 'User updated successfully!');
+
+    // Update normal fields
+    $user->fill($request->except(['password', 'reset_password_to_student_id']));
+
+    // ✅ Password update rules
+    if ($request->boolean('reset_password_to_student_id')) {
+        // reset to student_id (only if student_id exists)
+        if (!empty($request->student_id)) {
+            $user->password = Hash::make($request->student_id);
+        }
+    } elseif ($request->filled('password')) {
+        // set to new password
+        $user->password = Hash::make($request->password);
+    }
+
+    $user->save();
+
+    return redirect()->route('admin.dashboard', ['page' => 'manage-users'])
+        ->with('success', 'User updated successfully!');
 }
 
 public function destroyUser($id)

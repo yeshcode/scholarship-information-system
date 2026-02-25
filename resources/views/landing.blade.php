@@ -226,11 +226,10 @@
             <div class="col-lg-7">
                 <div class="pill mb-3">Real-time • Scholarships • Announcements</div>
                 <h1 class="hero-title display-5 mb-3">
-                    A modern scholarship portal for students and coordinators.
+                    Innovating Scholarship Services for the BISU Community.
                 </h1>
                 <p class="muted fs-5 mb-4">
-                    View available scholarships, read requirements, stay updated with announcements,
-                    and understand how to apply — all in one place.
+                    Scholarships serve as a vital support system that enables BISU students to pursue their education with confidence and financial assistance.
                 </p>
 
                 <div class="d-flex flex-column flex-sm-row gap-2">
@@ -244,7 +243,7 @@
                 </div>
 
                 <div class="mt-4 muted">
-                    Tip: Use the menu above to jump to sections quickly.
+                    Access system sections conveniently using the navigation menu above.
                 </div>
             </div>
 
@@ -271,9 +270,9 @@
                     </div>
 
                     <div class="mt-3 p-3 rounded-3" style="background:#f8fafc; border:1px solid rgba(229,231,235,.9);">
-                        <div class="fw-bold mb-1">Why this matters</div>
+                        <div class="fw-bold mb-1">Management Overview</div>
                         <div class="muted">
-                            Students don’t need to ask repeatedly — the system centralizes updates and scholarship details.
+                            The system supports efficient scholarship administration by managing scholar data, monitoring updates, and maintaining accurate records in a centralized platform.
                         </div>
                     </div>
                 </div>

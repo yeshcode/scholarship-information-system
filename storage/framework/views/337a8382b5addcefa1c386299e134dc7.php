@@ -225,6 +225,30 @@
     .dropdown-bg{
         max-width: calc(100vw - 16px);
     }
+    /* ✅ Small clear (X) button beside semester name */
+    .sem-clear-btn{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        width:20px;
+        height:20px;
+        margin-left:.45rem;
+        border-radius:999px;
+        border: 1px solid rgba(11,46,94,.22);
+        background:#fff;
+        color: var(--text);
+        font-weight:900;
+        font-size: 14px;
+        line-height: 1;
+        cursor:pointer;
+        transition:.12s ease;
+    }
+    .sem-clear-btn:hover{
+        background: rgba(11,46,94,.08);
+    }
+    .sem-clear-btn:active{
+        transform: scale(.96);
+    }
 </style>
 
 <?php
@@ -716,8 +740,8 @@
 
         <div class="d-flex align-items-start justify-content-between mb-3">
             <div>
-                <div class="fw-bold" style="color:var(--text)">Filter by Semester</div>
-                <div class="small" style="color:var(--muted)">Type to search. Click a result to apply.</div>
+                <div class="fw-bold" style="color:var(--text)">Change Semester</div>
+                
             </div>
             <button type="button" id="semesterModalCloseBtn" class="user-btn" style="height:38px;padding:0 .55rem;">✕</button>
         </div>
@@ -727,13 +751,8 @@
             placeholder="Type semester..."
             autocomplete="off">
 
-        <div class="mt-3 d-flex align-items-center justify-content-between">
-            <form method="POST" action="<?php echo e(route('semester.filter.clear')); ?>">
-                <?php echo csrf_field(); ?>
-                <button type="submit" class="btn btn-sm btn-outline-secondary">
-                    All Semesters
-                </button>
-            </form>
+        
+        <div class="mt-2">
             <div id="semesterSearchStatus" class="small" style="color:var(--muted)"></div>
         </div>
 
@@ -743,6 +762,10 @@
         <form id="semesterSetForm" method="POST" action="<?php echo e(route('semester.filter.set')); ?>" class="d-none">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="semester_id" id="semesterSelectedId">
+        </form>
+
+        <form id="semesterClearForm" method="POST" action="<?php echo e(route('semester.filter.clear')); ?>" class="d-none">
+            <?php echo csrf_field(); ?>
         </form>
     </div>
 </div>
