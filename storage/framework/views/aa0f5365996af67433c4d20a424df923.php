@@ -67,14 +67,16 @@
                 style="background-color:#003366; border-color:#003366;"
                 data-bs-toggle="modal"
                 data-bs-target="#addUserModal">
-            + Add User
+            Add User
         </button>
 
-        <a href="<?php echo e(route('admin.users.bulk-upload-form')); ?>"
-           class="btn btn-primary btn-sm"
-           style="background-color:#003366; border-color:#003366;">
-            📤 Bulk Upload Students
-        </a>
+        <button type="button"
+            class="btn btn-primary btn-sm"
+            style="background-color:#003366; border-color:#003366;"
+            data-bs-toggle="modal"
+            data-bs-target="#bulkUploadModal">
+        Bulk Upload Students
+    </button>
     </div>
 
     
@@ -120,7 +122,7 @@
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
                 <?php if(!request('college_id')): ?>
-                    <small class="text-muted">Choose a college to load courses.</small>
+                    
                 <?php endif; ?>
             </div>
 
@@ -142,7 +144,7 @@
         
         <div class="row mt-2">
             <div class="col-12">
-                <label class="form-label mb-1">Search</label>
+                
                 <div class="input-group input-group-sm">
                     <span class="input-group-text">🔎</span>
                     <input type="text"
@@ -154,7 +156,7 @@
                         Search
                     </button>
                 </div>
-                <small class="text-muted">Tip: Press Enter to search quickly.</small>
+                
             </div>
         </div>
 
@@ -353,7 +355,7 @@
                                         <input type="text" name="student_id" id="m_student_id"
                                                class="form-control form-control-sm"
                                                value="<?php echo e(old('student_id')); ?>">
-                                        <div class="form-text">For students, this will be their default password.</div>
+                                        
                                     </div>
 
                                     <div class="col-12" id="m_password_wrapper">
@@ -366,7 +368,7 @@
                                             </button>
                                         </div>
 
-                                        <div class="form-text">If Student, password will be Student ID.</div>
+                                        
                                     </div>
                                 </div>
                             </div>
@@ -394,7 +396,7 @@
                                     <div class="col-12 col-md-4">
                                         <label class="form-label">Course</label>
                                         <select name="course_id" id="m_course_id" class="form-select form-select-sm" disabled>
-                                            <option value="">Select college first</option>
+                                            <option value="">Select</option>
                                         </select>
                                     </div>
 
@@ -411,11 +413,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-12">
-                                        <div class="alert alert-light border small mb-0">
-                                            Tip: For non-student users, Academic Info can be left empty.
-                                        </div>
-                                    </div>
+                                    
                                 </div>
                             </div>
                         </div>
@@ -511,7 +509,7 @@
                                     <div class="col-12">
                                         <label class="form-label">Student ID</label>
                                         <input type="text" name="student_id" id="e_student_id" class="form-control form-control-sm">
-                                        <div class="form-text">Tip: You can reset password to Student ID below.</div>
+                                        
                                     </div>
 
                                     <div class="col-12">
@@ -628,6 +626,83 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger btn-sm">Yes, Delete</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade modal-wide" id="bulkUploadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md">
+        <div class="modal-content" style="border-radius:16px; overflow:hidden;">
+
+            <form method="POST"
+                  action="<?php echo e(route('admin.users.bulk-upload.preview')); ?>"
+                  enctype="multipart/form-data">
+                <?php echo csrf_field(); ?>
+
+                <div class="modal-header" style="background:#f4f7fb;">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" style="color:#003366;">Bulk Upload Students</h5>
+                        
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    
+                    <?php if(session('error')): ?>
+                        <div class="alert alert-danger py-2 small mb-3">
+                            <?php echo e(session('error')); ?>
+
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if($errors->any()): ?>
+                        <div class="alert alert-danger small mb-3">
+                            <div class="fw-bold mb-1">Please fix the following:</div>
+                            <ul class="mb-0 ps-3">
+                                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <li><?php echo e($error); ?></li>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="border rounded-4 p-3" style="background:#f6faff; border-color:rgba(0,51,102,.18) !important;">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <span class="badge rounded-pill text-bg-primary">Step 1</span>
+                            <div>
+                                <div class="fw-semibold" style="color:#003366;">Choose your file</div>
+                                <div class="small text-muted">Accepted: .xlsx, .xls, .csv</div>
+                            </div>
+                        </div>
+
+                        <input type="file"
+                               name="file"
+                               id="bulk_file"
+                               class="form-control"
+                               accept=".xlsx,.xls,.csv"
+                               required>
+
+                        
+                    </div>
+
+                </div>
+
+                <div class="modal-footer" style="background:#fff;">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="btn btn-primary btn-sm"
+                            style="background:#003366;border-color:#003366;">
+                        Upload
+                    </button>
                 </div>
 
             </form>

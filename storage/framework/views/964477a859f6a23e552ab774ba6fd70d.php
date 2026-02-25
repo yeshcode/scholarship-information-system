@@ -119,7 +119,7 @@
             <!-- Username -->
             <div class="mb-3">
                 <label for="email" class="form-label">
-                    USERNAME <span class="required-star">*</span>
+                    EMAIL <span class="required-star">*</span>
                 </label>
                 <input id="email"
                        type="email"

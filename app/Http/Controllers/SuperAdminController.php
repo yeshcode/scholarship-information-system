@@ -864,7 +864,7 @@ public function previewBulkUploadUsers(Request $request)
 {
     // ✅ allow Excel + CSV
     $request->validate([
-        'file' => 'required|file|mimes:xlsx,csv',
+        'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
     ]);
 
     $studentType = \App\Models\UserType::where('name', 'Student')->first();
@@ -913,7 +913,7 @@ public function previewBulkUploadUsers(Request $request)
 
     if (!empty($missing)) {
         return back()->with('error', 'Missing required column(s): ' . implode(', ', $missing)
-            . '. Tip: allowed header formats include "First Name", "first_name", "FIRSTNAME", etc.');
+            . '. Format Name Column: FIRSTNAME');
     }
 
 
@@ -979,10 +979,10 @@ public function previewBulkUploadUsers(Request $request)
 
         // Check duplicates in DB
         if ($student_id && \App\Models\User::where('student_id', $student_id)->exists()) {
-            $issues[] = 'student_id already exists';
+            $issues[] = 'Student ID exists.';
         }
         if ($email && \App\Models\User::where('bisu_email', $email)->exists()) {
-            $issues[] = 'bisu_email already exists';
+            $issues[] = 'BISU email address exists.';
         }
 
         if (!empty($issues)) $issuesCount++;

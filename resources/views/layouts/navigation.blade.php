@@ -736,8 +736,8 @@
 
         <div class="d-flex align-items-start justify-content-between mb-3">
             <div>
-                <div class="fw-bold" style="color:var(--text)">Filter by Semester</div>
-                <div class="small" style="color:var(--muted)">Type to search. Click a result to apply.</div>
+                <div class="fw-bold" style="color:var(--text)">Change Semester</div>
+                {{-- <div class="small" style="color:var(--muted)">Type to search. Click a result to apply.</div> --}}
             </div>
             <button type="button" id="semesterModalCloseBtn" class="user-btn" style="height:38px;padding:0 .55rem;">✕</button>
         </div>
