@@ -9,7 +9,7 @@
             <div class="col-12 col-lg-8">
                 <div class="text-white-50 small mb-1">Student Dashboard</div>
                 <h2 class="text-white fw-bold mb-1">
-                    Welcome, {{ auth()->user()->firstname }} 👋
+                    Welcome, {{ auth()->user()->firstname }}
                 </h2>
                 <div class="text-white-50">
                     Stay updated with announcements, scholarships, notifications, and your questions.

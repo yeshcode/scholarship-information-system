@@ -74,13 +74,13 @@
 
         <div class="d-flex gap-2">
             <button type="button" class="btn btn-bisu-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addEnrollmentModal">
-                + Add Enrollment
+                Add Enrollment
             </button>
             <a href="{{ route('admin.enrollments.enroll-students') }}" class="btn btn-bisu-secondary shadow-sm">
-                📚 Enroll Students
+                Enroll Students
             </a>
             <a href="{{ route('admin.enrollments.records') }}" class="btn btn-outline-secondary shadow-sm">
-                📂 Records
+                Records
             </a>
         </div>
     </div>
@@ -409,7 +409,7 @@
                     <option value="new">New Student</option>
                     <option value="transferee">Transferee</option>
                     </select>
-                    <div class="small text-muted">“New” hides those enrolled in current semester.</div>
+                    {{-- <div class="small text-muted">“New” hides those enrolled in current semester.</div> --}}
                 </div>
 
                 <div class="col-md-4">
@@ -444,9 +444,9 @@
                 <div class="col-md-7">
                 <label class="form-label fw-semibold text-secondary">Search Student ID</label>
                 <input type="text" id="new_student_id" class="form-control form-control-sm" placeholder="e.g., 2023-00001">
-                <div class="small text-muted mt-1">
+                {{-- <div class="small text-muted mt-1">
                     This will only find students NOT yet enrolled in the selected target semester.
-                </div>
+                </div> --}}
                 </div>
 
                 <div class="col-md-5 d-flex align-items-end">

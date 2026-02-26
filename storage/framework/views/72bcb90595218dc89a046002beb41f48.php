@@ -114,10 +114,8 @@
     
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
         <div>
-            <h1 class="page-title-blue">Bulk Semester Update (Students)</h1>
-            <div class="subtext">
-                Select students, choose a target semester, then confirm the update.
-            </div>
+            <h1 class="page-title-blue">Bulk Enroll Update</h1>
+            
         </div>
 
         <div class="text-md-end">
@@ -208,9 +206,7 @@
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
 
-                <div class="small text-muted">
-                    Required for promotion.
-                </div>
+                
             </div>
             <?php endif; ?>
 
@@ -237,9 +233,7 @@
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
 
-                <div class="small text-muted">
-                    Students already enrolled in this semester will be automatically excluded.
-                </div>
+                
             </div>
 
 
@@ -255,11 +249,7 @@
             </div>
         </div>
 
-        <div class="mt-3 small text-muted">
-            <strong>Auto rules:</strong>
-            If target is <em>1st Semester of a new academic year</em>, year level will be promoted.
-            4th year students will be marked as <strong>Graduated</strong>.
-        </div>
+        
 
     </div>
 </form>
@@ -351,9 +341,7 @@
 
         
         <div class="sticky-actions mt-3 d-flex gap-2 justify-content-between align-items-center flex-wrap">
-            <div class="small text-muted">
-                Step 2: Select students from the table, then proceed to confirm.
-            </div>
+            
             <div class="d-flex gap-2">
                 <button type="button" id="proceed-btn" class="btn btn-bisu btn-sm">
                     Proceed to Confirm Selected
@@ -389,7 +377,7 @@
         <div class="modal-body">
             <div class="alert alert-info py-2 small mb-3">
                 This will update selected students to the <strong>target semester</strong>.
-                Year level promotion and graduation will be handled automatically based on your rules.
+                Please check carefully before confirming.
             </div>
 
             
@@ -426,9 +414,7 @@
                 <div id="selected-hidden-inputs"></div>
             </form>
 
-            <div class="small text-muted mt-2">
-                If “Confirm Update” is disabled, make sure you selected a Target Semester in the filter.
-            </div>
+            
         </div>
 
         <div class="modal-footer">

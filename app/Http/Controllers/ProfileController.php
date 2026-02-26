@@ -16,28 +16,35 @@ class ProfileController extends Controller
 
         $isAdminLike = $user->hasRole('Super Admin') || $user->hasRole('Scholarship Coordinator');
 
-        // ✅ Student detection
+        // ✅ Student detection (keep your logic)
         $isStudent = ($user->userType->name ?? null) === 'Student';
 
-        // ✅ Always define defaults so compact() won't error
+        // ✅ Defaults
         $activeEnrollment = null;
         $semesterLabel = 'N/A';
         $scholarRecord = null;
+        $enrollmentHistory = collect(); // ✅ NEW
 
-        // ✅ Only students load academic + scholar data
         if ($isStudent && !$isAdminLike) {
 
+            // ✅ Current/Latest ENROLLED enrollment
             $activeEnrollment = $user->enrollments()
-                ->with(['semester', 'course.college']) // course->college
-                ->where('status', Enrollment::STATUS_ENROLLED) // enrolled enum
+                ->with(['semester', 'course.college'])
+                ->where('status', Enrollment::STATUS_ENROLLED)
                 ->latest('id')
                 ->first();
 
             $semesterLabel = ($activeEnrollment && $activeEnrollment->semester)
-                ? $activeEnrollment->semester->term . ' ' . $activeEnrollment->semester->academic_year
+                ? ($activeEnrollment->semester->term . ' ' . $activeEnrollment->semester->academic_year)
                 : 'N/A';
 
-            // ✅ Scholar info (blank if none)
+            // ✅ Enrollment history (latest first)
+            $enrollmentHistory = $user->enrollments()
+                ->with(['semester', 'course.college'])
+                ->orderByDesc('id')
+                ->get();
+
+            // ✅ Scholar record (blank if none)
             if (method_exists($user, 'isScholar') && $user->isScholar()) {
                 $scholarRecord = $user->scholarsAsStudent()
                     ->with('scholarship')
@@ -52,12 +59,13 @@ class ProfileController extends Controller
             'isStudent',
             'activeEnrollment',
             'semesterLabel',
-            'scholarRecord'
+            'scholarRecord',
+            'enrollmentHistory'
         ));
     }
 
-    // ✅ Contact Number only (since it's in users table)
-   public function updateContact(Request $request)
+    // ✅ Student-only contact edit
+    public function updateContact(Request $request)
     {
         $user = Auth::user();
         $isAdminLike = $user->hasRole('Super Admin') || $user->hasRole('Scholarship Coordinator');
@@ -93,7 +101,6 @@ class ProfileController extends Controller
             return back()->withErrors(['current_password' => 'The current password is incorrect.']);
         }
 
-        // ✅ Always hash (works even without model cast)
         $user->update([
             'password' => Hash::make($request->password),
         ]);
