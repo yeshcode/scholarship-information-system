@@ -268,11 +268,19 @@
 
         // Reports
         Route::get('/reports', [CoordinatorController::class, 'reports'])->name('coordinator.reports');
-        });
+       // Reports (Coordinator)
+        Route::get('/reports/list-of-scholars', [CoordinatorController::class, 'reportListOfScholars'])->name('coordinator.reports.list-of-scholars');
+        Route::get('/reports/summary-of-scholarships', [CoordinatorController::class, 'reportSummaryOfScholarships'])->name('coordinator.reports.summary-of-scholarships');
 
         //notification
         Route::get('/stipends/claim-notifications', [CoordinatorController::class, 'claimNotifications'])->name('coordinator.stipends.claim-notifications');
         Route::post('/notifications/{id}/read', [CoordinatorController::class, 'markNotificationRead'])->name('coordinator.notifications.read');
+
+        });
+
+        // //notification
+        // Route::get('/stipends/claim-notifications', [CoordinatorController::class, 'claimNotifications'])->name('coordinator.stipends.claim-notifications');
+        // Route::post('/notifications/{id}/read', [CoordinatorController::class, 'markNotificationRead'])->name('coordinator.notifications.read');
 
 
         // Student routes (only Students can access)
