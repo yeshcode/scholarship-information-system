@@ -85,7 +85,7 @@
                                 <th>Amount</th>
                                 <th>Status</th>
                                 <th>Released At</th>
-                                <th>Claimed At</th>
+                                <th>Confirmed At</th>
                                 <th class="text-end">Action</th>
                             </tr>
                         </thead>
@@ -145,7 +145,7 @@
                                             class="d-inline">
                                             @csrf
                                             <button type="submit" class="btn btn-bisu btn-sm">
-                                                I Claimed My Cheque
+                                                Confirmed
                                             </button>
                                         </form>
                                     @elseif($isClaimed)
