@@ -300,7 +300,19 @@
                             </button>
 
                             <a href="<?php echo e(route('coordinator.stipends.edit', $stipend->id)); ?>" class="text-primary me-2">Edit</a>
-                            <a href="<?php echo e(route('coordinator.stipends.confirm-delete', $stipend->id)); ?>" class="text-danger">Delete</a>
+                            <button
+                                  type="button"
+                                  class="btn btn-link p-0 text-danger openDeleteModal"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#deleteStipendModal"
+                                  data-stipend-id="<?php echo e($stipend->id); ?>"
+                                  data-student-name="<?php echo e(($stipend->scholar->user->firstname ?? 'N/A').' '.($stipend->scholar->user->lastname ?? '')); ?>"
+                                  data-release-title="<?php echo e($stipend->stipendRelease->title ?? 'N/A'); ?>"
+                                  data-amount="<?php echo e(number_format((float)$stipend->amount_received, 2)); ?>"
+                                  data-status="<?php echo e(strtoupper(str_replace('_',' ', $stipend->status))); ?>"
+                              >
+                                  Delete
+                              </button>
                         </td>
                     </tr>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
@@ -609,6 +621,54 @@
         </div>
 
       </form>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="deleteStipendModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+
+      <div class="modal-header" style="background: var(--danger); color:#fff;">
+        <div>
+          <div class="fw-bold">Confirm Delete</div>
+          <small class="opacity-75">This action cannot be undone.</small>
+        </div>
+        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="POST" id="deleteStipendForm">
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('DELETE'); ?>
+
+        <div class="modal-body">
+          <div class="alert alert-danger small mb-3">
+            Are you sure you want to delete this stipend record?
+          </div>
+
+          <div class="card border-0" style="background:#fff5f5;">
+            <div class="card-body py-3">
+              <div class="fw-bold" id="dm_student_name">—</div>
+              <div class="small text-muted">
+                Release Title: <span class="fw-semibold" id="dm_release_title">—</span>
+              </div>
+              <div class="small text-muted">
+                Amount: <span class="fw-semibold" id="dm_amount">—</span> •
+                Status: <span class="fw-semibold" id="dm_status">—</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-danger btn-sm" type="submit">Yes, Delete</button>
+        </div>
+
+      </form>
+
     </div>
   </div>
 </div>
@@ -1170,6 +1230,39 @@ document.addEventListener('click', function(e){
   // We generate base URL from Laravel route with placeholder style:
   const base = <?php echo json_encode(route('coordinator.stipends.release', ['stipend' => '___ID___']), 512) ?>;
   releaseForm.action = base.replace('___ID___', stipendId);
+});
+
+
+
+// =========================
+// DELETE MODAL (per stipend row)
+// =========================
+const deleteModalEl = document.getElementById('deleteStipendModal');
+const deleteForm    = document.getElementById('deleteStipendForm');
+
+const dmStudentName = document.getElementById('dm_student_name');
+const dmReleaseTitle= document.getElementById('dm_release_title');
+const dmAmount      = document.getElementById('dm_amount');
+const dmStatus      = document.getElementById('dm_status');
+
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.openDeleteModal');
+  if(!btn) return;
+
+  const stipendId   = btn.getAttribute('data-stipend-id');
+  const studentName = btn.getAttribute('data-student-name');
+  const releaseTitle= btn.getAttribute('data-release-title');
+  const amount      = btn.getAttribute('data-amount');
+  const status      = btn.getAttribute('data-status');
+
+  dmStudentName.textContent  = studentName || '—';
+  dmReleaseTitle.textContent = releaseTitle || '—';
+  dmAmount.textContent       = amount ? `₱ ${amount}` : '—';
+  dmStatus.textContent       = status || '—';
+
+  // ✅ Dynamic form action -> same destroy route
+  const base = <?php echo json_encode(route('coordinator.stipends.destroy', ['id' => '___ID___']), 512) ?>;
+  deleteForm.action = base.replace('___ID___', stipendId);
 });
 </script>
 
