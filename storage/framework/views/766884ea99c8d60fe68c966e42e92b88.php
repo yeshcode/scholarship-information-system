@@ -123,8 +123,15 @@
 
     </div>
 
+     
+    <?php echo $__env->yieldPushContent('modals'); ?>
+
     <!-- ✅ Bootstrap JS (local) -->
     <script src="<?php echo e(asset('bootstrap/js/bootstrap.bundle.min.js')); ?>"></script>
+
+        
+    <?php echo $__env->yieldPushContent('scripts'); ?>
+
 </body>
 </html>
 <?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/layouts/app.blade.php ENDPATH**/ ?>

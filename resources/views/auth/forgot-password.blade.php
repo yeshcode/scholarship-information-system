@@ -59,17 +59,19 @@
             @csrf
 
             <div class="mb-3">
-                <label for="email" class="form-label">
+                <label for="bisu_email" class="form-label">
                     Email / Username <span class="required-star">*</span>
                 </label>
-                <input id="email"
-                       class="form-control"
-                       type="email"
-                       name="email"
-                       value="{{ old('email') }}"
-                       required
-                       autofocus>
-                <x-input-error :messages="$errors->get('email')" class="mt-2" />
+
+                <input id="bisu_email"
+                    class="form-control"
+                    type="email"
+                    name="bisu_email"
+                    value="{{ old('bisu_email') }}"
+                    required
+                    autofocus>
+
+                <x-input-error :messages="$errors->get('bisu_email')" class="mt-2" />
             </div>
 
             <div class="d-grid mb-2">

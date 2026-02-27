@@ -490,11 +490,11 @@
                                 <div id="coord-stipends-menu" class="d-none position-absolute start-0 top-100 dropdown-bg" style="min-width: 18rem;">
                                     <a href="<?php echo e(route('coordinator.manage-stipend-releases')); ?>"
                                        class="dropdown-square <?php echo e((request()->routeIs('coordinator.manage-stipend-releases') || request()->routeIs('coordinator.stipend-releases.*')) ? 'dropdown-square-active' : ''); ?>">
-                                        Stipend Release Schedule
+                                        Stipend Details
                                     </a>
                                     <a href="<?php echo e(route('coordinator.manage-stipends')); ?>"
                                        class="dropdown-square <?php echo e((request()->routeIs('coordinator.manage-stipends') || request()->routeIs('coordinator.stipends.*')) ? 'dropdown-square-active' : ''); ?>">
-                                        Stipend Details
+                                        Stipend Release Schedule
                                     </a>
                                 </div>
                             </div>

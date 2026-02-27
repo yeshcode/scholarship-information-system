@@ -2075,10 +2075,130 @@ public function destroyScholarship($id)
 
 
 //reports
+
 public function reports()
 {
-    return view('coordinator.reports');
+    $activeSemesterId = $this->activeSemesterId();
+    $semesters = Semester::orderByDesc('start_date')->get();
+    $activeSemester = $activeSemesterId ? Semester::find($activeSemesterId) : null;
+
+    return view('coordinator.reports', compact('semesters', 'activeSemesterId', 'activeSemester'));
 }
+
+public function reportSummaryOfScholarships(Request $request)
+{
+    $activeSemesterId = $this->activeSemesterId();
+    $semesterId = (int) ($request->get('semester_id') ?: $activeSemesterId);
+
+    $semester = $semesterId ? Semester::findOrFail($semesterId) : null;
+
+    // If no semester selected/found, fallback safe values
+    $academicYear = $semester?->academic_year;
+
+    // ✅ Find both semesters of the SAME academic year (Docx wants 1st + 2nd)
+    // We pick by start_date ordering to avoid fragile "term text" matching.
+    $semestersOfAY = $academicYear
+        ? Semester::where('academic_year', $academicYear)
+            ->orderBy('start_date')
+            ->get()
+        : collect();
+
+    $sem1 = $semestersOfAY->get(0); // usually 1st semester
+    $sem2 = $semestersOfAY->get(1); // usually 2nd semester
+
+    $sem1Id = $sem1?->id;
+    $sem2Id = $sem2?->id;
+
+    // ✅ Build rows: one scholarship per row with 2 counts (sem1 + sem2)
+    // RULE (same as your reports):
+    // - include non-batch scholars ALWAYS (scholars.batch_id is NULL)
+    // - include batch scholars ONLY if scholarship_batches.semester_id = target semester
+    $rows = Scholarship::query()
+        ->leftJoin('scholars', 'scholars.scholarship_id', '=', 'scholarships.id')
+        ->leftJoin('scholarship_batches', 'scholarship_batches.id', '=', 'scholars.batch_id')
+        ->select([
+            'scholarships.id',
+            'scholarships.scholarship_name',
+            'scholarships.benefactor',
+
+            // ✅ 1st sem count
+            DB::raw("
+                COUNT(scholars.id) FILTER (
+                    WHERE " . ($sem1Id ? "(scholars.batch_id IS NULL OR scholarship_batches.semester_id = {$sem1Id})" : "false") . "
+                ) as total_sem1
+            "),
+
+            // ✅ 2nd sem count
+            DB::raw("
+                COUNT(scholars.id) FILTER (
+                    WHERE " . ($sem2Id ? "(scholars.batch_id IS NULL OR scholarship_batches.semester_id = {$sem2Id})" : "false") . "
+                ) as total_sem2
+            "),
+        ])
+        ->groupBy('scholarships.id', 'scholarships.scholarship_name', 'scholarships.benefactor')
+        ->orderBy('scholarships.scholarship_name')
+        ->get();
+
+    $grandSem1 = (int) $rows->sum('total_sem1');
+    $grandSem2 = (int) $rows->sum('total_sem2');
+
+    return view('coordinator.reports.summary-of-scholarships', compact(
+        'semesterId',
+        'semester',
+        'academicYear',
+        'sem1',
+        'sem2',
+        'rows',
+        'grandSem1',
+        'grandSem2'
+    ));
+}
+
+public function reportListOfScholars(Request $request)
+{
+    $activeSemesterId = $this->activeSemesterId();
+    $semesterId = (int) ($request->get('semester_id') ?: $activeSemesterId);
+
+    $semester = $semesterId ? Semester::findOrFail($semesterId) : null;
+
+    $scholars = Scholar::query()
+        ->with([
+            'scholarship',
+            'scholarshipBatch.semester',
+
+            // ✅ Load user + enrollment for THIS semester only (for Year Level)
+            'user' => function ($q) use ($semesterId) {
+                $q->with([
+                    'course',
+                    'enrollments' => function ($e) use ($semesterId) {
+                        $e->where('semester_id', $semesterId)
+                          ->with('yearLevel'); // enrollment.yearLevel
+                    }
+                ]);
+            },
+        ])
+        ->when($semesterId, function ($q) use ($semesterId) {
+            $q->where(function ($w) use ($semesterId) {
+                $w->whereNull('scholars.batch_id')
+                  ->orWhereHas('scholarshipBatch', function ($b) use ($semesterId) {
+                      $b->where('semester_id', $semesterId);
+                  });
+            });
+        })
+        ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+        ->select('scholars.*')
+        ->orderBy('users.lastname')
+        ->orderBy('users.firstname')
+        ->get();
+
+    return view('coordinator.reports.list-of-scholars', compact(
+        'semester',
+        'semesterId',
+        'scholars'
+    ));
+}
+
+
 
 //BULK UPLOAD SCHOLARS
 

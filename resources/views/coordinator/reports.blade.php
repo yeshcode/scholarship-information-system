@@ -1,84 +1,92 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 py-6">
+<div class="container py-4">
 
-    {{-- Page Header --}}
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-slate-800">Reports</h1>
-        <p class="text-slate-600 text-sm">
-            View and generate summary reports related to scholarships, scholars, and stipends.
-        </p>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+        <div>
+            <h3 class="mb-1" style="color:#0b2e5e;">Reports</h3>
+            <div class="text-muted">Generate official scholarship reports per semester (A4 format).</div>
+        </div>
+
+        <form class="d-flex align-items-center gap-2" method="GET" action="{{ route('coordinator.reports') }}">
+            <span class="text-muted small">Semester:</span>
+            <select class="form-select form-select-sm" style="min-width:260px;" disabled>
+                <option>
+                    {{ $activeSemester ? ($activeSemester->term.' • '.$activeSemester->academic_year) : 'No active semester set' }}
+                </option>
+            </select>
+        </form>
     </div>
 
-    {{-- Report Cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="row g-3">
+        {{-- Summary of Scholarships --}}
+        <div class="col-12 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <h5 class="mb-1">Summary of Scholarships</h5>
+                            <div class="text-muted small">
+                                Official semester summary of scholarships and total scholars.
+                            </div>
+                        </div>
+                        <span class="badge bg-light text-dark border">A4</span>
+                    </div>
 
-        {{-- Scholars Report --}}
-        <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
-            <h2 class="font-semibold text-slate-800 mb-2">
-                Scholars Report
-            </h2>
-            <p class="text-sm text-slate-600 mb-4">
-                Overview of total scholars, active scholars, and scholarship distribution.
-            </p>
+                    <div class="mt-3 d-flex flex-wrap gap-2">
+                        <a class="btn btn-primary btn-sm"
+                           style="background:#0b2e5e;border-color:#0b2e5e;"
+                           href="{{ route('coordinator.reports.summary-of-scholarships', ['semester_id' => $activeSemesterId]) }}">
+                            View Report
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                            Print Tip
+                        </button>
+                    </div>
 
-            <button
-                class="px-4 py-2 rounded-md bg-[#003366] text-white text-sm font-semibold hover:bg-[#002244] transition">
-                View Report
-            </button>
+                    <div class="mt-3 small text-muted">
+                        Uses the current semester filter ({{ $activeSemester?->term ?? 'N/A' }}).
+                    </div>
+                </div>
+            </div>
         </div>
 
-        {{-- Stipends Report --}}
-        <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
-            <h2 class="font-semibold text-slate-800 mb-2">
-                Stipends Report
-            </h2>
-            <p class="text-sm text-slate-600 mb-4">
-                Summary of stipend releases, amounts, and release schedules.
-            </p>
+        {{-- List of Scholars and Grantees --}}
+        <div class="col-12 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <h5 class="mb-1">List of Scholars and Grantees</h5>
+                            <div class="text-muted small">
+                                Official list of all scholars for the selected semester.
+                            </div>
+                        </div>
+                        <span class="badge bg-light text-dark border">A4</span>
+                    </div>
 
-            <button
-                class="px-4 py-2 rounded-md bg-[#003366] text-white text-sm font-semibold hover:bg-[#002244] transition">
-                View Report
-            </button>
+                    <div class="mt-3 d-flex flex-wrap gap-2">
+                        <a class="btn btn-primary btn-sm"
+                           style="background:#0b2e5e;border-color:#0b2e5e;"
+                           href="{{ route('coordinator.reports.list-of-scholars', ['semester_id' => $activeSemesterId]) }}">
+                            View Report
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                            Print Tip
+                        </button>
+                    </div>
+
+                    <div class="mt-3 small text-muted">
+                        Sorted alphabetically by last name.
+                    </div>
+                </div>
+            </div>
         </div>
-
-        {{-- Scholarships Report --}}
-        <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
-            <h2 class="font-semibold text-slate-800 mb-2">
-                Scholarships Report
-            </h2>
-            <p class="text-sm text-slate-600 mb-4">
-                List of available scholarships and their current status.
-            </p>
-
-            <button
-                class="px-4 py-2 rounded-md bg-[#003366] text-white text-sm font-semibold hover:bg-[#002244] transition">
-                View Report
-            </button>
-        </div>
-
-        {{-- Student Queries Report --}}
-        <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
-            <h2 class="font-semibold text-slate-800 mb-2">
-                Student Queries Report
-            </h2>
-            <p class="text-sm text-slate-600 mb-4">
-                Summary of student inquiries, grouped questions, and response status.
-            </p>
-
-            <button
-                class="px-4 py-2 rounded-md bg-[#003366] text-white text-sm font-semibold hover:bg-[#002244] transition">
-                View Report
-            </button>
-        </div>
-
     </div>
 
-    {{-- Footer Note --}}
-    <div class="mt-8 text-sm text-slate-500">
-        Reports are generated for monitoring, documentation, and decision-making purposes.
+    <div class="mt-4 text-muted small">
+        Note: Data is generated automatically based on scholarships and scholars stored in the system.
     </div>
 
 </div>
