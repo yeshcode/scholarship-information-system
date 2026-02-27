@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 
 <style>
     :root{
@@ -78,31 +78,33 @@
     .filters-divider{ border-top:1px dashed #e5e7eb; margin-top:.75rem; padding-top:.75rem; }
 </style>
 
-@if ($errors->any())
+<?php if($errors->any()): ?>
     <div class="alert alert-danger alert-dismissible fade show">
         <strong>Action failed:</strong>
         <ul class="mb-0">
-            @foreach ($errors->all() as $e)
-                <li>{{ $e }}</li>
-            @endforeach
+            <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $e): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <li><?php echo e($e); ?></li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </ul>
         <button class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-@endif
+<?php endif; ?>
 
-@if(session('success'))
+<?php if(session('success')): ?>
 <div class="alert alert-success alert-dismissible fade show">
-    {{ session('success') }}
-    <button class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
+    <?php echo e(session('success')); ?>
 
-@if(session('error'))
-<div class="alert alert-danger alert-dismissible fade show">
-    {{ session('error') }}
     <button class="btn-close" data-bs-dismiss="alert"></button>
 </div>
-@endif
+<?php endif; ?>
+
+<?php if(session('error')): ?>
+<div class="alert alert-danger alert-dismissible fade show">
+    <?php echo e(session('error')); ?>
+
+    <button class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<?php endif; ?>
 
 <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
     <div>
@@ -111,23 +113,23 @@
             Filter Scholarship → Batch → Release. Bulk-assign stipend schedules to eligible scholars.
         </div>
 
-        @if(!empty($currentSemester))
+        <?php if(!empty($currentSemester)): ?>
             <div class="mt-1">
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
                     Current Semester:
-                    <strong>{{ $currentSemester->term ?? $currentSemester->semester_name }} {{ $currentSemester->academic_year }}</strong>
+                    <strong><?php echo e($currentSemester->term ?? $currentSemester->semester_name); ?> <?php echo e($currentSemester->academic_year); ?></strong>
                 </span>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 
     <div class="d-flex gap-2">
       <a class="btn btn-outline-primary btn-sm"
-        href="{{ route('coordinator.stipends.claim-notifications') }}">
+        href="<?php echo e(route('coordinator.stipends.claim-notifications')); ?>">
           Notifications
-          @if(!empty($claimUnreadCount) && $claimUnreadCount > 0)
-              <span class="badge bg-danger ms-1">{{ $claimUnreadCount }}</span>
-          @endif
+          <?php if(!empty($claimUnreadCount) && $claimUnreadCount > 0): ?>
+              <span class="badge bg-danger ms-1"><?php echo e($claimUnreadCount); ?></span>
+          <?php endif; ?>
       </a>
       
         <button class="btn btn-bisu btn-sm" id="openBulkBtn" data-bs-toggle="modal" data-bs-target="#bulkSelectModal">
@@ -136,7 +138,7 @@
     </div>
 </div>
 
-{{-- FILTERS --}}
+
 <div class="card card-bisu shadow-sm mb-3">
     <div class="card-header d-flex align-items-center justify-content-between">
         <div class="fw-bold text-secondary">Filters</div>
@@ -144,18 +146,19 @@
     </div>
 
     <div class="card-body">
-        <form id="filterForm" method="GET" action="{{ route('coordinator.manage-stipends') }}">
-            {{-- Row 1: dropdowns TOP --}}
+        <form id="filterForm" method="GET" action="<?php echo e(route('coordinator.manage-stipends')); ?>">
+            
             <div class="row g-3">
                 <div class="col-12 col-md-4">
                     <label class="filter-label">Scholarship</label>
                     <select name="scholarship_id" id="scholarship_id" class="form-select form-select-sm">
                         <option value="">All scholarships</option>
-                        @foreach($scholarships as $s)
-                            <option value="{{ $s->id }}" {{ (string)request('scholarship_id')===(string)$s->id?'selected':'' }}>
-                                {{ $s->scholarship_name }}
+                        <?php $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($s->id); ?>" <?php echo e((string)request('scholarship_id')===(string)$s->id?'selected':''); ?>>
+                                <?php echo e($s->scholarship_name); ?>
+
                             </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
 
@@ -163,48 +166,49 @@
                     <label class="filter-label">Batch</label>
                     <select name="batch_id" id="batch_id" class="form-select form-select-sm">
                         <option value="">All batches</option>
-                        @foreach($batches as $b)
-                            <option value="{{ $b->id }}" {{ (string)request('batch_id')===(string)$b->id?'selected':'' }}>
-                                Batch {{ $b->batch_number }}
-                                ({{ $b->semester->term ?? '' }} {{ $b->semester->academic_year ?? '' }})
+                        <?php $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($b->id); ?>" <?php echo e((string)request('batch_id')===(string)$b->id?'selected':''); ?>>
+                                Batch <?php echo e($b->batch_number); ?>
+
+                                (<?php echo e($b->semester->term ?? ''); ?> <?php echo e($b->semester->academic_year ?? ''); ?>)
                             </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
-                    {{-- <div class="form-text">Batches list depends on active semester and scholarship filter.</div> --}}
+                    
                 </div>
 
                 <div class="col-12 col-md-4">
                     <label class="filter-label">Stipend Status</label>
                     <select name="stipend_status" id="stipend_status" class="form-select form-select-sm">
                         <option value="">All</option>
-                        <option value="for_release" {{ request('stipend_status')==='for_release'?'selected':'' }}>For Release</option>
-                        <option value="released"    {{ request('stipend_status')==='released'?'selected':'' }}>Released</option>
-                        <option value="returned"    {{ request('stipend_status')==='returned'?'selected':'' }}>Returned</option>
-                        <option value="waiting"     {{ request('stipend_status')==='waiting'?'selected':'' }}>Waiting</option>
+                        <option value="for_release" <?php echo e(request('stipend_status')==='for_release'?'selected':''); ?>>For Release</option>
+                        <option value="released"    <?php echo e(request('stipend_status')==='released'?'selected':''); ?>>Released</option>
+                        <option value="returned"    <?php echo e(request('stipend_status')==='returned'?'selected':''); ?>>Returned</option>
+                        <option value="waiting"     <?php echo e(request('stipend_status')==='waiting'?'selected':''); ?>>Waiting</option>
 
                     </select>
 
                 </div>
             </div>
 
-            {{-- Row 2: search BELOW --}}
+            
             <div class="row g-3 filters-divider">
                 <div class="col-12 col-md-6">
                     <label class="filter-label">Search scholar</label>
                     <input type="text" name="q" id="q" class="form-control form-control-sm"
-                        value="{{ request('q') }}" placeholder="Lastname / Firstname / Student ID">
+                        value="<?php echo e(request('q')); ?>" placeholder="Lastname / Firstname / Student ID">
                 </div>
 
                 <div class="col-12 col-md-6 d-flex align-items-end gap-2">
                     <button class="btn btn-bisu btn-sm" type="submit">Apply</button>
-                    <a class="btn btn-outline-secondary btn-sm" href="{{ route('coordinator.manage-stipends') }}">Reset</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="<?php echo e(route('coordinator.manage-stipends')); ?>">Reset</a>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-{{-- TABLE --}}
+
 <div class="card card-bisu shadow-sm">
     <div class="card-header d-flex align-items-center justify-content-between">
         <div class="fw-bold text-secondary">Stipend Records</div>
@@ -229,91 +233,94 @@
             </thead>
 
             <tbody>
-                @forelse($stipends as $stipend)
-                    @php
+                <?php $__empty_1 = true; $__currentLoopData = $stipends; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $stipend): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <?php
                         $rel = $stipend->stipendRelease;
                         $relStatusLabel = strtoupper(str_replace('_',' ', $rel->status ?? ''));
-                    @endphp
+                    ?>
                     <tr>
-                        <td>{{ $stipend->scholar->user->firstname ?? 'N/A' }} {{ $stipend->scholar->user->lastname ?? '' }}</td>
-                        <td>{{ $stipend->scholar->scholarship->scholarship_name ?? 'N/A' }}</td>
-                        <td>Batch {{ $stipend->scholar->scholarshipBatch->batch_number ?? 'N/A' }}</td>
-                        <td>{{ $rel->title ?? 'N/A' }}</td>
+                        <td><?php echo e($stipend->scholar->user->firstname ?? 'N/A'); ?> <?php echo e($stipend->scholar->user->lastname ?? ''); ?></td>
+                        <td><?php echo e($stipend->scholar->scholarship->scholarship_name ?? 'N/A'); ?></td>
+                        <td>Batch <?php echo e($stipend->scholar->scholarshipBatch->batch_number ?? 'N/A'); ?></td>
+                        <td><?php echo e($rel->title ?? 'N/A'); ?></td>
                         <td>
-                            @php
+                            <?php
                                 $isForRelease = strtolower($rel->status ?? '') === 'for_release';
-                            @endphp
+                            ?>
 
-                            <span class="badge {{ $isForRelease ? 'badge-release-green' : 'badge-release-default' }}">
-                                {{ $relStatusLabel ?: 'N/A' }}
+                            <span class="badge <?php echo e($isForRelease ? 'badge-release-green' : 'badge-release-default'); ?>">
+                                <?php echo e($relStatusLabel ?: 'N/A'); ?>
+
                             </span>
                         </td>
 
 
                         <td>
-                            @if($stipend->release_at)
-                                {{ \Carbon\Carbon::parse($stipend->release_at)->format('M d, Y h:i A') }}
-                            @else
+                            <?php if($stipend->release_at): ?>
+                                <?php echo e(\Carbon\Carbon::parse($stipend->release_at)->format('M d, Y h:i A')); ?>
+
+                            <?php else: ?>
                                 —
-                            @endif
+                            <?php endif; ?>
                         </td>
 
                         <td>
-                            @if($stipend->received_at)
-                                {{ \Carbon\Carbon::parse($stipend->received_at)->format('M d, Y h:i A') }}
-                            @else
+                            <?php if($stipend->received_at): ?>
+                                <?php echo e(\Carbon\Carbon::parse($stipend->received_at)->format('M d, Y h:i A')); ?>
+
+                            <?php else: ?>
                                 —
-                            @endif
+                            <?php endif; ?>
                         </td>
 
-                        <td>{{ number_format((float)$stipend->amount_received, 2) }}</td>
-                        <td>{{ strtoupper(str_replace('_',' ', $stipend->status)) }}</td>
+                        <td><?php echo e(number_format((float)$stipend->amount_received, 2)); ?></td>
+                        <td><?php echo e(strtoupper(str_replace('_',' ', $stipend->status))); ?></td>
 
                         <td class="text-end">
-                            @php $canRelease = $stipend->status === 'for_release'; @endphp
+                            <?php $canRelease = $stipend->status === 'for_release'; ?>
 
                             <button
                                 type="button"
                                 class="btn btn-sm btn-success me-2 openReleaseModal"
                                 data-bs-toggle="modal"
                                 data-bs-target="#releaseStipendModal"
-                                {{ $canRelease ? '' : 'disabled' }}
+                                <?php echo e($canRelease ? '' : 'disabled'); ?>
 
-                                data-stipend-id="{{ $stipend->id }}"
-                                data-student-name="{{ ($stipend->scholar->user->firstname ?? 'N/A').' '.($stipend->scholar->user->lastname ?? '') }}"
-                                data-student-id="{{ $stipend->scholar->user->student_id ?? 'N/A' }}"
-                                data-scholarship="{{ $stipend->scholar->scholarship->scholarship_name ?? 'N/A' }}"
-                                data-batch="{{ $stipend->scholar->scholarshipBatch->batch_number ?? 'N/A' }}"
-                                data-release-title="{{ $stipend->stipendRelease->title ?? 'N/A' }}"
-                                data-amount="{{ number_format((float)$stipend->amount_received, 2) }}"
-                                data-default-date="{{ $stipend->release_at ? \Carbon\Carbon::parse($stipend->release_at)->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i') }}"
+
+                                data-stipend-id="<?php echo e($stipend->id); ?>"
+                                data-student-name="<?php echo e(($stipend->scholar->user->firstname ?? 'N/A').' '.($stipend->scholar->user->lastname ?? '')); ?>"
+                                data-student-id="<?php echo e($stipend->scholar->user->student_id ?? 'N/A'); ?>"
+                                data-scholarship="<?php echo e($stipend->scholar->scholarship->scholarship_name ?? 'N/A'); ?>"
+                                data-batch="<?php echo e($stipend->scholar->scholarshipBatch->batch_number ?? 'N/A'); ?>"
+                                data-release-title="<?php echo e($stipend->stipendRelease->title ?? 'N/A'); ?>"
+                                data-amount="<?php echo e(number_format((float)$stipend->amount_received, 2)); ?>"
+                                data-default-date="<?php echo e($stipend->release_at ? \Carbon\Carbon::parse($stipend->release_at)->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i')); ?>"
                             >
                                 Release
                             </button>
 
-                            <a href="{{ route('coordinator.stipends.edit', $stipend->id) }}" class="text-primary me-2">Edit</a>
-                            <a href="{{ route('coordinator.stipends.confirm-delete', $stipend->id) }}" class="text-danger">Delete</a>
+                            <a href="<?php echo e(route('coordinator.stipends.edit', $stipend->id)); ?>" class="text-primary me-2">Edit</a>
+                            <a href="<?php echo e(route('coordinator.stipends.confirm-delete', $stipend->id)); ?>" class="text-danger">Delete</a>
                         </td>
                     </tr>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="10" class="text-center text-muted py-4">No stipend records found.</td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
 
     <div class="card-body">
-        {{ $stipends->links() }}
+        <?php echo e($stipends->links()); ?>
+
     </div>
 </div>
 
-{{-- =========================
-     BULK ASSIGN MODALS
-     ========================= --}}
 
-{{-- MODAL 1 --}}
+
+
 <div class="modal fade" id="bulkSelectModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
@@ -335,15 +342,15 @@
                 Scholarship <span class="req">*</span>
             </label>
 
-            {{-- ✅ TES/TDP ONLY --}}
+            
             <select id="m_scholarship_id" class="form-select form-select-sm">
               <option value="">Select scholarship…</option>
-              @foreach($scholarships as $s)
-                @php $nm = strtoupper($s->scholarship_name ?? ''); @endphp
-                @if(str_contains($nm, 'TES') || str_contains($nm, 'TDP'))
-                  <option value="{{ $s->id }}">{{ $s->scholarship_name }}</option>
-                @endif
-              @endforeach
+              <?php $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php $nm = strtoupper($s->scholarship_name ?? ''); ?>
+                <?php if(str_contains($nm, 'TES') || str_contains($nm, 'TDP')): ?>
+                  <option value="<?php echo e($s->id); ?>"><?php echo e($s->scholarship_name); ?></option>
+                <?php endif; ?>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
 
             <div class="form-text text-danger">Required.</div>
@@ -355,11 +362,12 @@
             </label>
             <select id="m_batch_id" class="form-select form-select-sm" disabled>
               <option value="">Select scholarship first…</option>
-              @foreach($batches as $b)
-                <option value="{{ $b->id }}" data-sch="{{ $b->scholarship_id }}">
-                    Batch {{ $b->batch_number }}
+              <?php $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($b->id); ?>" data-sch="<?php echo e($b->scholarship_id); ?>">
+                    Batch <?php echo e($b->batch_number); ?>
+
                 </option>
-              @endforeach
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
             <div class="form-text text-danger">Required.</div>
           </div>
@@ -406,37 +414,38 @@
             </thead>
 
             <tbody>
-              @foreach($eligibleScholars as $row)
+              <?php $__currentLoopData = $eligibleScholars; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr class="row-disabled"
-                    data-sch="{{ $row->scholarship_id }}"
-                    data-batch="{{ $row->batch_id }}"
-                    data-scholar-id="{{ $row->id }}"
-                    data-name="{{ strtolower(($row->user->lastname ?? '').' '.($row->user->firstname ?? '')) }}"
-                    data-studentid="{{ strtolower($row->user->student_id ?? '') }}"
+                    data-sch="<?php echo e($row->scholarship_id); ?>"
+                    data-batch="<?php echo e($row->batch_id); ?>"
+                    data-scholar-id="<?php echo e($row->id); ?>"
+                    data-name="<?php echo e(strtolower(($row->user->lastname ?? '').' '.($row->user->firstname ?? ''))); ?>"
+                    data-studentid="<?php echo e(strtolower($row->user->student_id ?? '')); ?>"
                     data-selectable="0">
 
                   <td class="text-center"><span class="text-muted small">—</span></td>
 
-                  <td>{{ $row->user->student_id ?? '' }}</td>
-                  <td>{{ $row->user->lastname ?? '' }}</td>
-                  <td>{{ $row->user->firstname ?? '' }}</td>
+                  <td><?php echo e($row->user->student_id ?? ''); ?></td>
+                  <td><?php echo e($row->user->lastname ?? ''); ?></td>
+                  <td><?php echo e($row->user->firstname ?? ''); ?></td>
 
                   <td>
                     <span class="badge statusBadge bg-secondary-subtle text-secondary"
-                          data-active-label="{{ $row->enrollment_status_label }}">
-                      {{ $row->enrollment_status_label }}
+                          data-active-label="<?php echo e($row->enrollment_status_label); ?>">
+                      <?php echo e($row->enrollment_status_label); ?>
+
                     </span>
                   </td>
 
-                  <td>{{ $row->scholarship->scholarship_name ?? '' }}</td>
-                  <td>Batch {{ $row->scholarshipBatch->batch_number ?? '' }}</td>
+                  <td><?php echo e($row->scholarship->scholarship_name ?? ''); ?></td>
+                  <td>Batch <?php echo e($row->scholarshipBatch->batch_number ?? ''); ?></td>
 
                   <td class="small text-muted">
-                    <span class="noteText">{{ $row->note }}</span>
+                    <span class="noteText"><?php echo e($row->note); ?></span>
                   </td>
 
                 </tr>
-              @endforeach
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </tbody>
           </table>
         </div>
@@ -459,7 +468,7 @@
   </div>
 </div>
 
-{{-- MODAL 2 --}}
+
 <div class="modal fade" id="bulkScheduleModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -472,10 +481,10 @@
         <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
 
-      <form method="POST" action="{{ route('coordinator.stipends.bulk-assign-v2') }}" id="bulkScheduleForm">
-        @csrf
+      <form method="POST" action="<?php echo e(route('coordinator.stipends.bulk-assign-v2')); ?>" id="bulkScheduleForm">
+        <?php echo csrf_field(); ?>
 
-        {{-- hidden --}}
+        
         <input type="hidden" name="scholarship_id" id="s2_scholarship_id">
         <input type="hidden" name="batch_id" id="s2_batch_id">
         <input type="hidden" name="stipend_release_id" id="s2_release_id">
@@ -489,7 +498,7 @@
               </div>
             </div>
 
-            {{-- ✅ NOT DROPDOWN: Read-only info --}}
+            
             <div class="col-12">
               <div class="small">
                 <span class="text-danger fw-bold">Working release schedule:</span>
@@ -504,7 +513,7 @@
                   name="release_at"
                   id="s2_release_at"
                   class="form-control form-control-sm"
-                  value="{{ old('release_at') }}"
+                  value="<?php echo e(old('release_at')); ?>"
                   required>
               <div class="form-text text-danger">Required.</div>
             </div>
@@ -525,7 +534,7 @@
           <div id="selectedInputs"></div>
         </div>
 
-        {{-- ✅ footer always visible --}}
+        
         <div class="sticky-actions d-flex justify-content-end gap-2">
           <button class="btn btn-outline-secondary btn-sm" id="backToStep1" type="button">Back</button>
           <button class="btn btn-bisu btn-sm" type="submit">Submit & Notify Scholars</button>
@@ -536,7 +545,7 @@
   </div>
 </div>
 
-{{-- RELEASE MODAL --}}
+
 <div class="modal fade" id="releaseStipendModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -550,7 +559,7 @@
       </div>
 
       <form method="POST" id="releaseStipendForm">
-        @csrf
+        <?php echo csrf_field(); ?>
 
         <div class="modal-body">
           <div class="alert alert-warning small mb-3">
@@ -658,8 +667,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const preview    = document.getElementById('selectedPreviewList');
 
   // endpoints
-  const urlReleasesByBatch = @json(route('coordinator.stipend-releases.by-batch'));
-  const urlPickMeta        = @json(route('coordinator.stipends.pick-meta'));
+  const urlReleasesByBatch = <?php echo json_encode(route('coordinator.stipend-releases.by-batch'), 15, 512) ?>;
+  const urlPickMeta        = <?php echo json_encode(route('coordinator.stipends.pick-meta'), 15, 512) ?>;
 
   function getRows(){ return Array.from(table.querySelectorAll('tbody tr')); }
 
@@ -1159,9 +1168,11 @@ document.addEventListener('click', function(e){
 
   // ✅ Set dynamic form action
   // We generate base URL from Laravel route with placeholder style:
-  const base = @json(route('coordinator.stipends.release', ['stipend' => '___ID___']));
+  const base = <?php echo json_encode(route('coordinator.stipends.release', ['stipend' => '___ID___']), 512) ?>;
   releaseForm.action = base.replace('___ID___', stipendId);
 });
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/manage-stipends.blade.php ENDPATH**/ ?>

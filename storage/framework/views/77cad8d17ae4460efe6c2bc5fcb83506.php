@@ -55,12 +55,12 @@
 
 <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
     <div>
-        <h2 class="page-title-bisu">Manage Stipend Release Schedules</h2>
+        <h2 class="page-title-bisu">Manage Stipend</h2>
         <div class="subtext">Create and manage release schedules for TDP/TES batches.</div>
     </div>
 
     <a href="<?php echo e(route('coordinator.stipend-releases.create')); ?>" class="btn btn-bisu btn-sm">
-        + Add Release Schedule
+        Add Stipend
     </a>
 </div>
 
