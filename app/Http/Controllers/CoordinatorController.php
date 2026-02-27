@@ -28,6 +28,9 @@ use Carbon\Carbon;
 use App\Models\StipendReleaseForm;
 use App\Models\StipendReleaseFormColumn;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\IOFactory;
 
 
 
@@ -41,6 +44,7 @@ class CoordinatorController extends Controller
         $activeSemesterId = $this->activeSemesterId(); // from UsesActiveSemester
         $activeSemester = $activeSemesterId ? Semester::find($activeSemesterId) : null;
 
+        $activeAcademicYear = $activeSemester?->academic_year;
         /**
          * FILTER RULE:
          * - If active semester is selected:
@@ -49,15 +53,17 @@ class CoordinatorController extends Controller
          * - If no active semester:
          *   ✅ Include all scholars
          */
-        $scholarScope = Scholar::query()
-            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
-                $q->where(function ($w) use ($activeSemesterId) {
-                    $w->whereNull('scholars.batch_id')
-                    ->orWhereHas('scholarshipBatch', function ($b) use ($activeSemesterId) {
-                        $b->where('semester_id', $activeSemesterId);
+        // ✅ AY-based filter
+            $scholarScope = Scholar::query()
+                ->activeRoster()
+                ->when($activeAcademicYear, function ($q) use ($activeAcademicYear) {
+                    $q->where(function ($w) use ($activeAcademicYear) {
+                        $w->whereNull('scholars.batch_id')
+                        ->orWhereHas('scholarshipBatch.semester', function ($sem) use ($activeAcademicYear) {
+                            $sem->where('academic_year', $activeAcademicYear);
+                        });
                     });
                 });
-            });
 
         // ✅ COUNTS (Filtered)
         $totalScholars = (clone $scholarScope)->count();
@@ -82,10 +88,11 @@ class CoordinatorController extends Controller
         $scholarsByScholarship = Scholarship::query()
             ->leftJoin('scholars', 'scholars.scholarship_id', '=', 'scholarships.id')
             ->leftJoin('scholarship_batches', 'scholarship_batches.id', '=', 'scholars.batch_id')
-            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
-                $q->where(function ($w) use ($activeSemesterId) {
+            ->leftJoin('semesters as batch_sem', 'batch_sem.id', '=', 'scholarship_batches.semester_id')
+            ->when($activeAcademicYear, function ($q) use ($activeAcademicYear) {
+                $q->where(function ($w) use ($activeAcademicYear) {
                     $w->whereNull('scholars.batch_id')
-                    ->orWhere('scholarship_batches.semester_id', $activeSemesterId);
+                    ->orWhere('batch_sem.academic_year', $activeAcademicYear);
                 });
             })
             ->select(
@@ -102,13 +109,15 @@ class CoordinatorController extends Controller
 
         // ✅ LINE (Filtered): scholars per course (top 10 for readability)
         $scholarsByCourse = Scholar::query()
+            ->activeRoster()
             ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
             ->leftJoin('courses', 'courses.id', '=', 'users.course_id')
             ->leftJoin('scholarship_batches', 'scholarship_batches.id', '=', 'scholars.batch_id')
-            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
-                $q->where(function ($w) use ($activeSemesterId) {
+            ->leftJoin('semesters as batch_sem', 'batch_sem.id', '=', 'scholarship_batches.semester_id')
+            ->when($activeAcademicYear, function ($q) use ($activeAcademicYear) {
+                $q->where(function ($w) use ($activeAcademicYear) {
                     $w->whereNull('scholars.batch_id')
-                    ->orWhere('scholarship_batches.semester_id', $activeSemesterId);
+                    ->orWhere('batch_sem.academic_year', $activeAcademicYear);
                 });
             })
             ->select(
@@ -125,13 +134,15 @@ class CoordinatorController extends Controller
 
         // ✅ NEW LINE (Filtered): scholars per college (top 10)
         $scholarsByCollege = Scholar::query()
+            ->activeRoster()
             ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
             ->leftJoin('colleges', 'colleges.id', '=', 'users.college_id')
             ->leftJoin('scholarship_batches', 'scholarship_batches.id', '=', 'scholars.batch_id')
-            ->when($activeSemesterId, function ($q) use ($activeSemesterId) {
-                $q->where(function ($w) use ($activeSemesterId) {
+            ->leftJoin('semesters as batch_sem', 'batch_sem.id', '=', 'scholarship_batches.semester_id')
+            ->when($activeAcademicYear, function ($q) use ($activeAcademicYear) {
+                $q->where(function ($w) use ($activeAcademicYear) {
                     $w->whereNull('scholars.batch_id')
-                    ->orWhere('scholarship_batches.semester_id', $activeSemesterId);
+                    ->orWhere('batch_sem.academic_year', $activeAcademicYear);
                 });
             })
             ->select(
@@ -193,6 +204,7 @@ class CoordinatorController extends Controller
     $semesters = Semester::orderByDesc('start_date')->get();
     $selectedSemester = $semesterId ? Semester::find($semesterId) : null;
 
+
     // Scholarship buttons/dropdown
     $scholarships = Scholarship::query()
         ->withCount('scholars')
@@ -226,6 +238,7 @@ class CoordinatorController extends Controller
      * Join enrollment (for selected semester) to show enrolled_status + semester label
      */
     $scholarsQuery = Scholar::query()
+        ->activeRoster()
         ->with([
             'user.course',
             'user.yearLevel',
@@ -248,6 +261,7 @@ class CoordinatorController extends Controller
             'semesters.academic_year as enrolled_academic_year',
         ]);
 
+        
     // Filter by scholarship
     if (!empty($scholarshipId)) {
         $scholarsQuery->where('scholars.scholarship_id', $scholarshipId);
@@ -2161,30 +2175,36 @@ public function reportListOfScholars(Request $request)
 
     $semester = $semesterId ? Semester::findOrFail($semesterId) : null;
 
+    // ✅ define academicYear BEFORE the query chain
+    $academicYear = $semester?->academic_year;
+
     $scholars = Scholar::query()
         ->with([
             'scholarship',
             'scholarshipBatch.semester',
-
-            // ✅ Load user + enrollment for THIS semester only (for Year Level)
             'user' => function ($q) use ($semesterId) {
                 $q->with([
                     'course',
+                    'yearLevel', // fallback
                     'enrollments' => function ($e) use ($semesterId) {
                         $e->where('semester_id', $semesterId)
-                          ->with('yearLevel'); // enrollment.yearLevel
+                          ->with('yearLevel');
                     }
                 ]);
             },
         ])
-        ->when($semesterId, function ($q) use ($semesterId) {
-            $q->where(function ($w) use ($semesterId) {
+
+        // ✅ AY-based filter (same logic as dashboard)
+        ->when($academicYear, function ($q) use ($academicYear) {
+            $q->where(function ($w) use ($academicYear) {
                 $w->whereNull('scholars.batch_id')
-                  ->orWhereHas('scholarshipBatch', function ($b) use ($semesterId) {
-                      $b->where('semester_id', $semesterId);
+                  ->orWhereHas('scholarshipBatch.semester', function ($sem) use ($academicYear) {
+                      $sem->where('academic_year', $academicYear);
                   });
             });
         })
+
+        // ✅ keep alphabetical
         ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
         ->select('scholars.*')
         ->orderBy('users.lastname')
@@ -2196,6 +2216,332 @@ public function reportListOfScholars(Request $request)
         'semesterId',
         'scholars'
     ));
+}
+
+public function reportSummaryOfScholarshipsPdf(Request $request)
+{
+    $activeSemesterId = $this->activeSemesterId();
+    $semesterId = (int) ($request->get('semester_id') ?: $activeSemesterId);
+
+    $semester = $semesterId ? Semester::findOrFail($semesterId) : null;
+    $academicYear = $semester?->academic_year;
+
+    $semestersOfAY = $academicYear
+        ? Semester::where('academic_year', $academicYear)->orderBy('start_date')->get()
+        : collect();
+
+    $sem1 = $semestersOfAY->get(0);
+    $sem2 = $semestersOfAY->get(1);
+
+    $sem1Id = $sem1?->id;
+    $sem2Id = $sem2?->id;
+
+    $rows = Scholarship::query()
+        ->leftJoin('scholars', 'scholars.scholarship_id', '=', 'scholarships.id')
+        ->leftJoin('scholarship_batches', 'scholarship_batches.id', '=', 'scholars.batch_id')
+        ->select([
+            'scholarships.id',
+            'scholarships.scholarship_name',
+            'scholarships.benefactor',
+
+            DB::raw("
+                COUNT(scholars.id) FILTER (
+                    WHERE " . ($sem1Id ? "(scholars.batch_id IS NULL OR scholarship_batches.semester_id = {$sem1Id})" : "false") . "
+                ) as total_sem1
+            "),
+
+            DB::raw("
+                COUNT(scholars.id) FILTER (
+                    WHERE " . ($sem2Id ? "(scholars.batch_id IS NULL OR scholarship_batches.semester_id = {$sem2Id})" : "false") . "
+                ) as total_sem2
+            "),
+        ])
+        ->groupBy('scholarships.id', 'scholarships.scholarship_name', 'scholarships.benefactor')
+        ->orderBy('scholarships.scholarship_name')
+        ->get();
+
+    $grandSem1 = (int) $rows->sum('total_sem1');
+    $grandSem2 = (int) $rows->sum('total_sem2');
+
+    $pdf = Pdf::loadView('coordinator.reports.pdf.summary-of-scholarships', compact(
+        'semesterId',
+        'semester',
+        'academicYear',
+        'sem1',
+        'sem2',
+        'rows',
+        'grandSem1',
+        'grandSem2'
+    ))->setPaper('a4', 'portrait');
+
+    $fileName = 'summary_of_scholarships_' . ($academicYear ?: 'report') . '.pdf';
+    return $pdf->download($fileName);
+}
+
+public function reportListOfScholarsPdf(Request $request)
+{
+    $activeSemesterId = $this->activeSemesterId();
+    $semesterId = (int) ($request->get('semester_id') ?: $activeSemesterId);
+
+    $semester = $semesterId ? Semester::findOrFail($semesterId) : null;
+    $academicYear = $semester?->academic_year;
+
+    $scholars = Scholar::query()
+        ->with([
+            'scholarship',
+            'scholarshipBatch.semester',
+            'user' => function ($q) use ($semesterId) {
+                $q->with([
+                    'course',
+                    'yearLevel',
+                    'enrollments' => function ($e) use ($semesterId) {
+                        $e->where('semester_id', $semesterId)->with('yearLevel');
+                    }
+                ]);
+            },
+        ])
+        ->when($academicYear, function ($q) use ($academicYear) {
+            $q->where(function ($w) use ($academicYear) {
+                $w->whereNull('scholars.batch_id')
+                  ->orWhereHas('scholarshipBatch.semester', function ($sem) use ($academicYear) {
+                      $sem->where('academic_year', $academicYear);
+                  });
+            });
+        })
+        ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+        ->select('scholars.*')
+        ->orderBy('users.lastname')
+        ->orderBy('users.firstname')
+        ->get();
+
+    $pdf = Pdf::loadView('coordinator.reports.pdf.list-of-scholars', compact(
+        'semester',
+        'semesterId',
+        'academicYear',
+        'scholars'
+    ))->setPaper('a4', 'portrait');
+
+    $fileName = 'list_of_scholars_' . ($academicYear ?: 'report') . '.pdf';
+    return $pdf->download($fileName);
+}
+
+
+public function reportSummaryOfScholarshipsDocx(Request $request)
+{
+    $activeSemesterId = $this->activeSemesterId();
+    $semesterId = (int) ($request->get('semester_id') ?: $activeSemesterId);
+
+    $semester = $semesterId ? Semester::findOrFail($semesterId) : null;
+    $academicYear = $semester?->academic_year;
+
+    $semestersOfAY = $academicYear
+        ? Semester::where('academic_year', $academicYear)->orderBy('start_date')->get()
+        : collect();
+
+    $sem1 = $semestersOfAY->get(0);
+    $sem2 = $semestersOfAY->get(1);
+
+    $sem1Id = $sem1?->id;
+    $sem2Id = $sem2?->id;
+
+    $rows = Scholarship::query()
+        ->leftJoin('scholars', 'scholars.scholarship_id', '=', 'scholarships.id')
+        ->leftJoin('scholarship_batches', 'scholarship_batches.id', '=', 'scholars.batch_id')
+        ->select([
+            'scholarships.id',
+            'scholarships.scholarship_name',
+            'scholarships.benefactor',
+            DB::raw("
+                COUNT(scholars.id) FILTER (
+                    WHERE " . ($sem1Id ? "(scholars.batch_id IS NULL OR scholarship_batches.semester_id = {$sem1Id})" : "false") . "
+                ) as total_sem1
+            "),
+            DB::raw("
+                COUNT(scholars.id) FILTER (
+                    WHERE " . ($sem2Id ? "(scholars.batch_id IS NULL OR scholarship_batches.semester_id = {$sem2Id})" : "false") . "
+                ) as total_sem2
+            "),
+        ])
+        ->groupBy('scholarships.id', 'scholarships.scholarship_name', 'scholarships.benefactor')
+        ->orderBy('scholarships.scholarship_name')
+        ->get();
+
+    $grandSem1 = (int) $rows->sum('total_sem1');
+    $grandSem2 = (int) $rows->sum('total_sem2');
+
+    // ======================
+    // DOCX BUILD
+    // ======================
+    $phpWord = new PhpWord();
+    $section = $phpWord->addSection([
+        'marginTop' => 720, 'marginBottom' => 720, 'marginLeft' => 720, 'marginRight' => 720
+    ]);
+
+    $title = "SUMMARY OF SCHOLARSHIPS";
+    $subtitle = "Candijay Campus • " . ($academicYear ?: 'N/A');
+
+    $section->addText($title, ['bold' => true, 'size' => 14], ['alignment' => 'center']);
+    $section->addText($subtitle, ['size' => 11], ['alignment' => 'center']);
+    $section->addTextBreak(1);
+
+    $sem1Label = $sem1 ? (($sem1->term ?? '1st Semester') . " AY " . ($sem1->academic_year ?? '')) : "1st Semester";
+    $sem2Label = $sem2 ? (($sem2->term ?? '2nd Semester') . " AY " . ($sem2->academic_year ?? '')) : "2nd Semester";
+
+    $tableStyle = ['borderSize' => 6, 'borderColor' => '000000', 'cellMargin' => 80];
+    $phpWord->addTableStyle('ReportTable', $tableStyle);
+    $table = $section->addTable('ReportTable');
+
+    // Header row
+    $table->addRow();
+    $table->addCell(5200)->addText('Scholarship', ['bold' => true]);
+    $table->addCell(2500)->addText($sem1Label, ['bold' => true]);
+    $table->addCell(2500)->addText($sem2Label, ['bold' => true]);
+
+    // Data rows
+    foreach ($rows as $r) {
+        $table->addRow();
+        $table->addCell(5200)->addText((string) $r->scholarship_name);
+        $table->addCell(2500)->addText((string) $r->total_sem1);
+        $table->addCell(2500)->addText((string) $r->total_sem2);
+    }
+
+    // Grand total row
+    $table->addRow();
+    $table->addCell(5200)->addText('GRAND TOTAL', ['bold' => true]);
+    $table->addCell(2500)->addText((string) $grandSem1, ['bold' => true]);
+    $table->addCell(2500)->addText((string) $grandSem2, ['bold' => true]);
+
+    // Save to temp + download
+    $fileName = 'summary_of_scholarships_' . ($academicYear ?: 'AY') . '.docx';
+    $tempPath = storage_path('app/temp/' . $fileName);
+
+    if (!is_dir(dirname($tempPath))) {
+        mkdir(dirname($tempPath), 0775, true);
+    }
+
+    $writer = IOFactory::createWriter($phpWord, 'Word2007');
+    $writer->save($tempPath);
+
+    return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
+}
+
+public function reportListOfScholarsDocx(Request $request)
+{
+    $activeSemesterId = $this->activeSemesterId();
+    $semesterId = (int) ($request->get('semester_id') ?: $activeSemesterId);
+
+    $semester = $semesterId ? Semester::findOrFail($semesterId) : null;
+    $academicYear = $semester?->academic_year;
+
+    $scholars = Scholar::query()
+        ->with(['scholarship', 'scholarshipBatch.semester', 'user.course'])
+        ->when($academicYear, function ($q) use ($academicYear) {
+            $q->where(function ($w) use ($academicYear) {
+                $w->whereNull('scholars.batch_id')
+                  ->orWhereHas('scholarshipBatch.semester', function ($sem) use ($academicYear) {
+                      $sem->where('academic_year', $academicYear);
+                  });
+            });
+        })
+        ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+        ->select('scholars.*')
+        ->orderBy('users.lastname')
+        ->orderBy('users.firstname')
+        ->get();
+
+    // ======================
+    // DOCX BUILD
+    // ======================
+    $phpWord = new PhpWord();
+    $section = $phpWord->addSection([
+        'marginTop' => 720, 'marginBottom' => 720, 'marginLeft' => 720, 'marginRight' => 720
+    ]);
+
+    $title = "LIST OF SCHOLARS AND GRANTEES";
+    $subtitle = "Candijay Campus • " . (($semester?->term ?? 'Semester') . " AY " . ($academicYear ?? 'N/A'));
+
+    $section->addText($title, ['bold' => true, 'size' => 14], ['alignment' => 'center']);
+    $section->addText($subtitle, ['size' => 11], ['alignment' => 'center']);
+    $section->addTextBreak(1);
+
+    $phpWord->addTableStyle('ScholarTable', ['borderSize' => 6, 'borderColor' => '000000', 'cellMargin' => 80]);
+    $table = $section->addTable('ScholarTable');
+
+    // Header
+    $table->addRow();
+    $table->addCell(700)->addText('#', ['bold' => true]);
+    $table->addCell(3000)->addText('Student Name', ['bold' => true]);
+    $table->addCell(2600)->addText('Course', ['bold' => true]);
+    $table->addCell(2800)->addText('Scholarship', ['bold' => true]);
+
+    $i = 1;
+    foreach ($scholars as $s) {
+        $user = $s->user;
+        $name = $user ? ($user->lastname . ', ' . $user->firstname) : 'N/A';
+        $course = $user?->course?->course_name ?? 'N/A';
+        $schName = $s->scholarship?->scholarship_name ?? 'N/A';
+
+        $table->addRow();
+        $table->addCell(700)->addText((string) $i++);
+        $table->addCell(3000)->addText($name);
+        $table->addCell(2600)->addText($course);
+        $table->addCell(2800)->addText($schName);
+    }
+
+    $fileName = 'list_of_scholars_' . (($semester?->term ?? 'Semester') . '_AY_' . ($academicYear ?? 'AY')) . '.docx';
+    $fileName = str_replace(['/', '\\'], '-', $fileName);
+
+    $tempPath = storage_path('app/temp/' . $fileName);
+    if (!is_dir(dirname($tempPath))) {
+        mkdir(dirname($tempPath), 0775, true);
+    }
+
+    $writer = IOFactory::createWriter($phpWord, 'Word2007');
+    $writer->save($tempPath);
+
+    return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
+}
+
+public function updateScholarStatus(Request $request, Scholar $scholar)
+{
+    $request->validate([
+        'status'       => 'required|in:active,inactive',
+        'date_removed' => 'nullable|date',
+    ]);
+
+    // If setting inactive, date_removed required (use today if not provided)
+    if ($request->status === 'inactive') {
+        $dateRemoved = $request->date_removed ?: now()->toDateString();
+
+        $scholar->update([
+            'status'       => 'inactive',
+            'date_removed' => $dateRemoved,
+            'updated_by'   => Auth::id(),
+        ]);
+
+        return back()->with('success', 'Scholar marked as NO LONGER a scholar.');
+    }
+
+    // If setting active again (restore)
+    $scholar->update([
+        'status'       => 'active',
+        'date_removed' => null,
+        'updated_by'   => Auth::id(),
+    ]);
+
+    return back()->with('success', 'Scholar restored as ACTIVE.');
+}
+
+public function destroyScholar(Scholar $scholar)
+{
+    // Safety: don’t allow delete if there are stipends
+    $hasStipends = Stipend::where('scholar_id', $scholar->id)->exists();
+    if ($hasStipends) {
+        return back()->with('error', 'Cannot delete this scholar because stipend records exist. Use Remove (inactive) instead.');
+    }
+
+    $scholar->delete();
+    return back()->with('success', 'Scholar record deleted permanently.');
 }
 
 

@@ -194,6 +194,7 @@
                     <th>Date Added</th>
                     <th>Course</th>
                     <th>Year Level</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
 
@@ -234,6 +235,35 @@
                         <td>{{ $scholar->date_added ?? 'N/A' }}</td>
                         <td>{{ $scholar->user->course->course_name ?? 'N/A' }}</td>
                         <td>{{ $scholar->user->yearLevel->year_level_name ?? 'N/A' }}</td>
+
+                        <td>
+                            <div class="d-flex gap-1">
+                                <!-- Update -->
+                                <button
+                                    class="btn btn-sm btn-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#updateScholarModal"
+                                    data-id="{{ $scholar->id }}"
+                                    data-name="{{ ($scholar->u_lastname ?? '') }}, {{ ($scholar->u_firstname ?? '') }}"
+                                    data-status="{{ $scholar->status ?? 'active' }}"
+                                >
+                                    Update
+                                </button>
+
+
+                                <!-- Delete (hard) -->
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteScholarModal"
+                                    data-id="{{ $scholar->id }}"
+                                    data-name="{{ ($scholar->u_lastname ?? $scholar->user->lastname ?? '') }}, {{ ($scholar->u_firstname ?? $scholar->user->firstname ?? '') }}"
+                                    >
+                                    Delete
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 @empty
                     <tr>
@@ -244,6 +274,85 @@
                 @endforelse
             </tbody>
         </table>
+
+        <!-- Update Scholar Modal -->
+        <div class="modal fade" id="updateScholarModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" id="updateScholarForm">
+                        @csrf
+                        @method('PATCH')
+
+                <div class="modal-header">
+                <h5 class="modal-title">Update Scholar Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                <div class="mb-2">
+                    <div class="fw-semibold" id="scholarNameText">Scholar</div>
+                    <small class="text-muted">Set if the student is still a scholar.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" id="scholarStatus" class="form-select form-select-sm">
+                    <option value="active">Active (Still Scholar)</option>
+                    <option value="inactive">Inactive (No Longer Scholar)</option>
+                    </select>
+                </div>
+
+                <div class="mb-2" id="dateRemovedWrap" style="display:none;">
+                    <label class="form-label">Date Removed</label>
+                    <input type="date" name="date_removed" id="dateRemoved" class="form-control form-control-sm">
+                    <small class="text-muted">Use the date when they stopped being a scholar.</small>
+                </div>
+                </div>
+
+                <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" type="button" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary btn-sm" type="submit">Save</button>
+                </div>
+            </form>
+            </div>
+        </div>
+        </div>
+
+        <!-- Delete Scholar Modal -->
+<div class="modal fade" id="deleteScholarModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="deleteScholarForm">
+        @csrf
+        @method('DELETE')
+
+        <div class="modal-header">
+          <h5 class="modal-title">Delete Scholar</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-2">
+            <div class="fw-semibold" id="deleteScholarName">Scholar</div>
+            <small class="text-muted">
+              This will permanently delete the scholar record. This cannot be undone.
+            </small>
+          </div>
+
+          <div class="alert alert-warning mb-0">
+            <strong>Note:</strong> If this scholar has stipend records, your controller will block deletion.
+            Use <strong>Update → Inactive</strong> instead.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary btn-sm" type="button" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-danger btn-sm" type="submit">Yes, Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
     </div>
 
     @if(method_exists($scholars, 'links'))
@@ -255,48 +364,117 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('filterForm');
-    const scholarship = document.getElementById('scholarship_id');
-    const batch = document.getElementById('batch_id');
-    const q = document.getElementById('q');
-    const batchHelp = document.getElementById('batchHelp');
 
-    function isTdpTesText(text){
-        const t = (text || '').toUpperCase();
-        return t.includes('TDP') || t.includes('TES');
+  // =========================
+  // Filters auto-submit
+  // =========================
+  const filterForm = document.getElementById('filterForm');
+  const scholarship = document.getElementById('scholarship_id');
+  const batch = document.getElementById('batch_id');
+  const q = document.getElementById('q');
+  const batchHelp = document.getElementById('batchHelp');
+
+  function isTdpTesText(text){
+    const t = (text || '').toUpperCase();
+    return t.includes('TDP') || t.includes('TES');
+  }
+
+  function syncBatchEnabled(){
+    if (!scholarship || !batch) return;
+
+    const selectedText = scholarship.options[scholarship.selectedIndex]?.text || '';
+    const enable = isTdpTesText(selectedText);
+
+    if (!enable) {
+      batch.value = "";
+      batch.setAttribute('disabled', 'disabled');
+      if (batchHelp) batchHelp.textContent = "Select TDP/TES scholarship to enable batch.";
+    } else {
+      batch.removeAttribute('disabled');
+      if (batchHelp) batchHelp.textContent = "";
     }
+  }
 
-    function syncBatchEnabled(){
-        const selectedText = scholarship?.options[scholarship.selectedIndex]?.text || '';
-        const enable = isTdpTesText(selectedText);
+  syncBatchEnabled();
 
-        if (!enable) {
-            batch.value = "";           // clear batch if not TDP/TES
-            batch.setAttribute('disabled', 'disabled');
-            batchHelp.textContent = "Select TDP/TES scholarship to enable batch.";
-        } else {
-            batch.removeAttribute('disabled');
-            batchHelp.textContent = "";
-        }
-    }
-
-    // init enable/disable state
+  scholarship?.addEventListener('change', () => {
     syncBatchEnabled();
+    filterForm?.submit();
+  });
 
-    // submit on dropdown change
-    scholarship?.addEventListener('change', () => {
-        syncBatchEnabled();
-        form.submit();
-    });
+  batch?.addEventListener('change', () => filterForm?.submit());
 
-    batch?.addEventListener('change', () => form.submit());
+  let t = null;
+  q?.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => filterForm?.submit(), 350);
+  });
 
-    // auto-submit on typing (debounce)
-    let t = null;
-    q?.addEventListener('input', () => {
-        clearTimeout(t);
-        t = setTimeout(() => form.submit(), 350);
-    });
+
+  // =========================
+  // Update Modal -> PATCH route
+  // =========================
+  const updateModal = document.getElementById('updateScholarModal');
+  const updateForm  = document.getElementById('updateScholarForm');
+  const nameText    = document.getElementById('scholarNameText');
+  const statusSel   = document.getElementById('scholarStatus');
+  const dateWrap    = document.getElementById('dateRemovedWrap');
+  const dateInput   = document.getElementById('dateRemoved');
+
+  const updateUrlTemplate = @json(route('coordinator.scholars.update-status', ['scholar' => '__ID__']));
+
+  function toggleDate() {
+    if (!statusSel || !dateWrap || !dateInput) return;
+
+    if (statusSel.value === 'inactive') {
+      dateWrap.style.display = '';
+      if (!dateInput.value) dateInput.value = new Date().toISOString().slice(0, 10);
+    } else {
+      dateWrap.style.display = 'none';
+      dateInput.value = '';
+    }
+  }
+
+  statusSel?.addEventListener('change', toggleDate);
+
+  updateModal?.addEventListener('show.bs.modal', function (event) {
+    const btn = event.relatedTarget;
+    const id  = btn?.getAttribute('data-id');
+    const nm  = btn?.getAttribute('data-name') || 'Scholar';
+    const st  = btn?.getAttribute('data-status') || 'active';
+
+    if (nameText) nameText.textContent = nm;
+
+    if (updateForm && id) {
+      updateForm.action = updateUrlTemplate.replace('__ID__', id);
+    }
+
+    if (statusSel) statusSel.value = st;
+    toggleDate();
+  });
+
+
+  // =========================
+  // Delete Modal -> DELETE route
+  // =========================
+  const delModal = document.getElementById('deleteScholarModal');
+  const delForm  = document.getElementById('deleteScholarForm');
+  const delName  = document.getElementById('deleteScholarName');
+
+  const deleteUrlTemplate = @json(route('coordinator.scholars.destroy', ['scholar' => '__ID__']));
+
+  delModal?.addEventListener('show.bs.modal', function (event) {
+    const btn = event.relatedTarget;
+    const id  = btn?.getAttribute('data-id');
+    const nm  = btn?.getAttribute('data-name') || 'Scholar';
+
+    if (delName) delName.textContent = nm;
+
+    if (delForm && id) {
+      delForm.action = deleteUrlTemplate.replace('__ID__', id);
+    }
+  });
+
 });
 </script>
 

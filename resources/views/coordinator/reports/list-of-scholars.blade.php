@@ -79,15 +79,22 @@
 
     <div class="report-title">LIST OF SCHOLARS AND GRANTEES</div>
 
-        <div class="text-center" style="margin-top:2px; margin-bottom:10px; line-height:1.2;">
-            <div style="font-weight:600;">Candijay Campus</div>
-            <div style="text-decoration: underline; text-underline-offset: 3px;">
-                {{ $semester ? ($semester->term . ', AY ' . $semester->academic_year) : 'Semester not set' }}
-            </div>
-        </div>
+    @php
+        // Semester label (safe)
+        $semLabel = $semester
+            ? ($semester->term . ', AY ' . $semester->academic_year)
+            : 'Semester not set';
+    @endphp
 
-        <div class="meta-line">
-            <span><strong>Total:</strong> {{ $scholars->count() }}</span>
+    <div class="text-center" style="margin-top:2px; margin-bottom:10px; line-height:1.2;">
+        <div style="font-weight:600;">Candijay Campus</div>
+        <div style="text-decoration: underline; text-underline-offset: 3px;">
+            {{ $semLabel }}
+        </div>
+    </div>
+
+    <div class="meta-line">
+        <span><strong>Total:</strong> {{ $scholars->count() }}</span>
     </div>
 
     <table class="table table-bordered table-report">
@@ -95,9 +102,7 @@
             <tr>
                 <th rowspan="2" style="width:38px;">No.</th>
                 <th rowspan="2" style="width:160px;">Scholarship Program</th>
-
                 <th colspan="3">Name</th>
-
                 <th rowspan="2" style="width:55px;">Sex</th>
                 <th rowspan="2" style="width:140px;">Course</th>
                 <th rowspan="2" style="width:85px;">Year Level</th>
@@ -108,16 +113,16 @@
                 <th style="width:45px;">MI</th>
             </tr>
         </thead>
+
         <tbody>
             @forelse($scholars as $i => $s)
                 @php
                     $u = $s->user;
 
-                    // Find enrollment for the selected semester
+                    // Find enrollment for selected semester first (if enrollments are eager loaded)
                     $en = $u?->enrollments?->firstWhere('semester_id', $semesterId)
                         ?? $u?->enrollments?->first();
 
-                    // ✅ FIX: use the correct YearLevel column name
                     $yearLevelLabel =
                         $en?->yearLevel?->year_level_name
                         ?? $u?->yearLevel?->year_level_name
@@ -133,12 +138,12 @@
                     <td class="text-center">{{ $i + 1 }}</td>
                     <td>{{ $s->scholarship->scholarship_name ?? '-' }}</td>
 
-                    <td>{{ $u->lastname ?? '-' }}</td>
-                    <td>{{ $u->firstname ?? '-' }}</td>
+                    <td>{{ $u?->lastname ?? '-' }}</td>
+                    <td>{{ $u?->firstname ?? '-' }}</td>
                     <td class="text-center">{{ $mi }}</td>
 
                     <td class="text-center">{{ $sex }}</td>
-                    <td>{{ $u->course->course_name ?? '-' }}</td>
+                    <td>{{ $u?->course?->course_name ?? '-' }}</td>
                     <td class="text-center">{{ $yearLevelLabel }}</td>
                 </tr>
             @empty
@@ -149,7 +154,6 @@
         </tbody>
     </table>
 
-    {{-- Footer like DOCX --}}
     <div class="footer-block">
         <div class="footer-row">
             <div class="footer-sign">
