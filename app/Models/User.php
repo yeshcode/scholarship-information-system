@@ -143,4 +143,9 @@ class User extends Authenticatable
      {
          return $this->scholarsAsStudent()->exists();
      }
+
+     public function getEmailForPasswordReset()
+    {
+        return $this->bisu_email;
+    }
 }

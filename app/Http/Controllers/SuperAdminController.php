@@ -1413,9 +1413,9 @@ public function storeEnrollment(Request $request)
 public function updateEnrollment(Request $request, $id)
 {
     $request->validate([
-        'status' => 'required|in:enrolled,dropped'
+        'status' => 'required|in:enrolled,dropped,graduated'
     ]);
-
+    
     $enrollment = Enrollment::findOrFail($id);
     $enrollment->status = $request->status;
     $enrollment->save();
@@ -1861,6 +1861,37 @@ public function ajaxPromotionStudent(Request $request)
             'semester_id' => $latestEnrollment->semester_id,
             'semester_label' => ($latestEnrollment->semester?->term ?? '') . ' ' . ($latestEnrollment->semester?->academic_year ?? ''),
         ] : null,
+    ]);
+}
+
+public function ajaxEnrollmentShow($id)
+{
+    $enrollment = \App\Models\Enrollment::with([
+        'user.college',
+        'user.course',
+        'user.yearLevel',
+        'semester',
+        'yearLevel',
+    ])->find($id);
+
+    if (!$enrollment) {
+        return response()->json(['found' => false, 'message' => 'Enrollment not found.']);
+    }
+
+    return response()->json([
+        'found' => true,
+        'enrollment' => [
+            'id' => $enrollment->id,
+            'status' => $enrollment->status,
+            'student' => trim(($enrollment->user->lastname ?? '') . ', ' . ($enrollment->user->firstname ?? '')),
+            'student_id' => $enrollment->user->student_id ?? 'N/A',
+            'semester' => trim(($enrollment->semester->term ?? 'N/A') . ' ' . ($enrollment->semester->academic_year ?? '')),
+            'college' => $enrollment->user->college->college_name ?? 'N/A',
+            'course' => $enrollment->user->course->course_name ?? 'N/A',
+            'year_level' => $enrollment->yearLevel->year_level_name
+                ?? $enrollment->user->yearLevel->year_level_name
+                ?? 'N/A',
+        ]
     ]);
 }
 

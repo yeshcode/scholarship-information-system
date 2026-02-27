@@ -24,6 +24,17 @@
         Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
 
+        use Illuminate\Support\Facades\Mail;
+
+Route::get('/test-mail', function () {
+    Mail::raw('Test email from SMIS', function ($message) {
+        $message->to('angelie.alcain@bisu.edu.ph')
+                ->subject('SMIS Test Mail');
+    });
+
+    return 'Test mail sent attempt. Check inbox/spam and laravel.log.';
+});
+
     // Protected routes (authenticated users only)
     Route::middleware(['auth'])->group(function () {
         // NEW: Profile routes (accessible to all logged-in users) - Added here, before role-specific groups
@@ -130,8 +141,8 @@
             // ===========================
             Route::post('/enrollments/manual-new', [SuperAdminController::class, 'storeManualNewEnrollment'])->name('admin.enrollments.manualNew');
             Route::post('/enrollments/manual-promote', [SuperAdminController::class, 'storeManualPromotion'])->name('admin.enrollments.manualPromote');
-            Route::get('/admin/ajax/new-student-lookup', [SuperAdminController::class, 'ajaxNewStudentLookup'])->name('admin.ajax.newStudentLookup');
-
+            Route::get('/ajax/new-student-lookup', [SuperAdminController::class, 'ajaxNewStudentLookup'])->name('admin.ajax.newStudentLookup');
+            Route::get('/ajax/enrollments/{id}', [SuperAdminController::class, 'ajaxEnrollmentShow'])->name('admin.ajax.enrollments.show');
 
             // Users CRUD
             Route::get('/users/bulk-upload', [SuperAdminController::class, 'showBulkUploadForm'])->name('admin.users.bulk-upload-form');

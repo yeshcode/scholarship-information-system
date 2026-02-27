@@ -120,7 +120,14 @@
 
     </div>
 
+     {{-- ✅ Put modals outside cards/wrappers --}}
+    @stack('modals')
+
     <!-- ✅ Bootstrap JS (local) -->
     <script src="{{ asset('bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+        {{-- ✅ Page scripts --}}
+    @stack('scripts')
+
 </body>
 </html>
