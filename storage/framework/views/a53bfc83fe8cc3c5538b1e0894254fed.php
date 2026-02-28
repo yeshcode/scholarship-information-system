@@ -3,134 +3,209 @@
 <?php $__env->startSection('page-content'); ?>
 <style>
     :root{
-        --brand:#2563eb;
-        --brand-600:#1d4ed8;
-        --ink:#111827;
-        --muted:#6b7280;
+        /* ✅ Stronger Blue Theme (BISU-like) */
+        --brand:#0b2e5e;        /* deep blue */
+        --brand-600:#123f85;    /* mid blue */
+        --brand-700:#0a2550;    /* darker */
+        --brand-soft:#eaf2ff;   /* soft blue */
+        --brand-line:#bcd6ff;   /* blue border */
+
+        /* Neutrals */
+        --ink:#0f172a;
+        --muted:#64748b;
         --line:#e5e7eb;
-        --bg:#f8fafc;
+        --bg:#f2f7ff;
         --card:#ffffff;
+
+        /* Status */
         --warn:#9a3412;
         --warn-bg:#fff7ed;
         --warn-line:#fed7aa;
+
+        --danger:#b91c1c;
+        --danger-bg:#fff1f2;
+        --danger-line:#fecdd3;
     }
 
-    .wrap{ max-width: 980px; margin:0 auto; padding: 10px; }
+    .wrap{
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 16px;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        color: var(--ink);
+    }
+
+    /* ✅ Blue background wash */
+    .page-shell{
+        background:
+            radial-gradient(1100px 380px at 10% 0%, rgba(11,46,94,.18) 0%, rgba(11,46,94,0) 55%),
+            linear-gradient(180deg, var(--bg), #ffffff);
+        border-radius: 22px;
+        padding: 12px;
+        border: 1px solid rgba(188,214,255,.7);
+    }
+
+    /* ✅ Blue header */
     .header{
-        background: var(--card);
-        border:1px solid var(--line);
-        border-radius:16px;
-        padding:16px;
-        display:flex; align-items:center; justify-content:space-between; gap:12px;
-        box-shadow: 0 1px 2px rgba(0,0,0,.06);
-        margin-bottom: 12px;
-    }
-    .title h2{ margin:0; font-size:24px; font-weight:900; color:var(--ink); }
-    .title p{ margin:4px 0 0; color:var(--muted); }
-
-    .btn-brand{
-        background: var(--brand);
+        background:
+            radial-gradient(900px 220px at 15% 0%, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 55%),
+            linear-gradient(135deg, var(--brand), var(--brand-600));
+        border: 1px solid rgba(255,255,255,.18);
+        border-radius: 22px;
+        padding: 18px;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:14px;
+        box-shadow: 0 .8rem 2.2rem rgba(2,6,23,.18);
+        margin-bottom: 14px;
         color:#fff;
-        border:none;
-        border-radius:12px;
-        padding:10px 14px;
-        font-weight:900;
-        cursor:pointer;
-        display:inline-flex; align-items:center; gap:8px;
     }
-    .btn-brand:hover{ background: var(--brand-600); }
+    .title h2{
+        margin:0;
+        font-size: 1.55rem;
+        font-weight: 950;
+        letter-spacing: .2px;
+        color:#fff;
+    }
+    .title p{
+        margin:6px 0 0;
+        color: rgba(255,255,255,.85);
+        font-size: .95rem;
+        line-height: 1.35;
+        max-width: 60ch;
+    }
 
+    /* ✅ Base cards (wide + blue accent) */
     .card{
-        background: var(--card);
-        border:1px solid var(--line);
-        border-radius:16px;
-        padding:16px;
-        box-shadow: 0 1px 2px rgba(0,0,0,.06);
-        margin-bottom: 12px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 18px;
+        box-shadow: 0 .55rem 1.6rem rgba(15,23,42,.06);
+        margin-bottom: 14px;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
     }
+    .card::before{
+        content:"";
+        position:absolute;
+        left:0; top:0; right:0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--brand), var(--brand-600));
+    }
+    .card:hover{ border-color: var(--brand-line); }
 
-    .row{ display:flex; align-items:center; gap:12px; }
-    .space{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    /* Layout helpers */
+    .row{ display:flex; align-items:flex-start; gap:12px; }
+    .space{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+
+    /* Avatar */
     .avatar{
-        width:44px; height:44px; border-radius:999px;
+        width:46px; height:46px; border-radius:999px;
         display:flex; align-items:center; justify-content:center;
-        background:#dbeafe; color:#1d4ed8; font-weight:900;
-        flex:0 0 auto;
+        background: var(--brand-soft);
+        border: 1px solid var(--brand-line);
+        color: var(--brand);
+        font-weight: 950;
+        flex: 0 0 auto;
     }
-    .name{ margin:0; font-weight:900; color:var(--ink); }
-    .sub{ margin:2px 0 0; font-size:12px; color:var(--muted); }
+    .name{ margin:0; font-weight: 950; font-size: .98rem; color: var(--ink); }
+    .sub{
+        margin:4px 0 0;
+        font-size: .82rem;
+        color: var(--muted);
+        display:flex;
+        flex-wrap:wrap;
+        gap:8px;
+        align-items:center;
+    }
 
+    /* Pills */
     .pill{
         display:inline-flex; align-items:center; gap:6px;
-        font-size:12px;
+        font-size: .75rem;
         padding:4px 10px;
         border-radius:999px;
         border:1px solid var(--line);
-        background:#f9fafb;
-        color:#374151;
+        background:#f8fafc;
+        color:#334155;
         white-space:nowrap;
+    }
+    .pill-blue{
+        background: var(--brand-soft);
+        border-color: var(--brand-line);
+        color: var(--brand);
+        font-weight: 900;
     }
     .pill-scheduled{
         background: var(--warn-bg);
         border-color: var(--warn-line);
         color: var(--warn);
-        font-weight:900;
+        font-weight: 900;
     }
 
-    .post-title{ font-weight:950; font-size:16px; color:var(--ink); margin-top:12px; }
-    .post-body{
-        margin-top:6px;
-        color:#374151;
-        white-space:pre-line;
-        word-break:break-word;
-        overflow-wrap:anywhere;
-        line-height:1.6;
-    }
-
-    .divider{ border-top:1px solid #eef2f7; margin: 12px 0; }
-
-    /* Tabs */
+    /* ✅ Tabs - visibly blue */
     .tabs{
-        display:flex; gap:8px; flex-wrap:wrap;
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
         padding:10px;
-        border:1px solid var(--line);
-        border-radius:16px;
-        background: var(--card);
-        box-shadow: 0 1px 2px rgba(0,0,0,.06);
-        margin-bottom: 12px;
+        border:1px solid rgba(188,214,255,.9);
+        border-radius: 20px;
+        background: rgba(255,255,255,.85);
+        box-shadow: 0 .45rem 1.2rem rgba(15,23,42,.05);
+        margin-bottom: 14px;
     }
     .tab{
         text-decoration:none;
         border:1px solid var(--line);
         background:#fff;
-        color:#111827;
-        border-radius:12px;
+        color: var(--ink);
+        border-radius:16px;
         padding:10px 14px;
-        font-weight:900;
-        display:inline-flex; align-items:center; gap:8px;
+        font-weight: 900;
+        font-size: .92rem;
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        transition: background .12s ease, border-color .12s ease, box-shadow .12s ease, transform .08s ease;
+    }
+    .tab:hover{
+        background: var(--brand-soft);
+        border-color: var(--brand-line);
+        transform: translateY(-1px);
     }
     .tab.active-posted{
-        background:#eef2ff;
-        border-color:#c7d2fe;
-        color:#1d4ed8;
+        background: linear-gradient(180deg, var(--brand-soft), #ffffff);
+        border-color: var(--brand-line);
+        color: var(--brand);
+        box-shadow: 0 .35rem 1rem rgba(18,63,133,.12);
     }
     .tab.active-scheduled{
         background: var(--warn-bg);
         border-color: var(--warn-line);
         color: var(--warn);
+        box-shadow: 0 .35rem 1rem rgba(154, 52, 18, .08);
     }
 
-    .btn-ghost{
-        border:1px solid var(--line);
-        background:#fff;
-        color:#111827;
-        border-radius:12px;
-        padding:10px 14px;
-        font-weight:900;
-        cursor:pointer;
-        white-space:nowrap;
+    /* Post content */
+    .post-title{
+        font-weight: 950;
+        font-size: 1.08rem;
+        color: var(--ink);
+        margin-top: 12px;
     }
-
+    .post-body{
+        margin-top: 8px;
+        color:#334155;
+        white-space:pre-line;
+        word-break:break-word;
+        overflow-wrap:anywhere;
+        line-height: 1.75;
+        font-size: .95rem;
+    }
     .post-body.clamp{
         display: -webkit-box;
         -webkit-box-orient: vertical;
@@ -141,13 +216,16 @@
         border:none;
         background:transparent;
         color: var(--brand-600);
-        font-weight:900;
+        font-weight: 900;
         padding: 0;
         cursor:pointer;
-        margin-top:8px;
+        margin-top:10px;
     }
+    .see-more:hover{ text-decoration: underline; }
 
-    /* Modal (existing) */
+    .divider{ border-top:1px solid #eef2f7; margin: 12px 0; }
+
+    /* ===== Modal (existing) ===== */
     .modal-backdrop-custom{
         position:fixed; inset:0; background:rgba(17,24,39,.45);
         display:none; align-items:center; justify-content:center;
@@ -158,35 +236,43 @@
         max-height: 90vh;
         background:var(--card);
         border:1px solid var(--line);
-        border-radius:18px;
-        box-shadow: 0 16px 40px rgba(0,0,0,.25);
+        border-radius:20px;
+        box-shadow: 0 18px 55px rgba(0,0,0,.25);
         overflow:hidden;
         display:flex;
         flex-direction:column;
     }
-
     .modal-head{
         padding:14px 16px;
         display:flex; align-items:center; justify-content:space-between; gap:10px;
         border-bottom:1px solid #eef2f7;
+        background:
+            radial-gradient(900px 220px at 0% 0%, rgba(11,46,94,.12), rgba(255,255,255,0) 55%),
+            linear-gradient(180deg, #ffffff, #f8fbff);
     }
-    .modal-head h3{ margin:0; font-size:16px; font-weight:950; color:var(--ink); }
+    .modal-head h3{ margin:0; font-size:1rem; font-weight:950; color:var(--ink); }
     .modal-close{
-        border:none; background:#f3f4f6; color:#111827;
-        border-radius:10px; padding:8px 10px; cursor:pointer; font-weight:900;
+        border:none; background:#f1f5f9; color:#0f172a;
+        border-radius:12px; padding:8px 10px; cursor:pointer; font-weight:900;
     }
     .modal-body{
         padding:16px;
         overflow:auto;
         flex:1 1 auto;
     }
+
     .input, .select, .textarea{
         width:100%;
         border:1px solid var(--line);
-        border-radius:12px;
+        border-radius:14px;
         padding:10px 12px;
         outline:none;
         background:#fff;
+        font-size:.95rem;
+    }
+    .input:focus, .textarea:focus{
+        border-color: var(--brand-line);
+        box-shadow: 0 0 0 .25rem rgba(11, 46, 94, .16);
     }
     .textarea{ min-height:120px; resize:vertical; }
 
@@ -201,23 +287,28 @@
 
     .aud-item{
         border:1px solid var(--line);
-        border-radius:14px;
+        border-radius:16px;
         padding:12px;
         cursor:pointer;
         display:flex; gap:10px; align-items:flex-start;
         background:#fff;
+        transition: background .12s ease, border-color .12s ease, transform .08s ease;
     }
-    .aud-item:hover{ background:#f9fafb; }
+    .aud-item:hover{
+        background: var(--brand-soft);
+        border-color: var(--brand-line);
+        transform: translateY(-1px);
+    }
     .aud-item input{ margin-top:3px; }
-    .aud-item b{ display:block; color:var(--ink); }
+    .aud-item b{ display:block; color:var(--ink); font-weight:950; }
     .aud-item small{ color:var(--muted); }
 
     .pick-box{
         margin-top:12px;
         border:1px solid var(--line);
-        border-radius:14px;
+        border-radius:16px;
         padding:12px;
-        background:#f9fafb;
+        background:#f8fafc;
         display:none;
     }
     .pick-top{
@@ -234,7 +325,7 @@
         display:inline-flex; align-items:center; gap:8px;
     }
     .chip button{
-        border:none; background:#f3f4f6;
+        border:none; background:#f1f5f9;
         border-radius:999px; padding:2px 8px;
         cursor:pointer; font-weight:900;
     }
@@ -242,41 +333,153 @@
     .results{ max-height:240px; overflow:auto; }
     .res{
         background:#fff; border:1px solid var(--line);
-        border-radius:14px; padding:10px;
+        border-radius:16px; padding:10px 12px;
         display:flex; justify-content:space-between; gap:10px;
         margin-bottom:8px;
         cursor:pointer;
+        transition: background .12s ease, border-color .12s ease;
     }
-    .res:hover{ background:#f3f4f6; }
-    .res b{ color:var(--ink); }
+    .res:hover{ background: var(--brand-soft); border-color: var(--brand-line); }
+    .res b{ color:var(--ink); font-weight:950; }
     .res small{ color:var(--muted); }
 
     .footer-actions{
-        margin-top:12px;
+        margin-top:14px;
         display:flex;
         justify-content:flex-end;
         gap:10px;
-
         position: sticky;
         bottom: 0;
-        background: var(--card);
+        background: #fff;
         padding: 12px 0 0;
         border-top: 1px solid #eef2f7;
     }
+
+    /* ===== Modern button system (blue themed) ===== */
+    .btnx{
+        border: 1px solid transparent;
+        border-radius: 12px;
+        padding: 9px 12px;
+        font-weight: 900;
+        font-size: .92rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        text-decoration: none;
+        line-height: 1;
+        transition: transform .08s ease, box-shadow .08s ease, background .12s ease, border-color .12s ease, filter .12s ease;
+        white-space: nowrap;
+    }
+    .btnx:active{ transform: translateY(1px); }
+    .btnx:focus{ outline: none; box-shadow: 0 0 0 .25rem rgba(11, 46, 94, .18); }
+
+    .btnx-primary{
+        background: linear-gradient(180deg, var(--brand), var(--brand-600));
+        border-color: rgba(18,63,133,.55);
+        color: #fff;
+    }
+    .btnx-primary:hover{
+        filter: brightness(1.03);
+        box-shadow: 0 .45rem 1.2rem rgba(11, 46, 94, .22);
+        color:#fff;
+    }
+
+    .btnx-secondary{
+        background: #fff;
+        border-color: var(--line);
+        color: var(--ink);
+    }
+    .btnx-secondary:hover{
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        box-shadow: 0 .3rem .9rem rgba(15,23,42,.06);
+    }
+
+    .btnx-soft{
+        background: var(--brand-soft);
+        border-color: var(--brand-line);
+        color: var(--brand);
+    }
+    .btnx-soft:hover{
+        background: #dbeafe;
+        border-color: #93c5fd;
+    }
+
+    .btnx-warn{
+        background: var(--warn-bg);
+        border-color: var(--warn-line);
+        color: var(--warn);
+    }
+    .btnx-warn:hover{
+        background: #ffedd5;
+        border-color: #fdba74;
+    }
+
+    .btnx-danger{
+        background: var(--danger-bg);
+        border-color: var(--danger-line);
+        color: var(--danger);
+    }
+    .btnx-danger:hover{
+        background: #ffe4e6;
+        border-color: #fda4af;
+    }
+
+    .btnx-sm{
+        padding: 7px 10px;
+        border-radius: 11px;
+        font-size: 12px;
+        font-weight: 950;
+    }
+
+    /* Pagination wrap */
+    .pagination-wrap{
+        border:1px solid rgba(188,214,255,.9);
+        border-radius: 18px;
+        background:#fff;
+        padding: 10px 12px;
+        box-shadow: 0 .35rem 1rem rgba(15,23,42,.05);
+    }
+
+    /* Mobile */
+    @media(max-width: 576px){
+        .space{ flex-direction: column; }
+        .space .d-flex{ justify-content:flex-start; }
+    }
+
+    #openModalBtn{
+    width: auto !important;
+    flex: 0 0 auto;          /* don't grow */
+    align-self: center;
+    padding: 10px 14px;      /* consistent size */
+    border-radius: 14px;
+}
+
+/* ✅ On mobile, make it full width ONLY if you want */
+@media (max-width: 576px){
+    #openModalBtn{
+        width: 100% !important;   /* remove this line if you want it still small */
+        justify-content: center;
+    }
+}
+
+    
 </style>
 
 <?php
-    // ✅ pick which list to show
     $list = ($tab ?? 'posted') === 'scheduled' ? $scheduledAnnouncements : $postedAnnouncements;
 ?>
 
 <div class="wrap">
+  <div class="page-shell">
+
     <div class="header">
         <div class="title">
             <h2>Announcements</h2>
-            <p>Post updates and notify students (system + email).</p>
+            <p>Post updates and notify students.</p>
         </div>
-        <button class="btn-brand" id="openModalBtn">➕ Create Announcement</button>
+        <button class="btnx btnx-primary" id="openModalBtn">Create Announcement</button>
     </div>
 
     <?php if(session('success')): ?>
@@ -290,12 +493,12 @@
     <div class="tabs">
         <a href="<?php echo e(route('coordinator.manage-announcements', ['tab' => 'posted'])); ?>"
            class="tab <?php echo e(($tab ?? 'posted') === 'posted' ? 'active-posted' : ''); ?>">
-            ✅ Posted
+            Posted
         </a>
 
         <a href="<?php echo e(route('coordinator.manage-announcements', ['tab' => 'scheduled'])); ?>"
            class="tab <?php echo e(($tab ?? 'posted') === 'scheduled' ? 'active-scheduled' : ''); ?>">
-            🕒 Scheduled Posts
+            Scheduled Posts
         </a>
     </div>
 
@@ -305,10 +508,10 @@
             $isScheduled = $post->posted_at && $post->posted_at->isFuture();
         ?>
 
-        <div class="card" style="<?php echo e($isScheduled ? 'border-color:var(--warn-line);' : ''); ?>">
+        <div class="card" style="<?php echo e($isScheduled ? 'border-color:var(--warn-line); background: linear-gradient(180deg, #fff, #fffaf5);' : ''); ?>">
             <div class="space">
                 <div class="row">
-                    <div class="avatar" style="background:#f3f4f6;color:#374151;">
+                    <div class="avatar">
                         <?php echo e(strtoupper(substr($post->creator->firstname ?? 'C', 0, 1))); ?>
 
                     </div>
@@ -322,7 +525,7 @@
                                   title="<?php echo e($post->posted_at?->format('M d, Y h:i A')); ?>">
                             </span>
 
-                            <span class="pill">
+                            <span class="pill pill-blue">
                                 <?php echo e(match($post->audience){
                                     'all_students' => 'All Students',
                                     'all_scholars' => 'All Scholars',
@@ -337,7 +540,6 @@
                                 <span class="pill pill-scheduled">🕒 Scheduled</span>
                             <?php endif; ?>
 
-                            •
                             <span class="pill" title="Views">👁️ <?php echo e($post->views_count ?? 0); ?></span>
                         </p>
                     </div>
@@ -345,34 +547,34 @@
 
                 
                 <div class="d-flex gap-2 flex-wrap ms-auto">
-    <?php if($isScheduled): ?>
-        <button type="button"
-                class="btn btn-outline-primary btn-sm rounded-3 fw-semibold"
-                onclick="openEditSchedule(<?php echo e($post->id); ?>, '<?php echo e($post->posted_at->format('Y-m-d\TH:i')); ?>')">
-            ✏️ Edit Time
-        </button>
+                    <?php if($isScheduled): ?>
+                        <button type="button"
+                                class="btnx btnx-soft btnx-sm"
+                                onclick="openEditSchedule(<?php echo e($post->id); ?>, '<?php echo e($post->posted_at->format('Y-m-d\TH:i')); ?>')">
+                            ✏️ Edit Time
+                        </button>
 
-        <form action="<?php echo e(route('coordinator.announcements.cancel-schedule', $post->id)); ?>"
-              method="POST"
-              onsubmit="return confirm('Cancel this scheduled post?')">
-            <?php echo csrf_field(); ?>
-            <?php echo method_field('PATCH'); ?>
-            <button class="btn btn-outline-warning btn-sm rounded-3 fw-semibold" type="submit">
-                ⛔ Cancel
-            </button>
-        </form>
-    <?php endif; ?>
+                        <form action="<?php echo e(route('coordinator.announcements.cancel-schedule', $post->id)); ?>"
+                              method="POST"
+                              onsubmit="return confirm('Cancel this scheduled post?')">
+                            <?php echo csrf_field(); ?>
+                            <?php echo method_field('PATCH'); ?>
+                            <button class="btnx btnx-warn btnx-sm" type="submit">
+                                ⛔ Cancel
+                            </button>
+                        </form>
+                    <?php endif; ?>
 
-    <form action="<?php echo e(route('coordinator.announcements.destroy', $post->id)); ?>"
-          method="POST"
-          onsubmit="return confirm('Delete this announcement? This cannot be undone.')">
-        <?php echo csrf_field(); ?>
-        <?php echo method_field('DELETE'); ?>
-        <button class="btn btn-outline-danger btn-sm rounded-3 fw-semibold" type="submit">
-            🗑 Delete
-        </button>
-    </form>
-</div>
+                    <form action="<?php echo e(route('coordinator.announcements.destroy', $post->id)); ?>"
+                          method="POST"
+                          onsubmit="return confirm('Delete this announcement? This cannot be undone.')">
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('DELETE'); ?>
+                        <button class="btnx btnx-danger btnx-sm" type="submit">
+                            🗑 Delete
+                        </button>
+                    </form>
+                </div>
 
             </div>
 
@@ -384,17 +586,18 @@
             <?php endif; ?>
         </div>
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-        <div class="card" style="text-align:center; color:#6b7280;">
+        <div class="card" style="text-align:center; color:var(--muted);">
             No <?php echo e(($tab ?? 'posted') === 'scheduled' ? 'scheduled posts' : 'announcements'); ?> yet.
         </div>
     <?php endif; ?>
 
-    <div style="margin-top:14px;">
+    <div class="pagination-wrap mt-3">
         <?php echo e($list->links()); ?>
 
     </div>
-</div>
 
+  </div>
+</div>
 
 
 <div class="modal-backdrop-custom" id="editModal">
@@ -408,17 +611,16 @@
             <?php echo csrf_field(); ?>
             <?php echo method_field('PATCH'); ?>
 
-            <label class="sub" style="font-weight:900;">New Schedule Date & Time</label>
+            <label class="sub" style="font-weight:950;">New Schedule Date & Time</label>
             <input type="datetime-local" name="posted_at" class="input" id="editPostedAt" required>
 
             <div class="footer-actions">
-                <button type="button" class="btn-ghost" onclick="closeEditModal()">Cancel</button>
-                <button type="submit" class="btn-brand">Save</button>
+                <button type="button" class="btnx btnx-secondary" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btnx btnx-primary">Save</button>
             </div>
         </form>
     </div>
 </div>
-
 
 
 <div class="modal-backdrop-custom" id="createModal">
@@ -433,24 +635,24 @@
 
             <div class="grid">
                 <div>
-                    <label class="sub" style="font-weight:900;">Title</label>
+                    <label class="sub" style="font-weight:950;">Title</label>
                     <input class="input" name="title" placeholder="Announcement title…" required>
                 </div>
                 <div>
-                    <label class="sub" style="font-weight:900;">Posting Time</label>
+                    <label class="sub" style="font-weight:950;">Posting Time</label>
                     <input class="input" type="datetime-local" name="posted_at"
                            value="<?php echo e(now()->format('Y-m-d\TH:i')); ?>" required>
-                    <small class="sub">Default is current date/time, but you can schedule it.</small>
+                    
                 </div>
             </div>
 
             <div style="margin-top:10px;">
-                <label class="sub" style="font-weight:900;">Description</label>
+                <label class="sub" style="font-weight:950;">Description</label>
                 <textarea class="textarea" name="description" placeholder="What do you want to announce?" required></textarea>
             </div>
 
             <div style="margin-top:10px;">
-                <label class="sub" style="font-weight:900;">Audience</label>
+                <label class="sub" style="font-weight:950;">Audience</label>
                 <div class="aud" id="audienceCards">
                     <label class="aud-item">
                         <input type="radio" name="audience" value="all_students" checked>
@@ -475,7 +677,7 @@
             <div class="pick-box" id="pickerBox">
                 <div class="pick-top">
                     <div>
-                        <b style="color:var(--ink);">Select recipients</b><br>
+                        <b style="color:var(--ink); font-weight:950;">Select recipients</b><br>
                         <small class="sub">Type a name / student id / email to search</small>
                     </div>
                     <span class="pill" id="pickedCount">0 selected</span>
@@ -493,8 +695,8 @@
             </div>
 
             <div class="footer-actions">
-                <button type="button" class="btn-ghost" id="cancelBtn">Cancel</button>
-                <button type="submit" class="btn-brand">Post & Notify</button>
+                <button type="button" class="btnx btnx-secondary" id="cancelBtn">Cancel</button>
+                <button type="submit" class="btnx btnx-primary">Post & Notify</button>
             </div>
         </form>
     </div>
@@ -691,7 +893,6 @@
 
         const diff = Math.floor((now - then) / 1000);
 
-        // ✅ if scheduled (future)
         if (diff < 0) {
             const mins = Math.ceil(Math.abs(diff) / 60);
             if (mins < 60) return `scheduled in ${mins}m`;
@@ -750,7 +951,6 @@
 </script>
 
 <script>
-    // ===== edit schedule modal =====
     function openEditSchedule(id, value){
         const modal = document.getElementById('editModal');
         const input = document.getElementById('editPostedAt');
@@ -758,7 +958,6 @@
 
         input.value = value;
 
-        // build URL: .../manage-announcements/{id}/reschedule
         let url = "<?php echo e(route('coordinator.announcements.reschedule', ['announcement' => '__ID__'])); ?>";
         url = url.replace('__ID__', id);
 
@@ -774,12 +973,10 @@
         document.body.style.overflow = '';
     }
 
-    // click backdrop to close
     document.getElementById('editModal')?.addEventListener('click', (e)=>{
         if(e.target.id === 'editModal') closeEditModal();
     });
 </script>
 
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/manage-announcements.blade.php ENDPATH**/ ?>

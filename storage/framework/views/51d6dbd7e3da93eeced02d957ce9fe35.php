@@ -1,6 +1,114 @@
 
 
 <?php $__env->startSection('content'); ?>
+<style>
+    :root{
+        --brand:#0b2e5e;
+        --brand2:#123f85;
+        --muted:#6b7280;
+        --bg:#f4f7fb;
+        --line:#e5e7eb;
+
+        --successSoft:#eaf7ef;
+        --warningSoft:#fff7e6;
+        --infoSoft:#e8f1ff;
+    }
+
+    body{ background: var(--bg); }
+
+    .page-title-blue{
+        font-weight: 800;
+        font-size: 1.7rem;
+        color: var(--brand);
+        margin: 0;
+        letter-spacing:.2px;
+    }
+    .subtext{ color: var(--muted); font-size: .92rem; }
+
+    .filter-pill .btn{
+        border: 1px solid var(--line);
+        background: #fff;
+        color: #111827;
+    }
+    .filter-pill .btn.active,
+    .filter-pill .btn:focus{
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+        box-shadow: none;
+    }
+
+    .card-soft{
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    /* Thread card states */
+    .thread-card{
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        transition: transform .08s ease, box-shadow .08s ease;
+    }
+    .thread-card:hover{
+        transform: translateY(-1px);
+        box-shadow: 0 .5rem 1.2rem rgba(15, 23, 42, .08);
+    }
+
+    .thread-card.is-new{
+        border-color: #198754;
+        background: var(--successSoft);
+    }
+    .thread-card.is-new .left-accent{
+        background: #198754;
+    }
+
+    .thread-card.is-answered{
+        background: #fff;
+    }
+    .thread-card.is-answered .left-accent{
+        background: #111827; /* answered indicator requested */
+    }
+
+    .thread-card.is-unanswered{
+        background: var(--warningSoft);
+        border-color: #f59e0b;
+    }
+    .thread-card.is-unanswered .left-accent{
+        background: #f59e0b;
+    }
+
+    .left-accent{
+        width: 6px;
+        border-radius: 14px 0 0 14px;
+        background: var(--line);
+        flex-shrink: 0;
+    }
+
+    .meta-badge{
+        background:#fff;
+        border: 1px solid var(--line);
+        color:#111827;
+        font-weight: 600;
+    }
+
+    .btn-bisu-primary{
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+    }
+    .btn-bisu-primary:hover{ background: var(--brand2); border-color: var(--brand2); color:#fff; }
+
+    .btn-bisu-secondary{
+        background: #fff;
+        border: 1px solid var(--line);
+        color: #111827;
+    }
+    .btn-bisu-secondary:hover{ background: #f8fafc; }
+</style>
+
 <div class="mx-auto" style="max-width: 1100px;">
 
 <?php
@@ -14,57 +122,61 @@
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
     <div>
-        <h2 class="page-title-blue mb-0">Student Inquiries</h2>
-        <small class="text-muted">Open-thread style. Similar questions are grouped automatically.</small>
+        <h2 class="page-title-blue mb-1">Student Inquiries</h2>
+        
     </div>
 
     
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 filter-pill">
         <a href="<?php echo e(route('clusters.index', ['q' => $q, 'search_mode' => $searchMode, 'threshold' => $threshold])); ?>"
-           class="btn btn-bisu-secondary btn-sm <?php echo e(!$status ? 'active' : ''); ?>">
+           class="btn btn-sm <?php echo e(!$status ? 'active' : ''); ?>">
             All
         </a>
 
         <a href="<?php echo e(route('clusters.index', ['status' => 'unanswered', 'q' => $q, 'search_mode' => $searchMode, 'threshold' => $threshold])); ?>"
-           class="btn btn-bisu-secondary btn-sm <?php echo e($isActive('unanswered')); ?>">
-            Unanswered
+           class="btn btn-sm <?php echo e($isActive('unanswered')); ?>">
+            Needs Reply
         </a>
 
         <a href="<?php echo e(route('clusters.index', ['status' => 'answered', 'q' => $q, 'search_mode' => $searchMode, 'threshold' => $threshold])); ?>"
-           class="btn btn-bisu-secondary btn-sm <?php echo e($isActive('answered')); ?>">
+           class="btn btn-sm <?php echo e($isActive('answered')); ?>">
             Answered
         </a>
     </div>
 </div>
 
 
-<div class="card border-0 shadow-sm mb-3">
-    <div class="card-body p-3">
-            <form method="GET" action="<?php echo e(route('clusters.index')); ?>">
-        <input type="hidden" name="status" value="<?php echo e($status); ?>">
+<div class="card-soft shadow-sm mb-3">
+    <div class="card-body p-3 p-md-4">
+        <form method="GET" action="<?php echo e(route('clusters.index')); ?>">
+            <input type="hidden" name="status" value="<?php echo e($status); ?>">
 
-        <div class="row g-2 align-items-end">
-            <div class="col-12 col-md-8">
-                <label class="form-label small text-muted mb-1">Search</label>
-                <input type="text" name="q" value="<?php echo e($q); ?>" class="form-control"
-                    placeholder="Type a question/topic (e.g., stipend requirements)">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md">
+                    <label class="form-label small text-muted mb-1">Search inquiries</label>
+                    <input type="text"
+                        name="q"
+                        value="<?php echo e($q); ?>"
+                        class="form-control"
+                        placeholder="Search questions keywords . . .">
+                </div>
+
+                <div class="col-12 col-md-auto d-flex gap-2 align-items-end">
+                    <button class="btn btn-bisu-primary px-4" type="submit">
+                        Search
+                    </button>
+
+                    <?php if($q): ?>
+                        <a class="btn btn-bisu-secondary px-4"
+                        href="<?php echo e(route('clusters.index', ['status' => $status])); ?>">
+                            Reset
+                        </a>
+                    <?php endif; ?>
+                </div>
             </div>
 
-            <div class="col-12 col-md-4 d-flex gap-2">
-                <button class="btn btn-bisu-primary" type="submit">Search</button>
-                <?php if($q): ?>
-                    <a class="btn btn-outline-secondary" href="<?php echo e(route('clusters.index', ['status' => $status])); ?>">
-                        Reset
-                    </a>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <small class="text-muted d-block mt-2">
-            Search is automatic: the system checks both keyword and “similar meaning”.
-        </small>
-    </form>
-
+            
+        </form>
     </div>
 </div>
 
@@ -74,92 +186,124 @@
         $isAnswered = !is_null($cluster->cluster_answer) && trim($cluster->cluster_answer) !== '';
         $hasNew = $isAnswered && ((int) ($cluster->new_unanswered_count ?? 0) > 0);
 
+        // ✅ Card state priority: NEW (green) > UNANSWERED (yellow) > ANSWERED (neutral)
+        $stateClass = $hasNew ? 'is-new' : ($isAnswered ? 'is-answered' : 'is-unanswered');
 
-        // ✅ Black indicator for answered (adviser request)
-        $dotStyle = $hasNew
-            ? 'background:#dc3545;'      // red = answered but has new needs reply
-            : ($isAnswered ? 'background:#111827;' : 'background:#f59e0b;');
-
-        $badgeClass = $isAnswered ? 'bg-dark' : 'bg-warning text-dark';
-        $badgeText  = $isAnswered ? 'Answered' : 'Needs reply';
+        $badgeClass = $hasNew ? 'bg-success' : ($isAnswered ? 'bg-dark' : 'bg-warning text-dark');
+        $badgeText  = $hasNew ? 'New Posts' : ($isAnswered ? 'Answered' : 'Needs Reply');
 
         $topic = $cluster->label ?: \Illuminate\Support\Str::limit($cluster->representative_question, 52);
     ?>
 
-    <div class="card border-0 shadow-sm mb-2 <?php echo e($hasNew ? 'border border-danger' : ''); ?>"
-     style="<?php echo e($hasNew ? 'border-left:6px solid #dc3545!important;' : ''); ?>">
+    <div class="thread-card shadow-sm mb-2 d-flex <?php echo e($stateClass); ?>">
+        <div class="left-accent"></div>
 
-        <div class="card-body p-3 p-md-4">
+        <div class="p-3 p-md-4 w-100">
             <div class="d-flex align-items-start justify-content-between gap-3">
+                <div class="me-2">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                        <h5 class="mb-0 fw-semibold" style="color: var(--brand);">
+                            <?php echo e($topic); ?>
 
-                <div class="d-flex gap-3">
-                    
-                    <div class="rounded-circle flex-shrink-0"
-                         title="<?php echo e($badgeText); ?>"
-                         style="width:12px;height:12px; margin-top:6px; <?php echo e($dotStyle); ?>">
+                        </h5>
+                        <span class="badge <?php echo e($badgeClass); ?>"><?php echo e($badgeText); ?></span>
+
+                        <?php if($hasNew): ?>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success">
+                                <?php echo e((int) $cluster->new_unanswered_count); ?> new need<?php echo e((int)$cluster->new_unanswered_count === 1 ? 's' : ''); ?> reply
+                            </span>
+                        <?php endif; ?>
                     </div>
+                    
+                    
 
-                    <div>
-                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                            <h5 class="fw-semibold mb-0" style="color:#003366;">
-                                <?php echo e($topic); ?>
-
-                            </h5>
-                            <span class="badge <?php echo e($badgeClass); ?>"><?php echo e($badgeText); ?></span>
-                            <?php if($hasNew): ?>
-                                <span class="badge bg-danger">
-                                    🔔 New: <?php echo e((int) $cluster->new_unanswered_count); ?> need<?php echo e((int)$cluster->new_unanswered_count === 1 ? 's' : ''); ?> reply
-                                </span>
-                            <?php endif; ?>
-                        </div>
-
-                        <div class="text-muted">
-                            <span class="fw-semibold">Representative:</span>
-                            <span style="white-space: pre-line;">
-                                <?php echo e(\Illuminate\Support\Str::limit($cluster->representative_question, 150)); ?>
-
-                            </span>
-                        </div>
-
-                        <div class="mt-2 d-flex flex-wrap gap-2">
-                            <span class="badge bg-light text-dark border">
-                                👥 <?php echo e($cluster->questions_count); ?> post<?php echo e($cluster->questions_count == 1 ? '' : 's'); ?>
-
-                            </span>
-                            <?php if(!empty($cluster->created_at)): ?>
-                                <span class="badge bg-light text-dark border">
-                                    🕒 <?php echo e($cluster->created_at->format('M d, Y')); ?>
-
-                                </span>
-                            <?php endif; ?>
-                            <span class="badge bg-light text-dark border">🔒 Anonymous</span>
-                        </div>
+                    <div class="mt-2 d-flex flex-wrap gap-2">
+                        <span class="badge meta-badge"><?php echo e($cluster->questions_count); ?> post<?php echo e($cluster->questions_count == 1 ? '' : 's'); ?></span>
+                        <?php if(!empty($cluster->created_at)): ?>
+                            <span class="badge meta-badge"><?php echo e($cluster->created_at->format('M d, Y')); ?></span>
+                        <?php endif; ?>
+                        <span class="badge meta-badge">Anonymous</span>
                     </div>
                 </div>
 
                 <div class="text-end">
-                    <a href="<?php echo e(route('clusters.show', [$cluster->id, 'threshold' => $threshold])); ?>"
-                       class="btn btn-bisu-primary btn-sm">
-                        Open Thread
-                    </a>
-                    <div class="small text-muted mt-2">
-                        <?php if($hasNew): ?>
-                            <span class="fw-semibold text-danger">New posts need reply</span>
-                        <?php else: ?>
-                            <?php echo e($isAnswered ? 'Answer posted' : 'Reply needed'); ?>
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="<?php echo e(route('clusters.show', [$cluster->id, 'threshold' => $threshold])); ?>"
+                        class="btn btn-bisu-primary btn-sm">
+                            Open Thread
+                        </a>
 
-                        <?php endif; ?>
+                        <button type="button"
+                                class="btn btn-outline-danger btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteThreadModal-<?php echo e($cluster->id); ?>">
+                            Delete
+                        </button>
                     </div>
-                </div>
 
+                    
+                </div>
             </div>
         </div>
     </div>
 
+    
+    <?php if($cluster->questions_count == 0): ?>
+<div class="modal fade" id="deleteThreadModal-<?php echo e($cluster->id); ?>" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:14px;">
+      <div class="modal-header">
+        <h5 class="modal-title">Delete this thread?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-2 text-muted">
+          This will permanently delete the entire thread and all posts under it.
+        </div>
+
+        <div class="p-3 rounded border" style="background:#fff;">
+          <div class="fw-semibold" style="color: var(--brand);">
+            <?php echo e($topic); ?>
+
+          </div>
+          <div class="small text-muted mt-1">
+            <?php echo e($cluster->questions_count); ?> post<?php echo e($cluster->questions_count == 1 ? '' : 's'); ?>
+
+            <?php if(!empty($cluster->created_at)): ?>
+              • Created <?php echo e($cluster->created_at->format('M d, Y')); ?>
+
+            <?php endif; ?>
+          </div>
+        </div>
+
+        <div class="alert alert-warning mt-3 mb-0">
+          <span class="fw-semibold">Note:</span> This action cannot be undone.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-bisu-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+
+        <form method="POST" action="<?php echo e(route('clusters.destroy', $cluster->id)); ?>">
+          <?php echo csrf_field(); ?>
+          <?php echo method_field('DELETE'); ?>
+          <button type="submit" class="btn btn-danger">
+            Yes, Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
     <div class="text-center py-5">
         <div class="mb-2" style="font-size:2rem;">📭</div>
-        <h5 class="fw-semibold mb-1" style="color:#003366;">No inquiries yet</h5>
+        <h5 class="fw-semibold mb-1" style="color:var(--brand);">No inquiries yet</h5>
         <p class="text-muted mb-0">Student questions will appear here once submitted.</p>
     </div>
 <?php endif; ?>
@@ -173,5 +317,4 @@
 
 </div>
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/clusters/index.blade.php ENDPATH**/ ?>
