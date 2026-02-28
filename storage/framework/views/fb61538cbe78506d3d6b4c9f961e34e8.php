@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 
 <style>
   :root{ --bisu-blue:#003366; --bisu-blue-2:#0b4a85; }
@@ -17,14 +17,14 @@
   .info-box{ background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:.6rem .75rem; }
 </style>
 
-@if ($errors->any())
+<?php if($errors->any()): ?>
   <div class="alert alert-danger">
     <strong>Update failed:</strong>
     <ul class="mb-0">
-      @foreach($errors->all() as $e) <li>{{ $e }}</li> @endforeach
+      <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $e): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?> <li><?php echo e($e); ?></li> <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </ul>
   </div>
-@endif
+<?php endif; ?>
 
 <div class="card card-bisu shadow-sm">
   <div class="card-header">
@@ -33,20 +33,22 @@
   </div>
 
   <div class="card-body">
-    <form action="{{ route('coordinator.stipends.update', $stipend->id) }}" method="POST">
-      @csrf
-      @method('PUT')
+    <form action="<?php echo e(route('coordinator.stipends.update', $stipend->id)); ?>" method="POST">
+      <?php echo csrf_field(); ?>
+      <?php echo method_field('PUT'); ?>
 
       <div class="row g-3">
 
-        {{-- INFORMATION ONLY --}}
+        
         <div class="col-12 col-md-6">
           <div class="label">Scholar</div>
           <div class="info-box">
-            {{ $stipend->scholar->user->lastname ?? '' }},
-            {{ $stipend->scholar->user->firstname ?? '' }}
+            <?php echo e($stipend->scholar->user->lastname ?? ''); ?>,
+            <?php echo e($stipend->scholar->user->firstname ?? ''); ?>
+
             <div class="small text-muted">
-              Student ID: {{ $stipend->scholar->user->student_id ?? '—' }}
+              Student ID: <?php echo e($stipend->scholar->user->student_id ?? '—'); ?>
+
             </div>
           </div>
         </div>
@@ -54,9 +56,11 @@
         <div class="col-12 col-md-6">
           <div class="label">Release Schedule</div>
           <div class="info-box">
-            {{ $stipend->stipendRelease->title ?? '—' }}
+            <?php echo e($stipend->stipendRelease->title ?? '—'); ?>
+
             <div class="small text-muted">
-              Amount: {{ number_format((float)($stipend->stipendRelease->amount ?? 0), 2) }}
+              Amount: <?php echo e(number_format((float)($stipend->stipendRelease->amount ?? 0), 2)); ?>
+
             </div>
           </div>
         </div>
@@ -64,16 +68,17 @@
         <div class="col-12 col-md-6">
           <div class="label">Current Amount (record)</div>
           <div class="info-box">
-            {{ number_format((float)$stipend->amount_received, 2) }}
+            <?php echo e(number_format((float)$stipend->amount_received, 2)); ?>
+
           </div>
         </div>
 
-        {{-- EDITABLE ONLY --}}
+        
         <div class="col-12 col-md-6">
           <label class="label">Status</label>
           <select name="status" class="form-select form-select-sm" required>
-            <option value="for_release" {{ $stipend->status === 'for_release' ? 'selected' : '' }}>For Release</option>
-            <option value="released" {{ $stipend->status === 'released' ? 'selected' : '' }}>Released</option>
+            <option value="for_release" <?php echo e($stipend->status === 'for_release' ? 'selected' : ''); ?>>For Release</option>
+            <option value="released" <?php echo e($stipend->status === 'released' ? 'selected' : ''); ?>>Released</option>
           </select>
         </div>
 
@@ -82,19 +87,21 @@
           <input type="datetime-local"
                  name="received_at"
                  class="form-control form-control-sm"
-                 value="{{ $stipend->received_at ? \Carbon\Carbon::parse($stipend->received_at)->format('Y-m-d\TH:i') : '' }}">
-          {{-- <div class="form-text">If Status = Received, leaving this empty will auto-set to now.</div> --}}
+                 value="<?php echo e($stipend->received_at ? \Carbon\Carbon::parse($stipend->received_at)->format('Y-m-d\TH:i') : ''); ?>">
+          
         </div>
 
       </div>
 
       <div class="mt-3 d-flex gap-2">
         <button type="submit" class="btn btn-bisu btn-sm">Update</button>
-        <a href="{{ route('coordinator.manage-stipends') }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+        <a href="<?php echo e(route('coordinator.manage-stipends')); ?>" class="btn btn-outline-secondary btn-sm">Cancel</a>
       </div>
 
     </form>
   </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/edit-stipend.blade.php ENDPATH**/ ?>

@@ -213,5 +213,20 @@ class QuestionClusterController extends Controller
         return back()->with('success', 'Topic renamed successfully.');
     }
 
+    public function destroy(QuestionCluster $cluster)
+    {
+        // Delete the whole thread safely (cluster + its questions)
+        DB::transaction(function () use ($cluster) {
+            // delete child questions first
+            $cluster->questions()->delete();
+
+            // delete the cluster itself
+            $cluster->delete();
+        });
+
+        return redirect()
+            ->route('clusters.index')
+            ->with('success', 'Thread deleted successfully.');
+    }
 
 }

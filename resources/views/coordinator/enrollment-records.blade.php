@@ -81,7 +81,7 @@
 <div class="card shadow-sm mb-3">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <strong class="text-secondary">Filters</strong>
-        <small class="text-muted">Use filters to narrow records</small>
+        {{-- <small class="text-muted">Use filters to narrow records</small> --}}
     </div>
 
     <div class="card-body">
@@ -189,7 +189,7 @@
             class="btn btn-bisu-primary btn-sm"
             data-bs-toggle="modal"
             data-bs-target="#addModal">
-        + Enroll / Promote Student
+        Enroll Student
     </button>
 </div>
 

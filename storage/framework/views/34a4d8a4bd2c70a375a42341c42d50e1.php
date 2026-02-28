@@ -1,6 +1,6 @@
-@extends('layouts.app')
 
-@section('content')
+
+<?php $__env->startSection('content'); ?>
 <style>
     :root{
         /* ✅ Brand Blues (BISU vibe) */
@@ -149,7 +149,7 @@
 
 <div class="mx-auto" style="max-width: 1100px;">
 
-@php
+<?php
     $isAnswered = !is_null($cluster->cluster_answer) && trim($cluster->cluster_answer) !== '';
     $badgeClass = $isAnswered ? 'bg-dark' : 'bg-warning text-dark';
     $badgeText  = $isAnswered ? 'Answered' : 'Needs reply';
@@ -182,33 +182,31 @@
 
         
     });
-@endphp
+?>
 
 
 
-{{-- Header --}}
+
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
     <div>
         <h2 class="page-title-blue mb-1">Inquiry Thread</h2>
-        {{-- <div class="subtext">
-            Similarity threshold: <span class="fw-semibold">{{ number_format((float)$threshold, 2) }}</span>
-        </div> --}}
+        
     </div>
 
     <div class="d-flex gap-2">
-        <a href="{{ route('clusters.index', request()->only('status','q','search_mode','threshold')) }}"
+        <a href="<?php echo e(route('clusters.index', request()->only('status','q','search_mode','threshold'))); ?>"
            class="btn btn-bisu-secondary btn-sm">
             ← Back
         </a>
     </div>
 </div>
 
-{{-- ✅ Quick Summary at TOP --}}
+
 <div class="row g-2 g-md-3 mb-3">
     <div class="col-12 col-md-3">
         <div class="stat-card shadow-sm">
             <div class="stat-title">Total posts</div>
-            <div class="stat-value">{{ $total }}</div>
+            <div class="stat-value"><?php echo e($total); ?></div>
             <div class="stat-note">All inquiries in this thread</div>
         </div>
     </div>
@@ -216,7 +214,7 @@
     <div class="col-12 col-md-3">
         <div class="stat-card shadow-sm" style="background: var(--warningSoft); border-color: var(--warningLine);">
             <div class="stat-title">Unanswered</div>
-            <div class="stat-value">{{ $unansweredQuestions->count() }}</div>
+            <div class="stat-value"><?php echo e($unansweredQuestions->count()); ?></div>
             <div class="stat-note">Still waiting for reply</div>
         </div>
     </div>
@@ -224,7 +222,7 @@
     <div class="col-12 col-md-3">
         <div class="stat-card shadow-sm" style="background: var(--successSoft); border-color: var(--successLine);">
             <div class="stat-title">New after answer</div>
-            <div class="stat-value">{{ $newQuestions->count() }}</div>
+            <div class="stat-value"><?php echo e($newQuestions->count()); ?></div>
             <div class="stat-note">Posted after saved answer</div>
         </div>
     </div>
@@ -232,71 +230,67 @@
     <div class="col-12 col-md-3">
         <div class="stat-card shadow-sm" style="background: var(--infoSoft); border-color: var(--infoLine);">
             <div class="stat-title">Thread status</div>
-            <div class="stat-value">{{ $isAnswered ? 'Answered' : 'Needs reply' }}</div>
+            <div class="stat-value"><?php echo e($isAnswered ? 'Answered' : 'Needs reply'); ?></div>
             <div class="stat-note">Based on saved answer</div>
         </div>
     </div>
 </div>
 
-{{-- Alerts --}}
-@if (session('success'))
-    <div class="alert alert-success border-0 shadow-sm">{{ session('success') }}</div>
-@endif
-@if (session('error'))
-    <div class="alert alert-danger border-0 shadow-sm">{{ session('error') }}</div>
-@endif
-@if ($errors->any())
+
+<?php if(session('success')): ?>
+    <div class="alert alert-success border-0 shadow-sm"><?php echo e(session('success')); ?></div>
+<?php endif; ?>
+<?php if(session('error')): ?>
+    <div class="alert alert-danger border-0 shadow-sm"><?php echo e(session('error')); ?></div>
+<?php endif; ?>
+<?php if($errors->any()): ?>
     <div class="alert alert-danger border-0 shadow-sm">
         <div class="fw-semibold mb-1">Please fix the errors below.</div>
         <ul class="mb-0">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
+            <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <li><?php echo e($error); ?></li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </ul>
     </div>
-@endif
+<?php endif; ?>
 
-{{-- Thread Info --}}
+
 <div class="card-soft shadow-sm mb-3">
     <div class="card-body p-3 p-md-4">
         <div class="d-flex align-items-start justify-content-between gap-3">
             <div class="d-flex gap-3">
 
                 <div class="rounded-circle flex-shrink-0"
-                     style="width:12px;height:12px;margin-top:7px; {{ $isAnswered ? 'background:#111827;' : 'background:#f59e0b;' }}">
+                     style="width:12px;height:12px;margin-top:7px; <?php echo e($isAnswered ? 'background:#111827;' : 'background:#f59e0b;'); ?>">
                 </div>
 
                 <div>
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                        <h5 class="mb-0 fw-semibold" style="color: var(--brand);">{{ $topic }}</h5>
-                        <span class="badge {{ $badgeClass }}">{{ $badgeText }}</span>
+                        <h5 class="mb-0 fw-semibold" style="color: var(--brand);"><?php echo e($topic); ?></h5>
+                        <span class="badge <?php echo e($badgeClass); ?>"><?php echo e($badgeText); ?></span>
 
-                        @if($isAnswered && $newQuestions->count() > 0)
+                        <?php if($isAnswered && $newQuestions->count() > 0): ?>
                             <span class="badge bg-success">New Posts</span>
                             <span class="badge bg-success bg-opacity-10 text-success border border-success">
-                                {{ $newQuestions->count() }} waiting
+                                <?php echo e($newQuestions->count()); ?> waiting
                             </span>
-                        @endif
+                        <?php endif; ?>
                     </div>
-{{-- 
-                    <div class="text-muted">
-                        <span class="fw-semibold">Representative question:</span><br>
-                        <span style="white-space: pre-line;">{{ $cluster->representative_question }}</span>
-                    </div> --}}
+
 
                     <div class="mt-2 d-flex flex-wrap gap-2">
-                        <span class="badge meta-badge">{{ $total }} post{{ $total == 1 ? '' : 's' }}</span>
+                        <span class="badge meta-badge"><?php echo e($total); ?> post<?php echo e($total == 1 ? '' : 's'); ?></span>
                         <span class="badge meta-badge">Anonymous</span>
-                        @if(!empty($cluster->created_at))
-                            <span class="badge meta-badge">{{ $cluster->created_at->format('M d, Y') }}</span>
-                        @endif
+                        <?php if(!empty($cluster->created_at)): ?>
+                            <span class="badge meta-badge"><?php echo e($cluster->created_at->format('M d, Y')); ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
 
             <div class="text-end">
                 <div class="small text-muted">Thread ID</div>
-                <div class="fw-semibold mb-2" style="color:var(--brand);">#{{ $cluster->id }}</div>
+                <div class="fw-semibold mb-2" style="color:var(--brand);">#<?php echo e($cluster->id); ?></div>
 
                 <button class="btn btn-outline-secondary btn-sm"
                         data-bs-toggle="modal"
@@ -306,67 +300,75 @@
             </div>
         </div>
 
-        {{-- <div class="hint mt-3">
-            <span class="fw-semibold">Workflow tip:</span>
-            Use <b>Answer selected questions</b> for same-meaning posts, and <b>Manual reply</b> for unique ones.
-        </div> --}}
+        
     </div>
 </div>
 
-{{-- Bulk Answer (only when NOT answered yet) --}}
-@if(!$isAnswered)
+
+<?php if(!$isAnswered): ?>
     <div class="card-soft shadow-sm mb-3">
         <div class="card-body p-3 p-md-4">
             <div class="d-flex align-items-start justify-content-between gap-3">
                 <div>
                     <h5 class="section-title mb-1">Answer selected questions</h5>
-                    {{-- <div class="subtext">
-                        Select the posts that mean the same thing, then reply once for all of them.
-                    </div> --}}
+                    
                 </div>
                 <div class="text-end small text-muted">
-                    {{ $unansweredQuestions->count() }} unanswered
+                    <?php echo e($unansweredQuestions->count()); ?> unanswered
                 </div>
             </div>
 
-            @if($unansweredQuestions->count() > 0)
-                <form method="POST" action="{{ route('clusters.bulk-answer', $cluster->id) }}">
-                    @csrf
+            <?php if($unansweredQuestions->count() > 0): ?>
+                <form method="POST" action="<?php echo e(route('clusters.bulk-answer', $cluster->id)); ?>">
+                    <?php echo csrf_field(); ?>
 
                     <div class="mt-3">
                         <label class="form-label small text-muted mb-1">Your answer</label>
                         <textarea name="answer"
                                   rows="4"
-                                  class="form-control @error('answer') is-invalid @enderror"
+                                  class="form-control <?php $__errorArgs = ['answer'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
                                   placeholder="Type one answer that will apply to the selected questions..."
-                                  required>{{ old('answer') }}</textarea>
+                                  required><?php echo e(old('answer')); ?></textarea>
 
-                        @error('answer')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                        <?php $__errorArgs = ['answer'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                            <div class="invalid-feedback"><?php echo e($message); ?></div>
+                        <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
 
-                        {{-- <div class="form-text text-muted">
-                            Keep it official: steps, requirements, deadlines, and where to submit.
-                        </div> --}}
+                        
                     </div>
 
                     <div class="mt-3 d-flex flex-column gap-2">
                         <div class="small text-muted">Select posts:</div>
 
-                        @foreach($unansweredQuestions as $uq)
+                        <?php $__currentLoopData = $unansweredQuestions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $uq): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <label class="d-flex gap-2 align-items-start p-2 rounded border bg-light">
                                 <input type="checkbox"
                                        name="question_ids[]"
-                                       value="{{ $uq->id }}"
+                                       value="<?php echo e($uq->id); ?>"
                                        class="form-check-input mt-1">
                                 <div class="flex-grow-1">
                                     <div class="small text-muted mb-1">
-                                        Posted {{ $uq->created_at ? \Carbon\Carbon::parse($uq->created_at)->format('M d, Y • h:i A') : '' }}
+                                        Posted <?php echo e($uq->created_at ? \Carbon\Carbon::parse($uq->created_at)->format('M d, Y • h:i A') : ''); ?>
+
                                     </div>
-                                    <div style="white-space: pre-line;">{{ $uq->question_text }}</div>
+                                    <div style="white-space: pre-line;"><?php echo e($uq->question_text); ?></div>
                                 </div>
                             </label>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
 
                     <div class="d-flex justify-content-end mt-3">
@@ -375,15 +377,15 @@
                         </button>
                     </div>
                 </form>
-            @else
+            <?php else: ?>
                 <div class="mt-3 text-muted">No unanswered questions found.</div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
-@endif
+<?php endif; ?>
 
-{{-- New Questions After Answer (only when answered) --}}
-@if($isAnswered)
+
+<?php if($isAnswered): ?>
     <div class="card-soft shadow-sm mb-3" style="background: var(--successSoft); border-color:#198754;">
         <div class="card-body p-3 p-md-4">
             <div class="d-flex align-items-start justify-content-between gap-3">
@@ -395,26 +397,27 @@
                 </div>
 
                 <div class="text-end small text-muted">
-                    {{ $newQuestions->count() }} new
+                    <?php echo e($newQuestions->count()); ?> new
                 </div>
             </div>
 
-            @if($newQuestions->count() > 0)
-                <form method="POST" action="{{ route('clusters.answer-selected', $cluster->id) }}">
-                    @csrf
+            <?php if($newQuestions->count() > 0): ?>
+                <form method="POST" action="<?php echo e(route('clusters.answer-selected', $cluster->id)); ?>">
+                    <?php echo csrf_field(); ?>
 
                     <div class="mt-3 d-flex flex-column gap-2">
-                        @foreach($newQuestions as $nq)
+                        <?php $__currentLoopData = $newQuestions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $nq): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <label class="d-flex gap-2 align-items-start p-2 rounded border bg-white">
-                                <input type="checkbox" name="question_ids[]" value="{{ $nq->id }}" class="form-check-input mt-1">
+                                <input type="checkbox" name="question_ids[]" value="<?php echo e($nq->id); ?>" class="form-check-input mt-1">
                                 <div class="flex-grow-1">
                                     <div class="small text-muted mb-1">
-                                        Posted {{ $nq->created_at ? $nq->created_at->format('M d, Y • h:i A') : '' }}
+                                        Posted <?php echo e($nq->created_at ? $nq->created_at->format('M d, Y • h:i A') : ''); ?>
+
                                     </div>
-                                    <div style="white-space: pre-line;">{{ $nq->question_text }}</div>
+                                    <div style="white-space: pre-line;"><?php echo e($nq->question_text); ?></div>
                                 </div>
                             </label>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
 
                     <div class="d-flex justify-content-end mt-3">
@@ -423,13 +426,13 @@
                         </button>
                     </div>
                 </form>
-            @else
+            <?php else: ?>
                 <div class="mt-3 text-muted">No new questions found.</div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 
-    {{-- Compact saved answer editor (keeps your logic working) --}}
+    
     <div class="card-soft shadow-sm mb-4">
         <div class="card-body p-3 p-md-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -437,22 +440,37 @@
                     <h5 class="section-title mb-0">Saved answer (optional)</h5>
                     <div class="subtext">Used when applying an answer to new posts.</div>
                 </div>
-                <span class="badge {{ $isAnswered ? 'bg-success' : 'bg-secondary' }}">
-                    {{ $isAnswered ? 'Saved' : 'Not saved' }}
+                <span class="badge <?php echo e($isAnswered ? 'bg-success' : 'bg-secondary'); ?>">
+                    <?php echo e($isAnswered ? 'Saved' : 'Not saved'); ?>
+
                 </span>
             </div>
 
-            <form action="{{ route('clusters.answer', $cluster->id) }}" method="POST">
-                @csrf
+            <form action="<?php echo e(route('clusters.answer', $cluster->id)); ?>" method="POST">
+                <?php echo csrf_field(); ?>
                 <textarea name="cluster_answer"
                           rows="3"
-                          class="form-control @error('cluster_answer') is-invalid @enderror"
+                          class="form-control <?php $__errorArgs = ['cluster_answer'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
                           placeholder="Save the official answer here so you can reuse it for future new posts..."
-                          required>{{ old('cluster_answer', $cluster->cluster_answer) }}</textarea>
+                          required><?php echo e(old('cluster_answer', $cluster->cluster_answer)); ?></textarea>
 
-                @error('cluster_answer')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                <?php $__errorArgs = ['cluster_answer'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                    <div class="invalid-feedback"><?php echo e($message); ?></div>
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
 
                 <div class="d-flex justify-content-end mt-2">
                     <button type="submit" class="btn btn-bisu-primary btn-sm">
@@ -462,83 +480,99 @@
             </form>
         </div>
     </div>
-@endif
+<?php endif; ?>
 
-{{-- Thread Posts --}}
+
 <div class="d-flex align-items-center justify-content-between mb-2">
     <h5 class="section-title mb-0">Thread Posts</h5>
-    <small class="text-muted">{{ $total }} total</small>
+    <small class="text-muted"><?php echo e($total); ?> total</small>
 </div>
 
-@forelse ($cluster->questions as $q)
-    @php
+<?php $__empty_1 = true; $__currentLoopData = $cluster->questions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $q): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+    <?php
         $qAnswered = !empty($q->answer) && trim($q->answer) !== '';
         $sim = (float) ($q->sim_score ?? 0);
         $isSimilarMarked = $sim >= (float)$threshold;
-    @endphp
+    ?>
 
-    <div class="post-card shadow-sm mb-2 {{ $qAnswered ? 'is-answered' : 'is-unanswered' }}">
+    <div class="post-card shadow-sm mb-2 <?php echo e($qAnswered ? 'is-answered' : 'is-unanswered'); ?>">
         <div class="card-body p-3 p-md-4">
             <div class="d-flex justify-content-between align-items-start gap-3">
                 <div class="me-2">
                     <div class="small text-muted mb-1">
-                        Post #{{ $loop->iteration }}
-                        @if($q->created_at) • {{ $q->created_at->format('M d, Y • h:i A') }} @endif
+                        Post #<?php echo e($loop->iteration); ?>
 
-                        {{-- <span class="ms-2 badge bg-light text-dark border">
-                            Similarity: {{ number_format($sim, 2) }}
-                        </span> --}}
+                        <?php if($q->created_at): ?> • <?php echo e($q->created_at->format('M d, Y • h:i A')); ?> <?php endif; ?>
 
-                        @if($isSimilarMarked)
+                        
+
+                        <?php if($isSimilarMarked): ?>
                             <span class="ms-1 badge bg-danger">Marked similar</span>
-                        @endif
+                        <?php endif; ?>
                     </div>
 
-                    <div style="white-space: pre-line;">{{ $q->question_text }}</div>
+                    <div style="white-space: pre-line;"><?php echo e($q->question_text); ?></div>
                 </div>
 
                 <div class="text-end">
-                    <span class="badge {{ $qAnswered ? 'bg-success' : 'bg-warning text-dark' }}">
-                        {{ $qAnswered ? 'Answered' : 'Unanswered' }}
+                    <span class="badge <?php echo e($qAnswered ? 'bg-success' : 'bg-warning text-dark'); ?>">
+                        <?php echo e($qAnswered ? 'Answered' : 'Unanswered'); ?>
+
                     </span>
                 </div>
             </div>
 
-            {{-- Manual Answer --}}
+            
             <div class="mt-3">
-                <form method="POST" action="{{ route('clusters.questions.answer', $q->id) }}">
-                    @csrf
+                <form method="POST" action="<?php echo e(route('clusters.questions.answer', $q->id)); ?>">
+                    <?php echo csrf_field(); ?>
 
                     <label class="form-label small text-muted mb-1">Manual reply</label>
                     <textarea name="answer"
                             rows="3"
-                            class="form-control @error('answer') is-invalid @enderror"
+                            class="form-control <?php $__errorArgs = ['answer'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
                             placeholder="Write an answer for this specific post..."
-                            {{ $qAnswered ? 'disabled' : '' }}>{{ old('answer', $q->answer) }}</textarea>
+                            <?php echo e($qAnswered ? 'disabled' : ''); ?>><?php echo e(old('answer', $q->answer)); ?></textarea>
 
-                    @if($qAnswered)
+                    <?php if($qAnswered): ?>
                         <div class="small text-success mt-1">
                             This post is already answered and locked.
                         </div>
-                    @endif
+                    <?php endif; ?>
 
-                    @error('answer')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+                    <?php $__errorArgs = ['answer'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                        <div class="invalid-feedback"><?php echo e($message); ?></div>
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
 
                     <div class="d-flex align-items-center justify-content-between mt-2">
                         <small class="text-muted">
-                            @if(!empty($q->answered_at))
-                                Answered: {{ $q->answered_at->format('M d, Y • h:i A') }}
-                            @else
+                            <?php if(!empty($q->answered_at)): ?>
+                                Answered: <?php echo e($q->answered_at->format('M d, Y • h:i A')); ?>
+
+                            <?php else: ?>
                                 Not answered yet
-                            @endif
+                            <?php endif; ?>
                         </small>
 
                         <button type="submit"
                                 class="btn btn-bisu-primary btn-sm"
-                                {{ $qAnswered ? 'disabled' : '' }}>
-                            {{ $qAnswered ? 'Locked' : 'Save Answer' }}
+                                <?php echo e($qAnswered ? 'disabled' : ''); ?>>
+                            <?php echo e($qAnswered ? 'Locked' : 'Save Answer'); ?>
+
                         </button>
                     </div>
                 </form>
@@ -547,20 +581,20 @@
         </div>
     </div>
 
-@empty
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
     <div class="text-center py-5 text-muted">
         No posts in this thread yet.
     </div>
-@endforelse
+<?php endif; ?>
 
 </div>
 
-{{-- Rename Topic Modal --}}
+
 <div class="modal fade" id="editLabelModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content" style="border-radius:14px;">
-      <form method="POST" action="{{ route('clusters.rename', $cluster->id) }}">
-        @csrf
+      <form method="POST" action="<?php echo e(route('clusters.rename', $cluster->id)); ?>">
+        <?php echo csrf_field(); ?>
 
         <div class="modal-header">
           <h5 class="modal-title">Rename Topic</h5>
@@ -572,7 +606,7 @@
           <input type="text"
                  name="label"
                  class="form-control"
-                 value="{{ $cluster->label }}"
+                 value="<?php echo e($cluster->label); ?>"
                  placeholder="Enter new topic title..."
                  required>
           <div class="form-text text-muted">Keep it short and clear (example: “TES Requirements”).</div>
@@ -589,4 +623,5 @@
   </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/clusters/show.blade.php ENDPATH**/ ?>

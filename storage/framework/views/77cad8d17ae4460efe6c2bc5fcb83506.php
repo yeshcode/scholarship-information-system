@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 
 <style>
     :root{
@@ -73,28 +73,30 @@
     }
 </style>
 
-{{-- Flash --}}
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show">
-        {{ session('success') }}
-        <button class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-@if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show">
-        {{ session('error') }}
-        <button class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
 
-{{-- Header --}}
+<?php if(session('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show">
+        <?php echo e(session('success')); ?>
+
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+<?php if(session('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <?php echo e(session('error')); ?>
+
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+
+
 <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
     <div>
         <h2 class="page-title-bisu">Manage Stipend</h2>
         <div class="subtext">Create and manage release schedules for TDP/TES batches.</div>
     </div>
 
-    <a href="{{ route('coordinator.stipend-releases.create') }}" class="btn btn-bisu btn-sm">
+    <a href="<?php echo e(route('coordinator.stipend-releases.create')); ?>" class="btn btn-bisu btn-sm">
         Add Stipend
     </a>
 </div>
@@ -102,27 +104,28 @@
 <div class="card card-bisu shadow-sm mb-3">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <div class="fw-bold text-secondary">Filters</div>
-        {{-- <small class="text-muted">Semester filter is based on release record</small> --}}
+        
     </div>
 
     <div class="card-body">
-        <form method="GET" action="{{ route('coordinator.manage-stipend-releases') }}">
+        <form method="GET" action="<?php echo e(route('coordinator.manage-stipend-releases')); ?>">
             <div class="row g-3 align-items-end">
                 <div class="col-12 col-md-4">
                     <label class="form-label-bisu">Release Semester</label>
                     <select name="semester_id" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">All semesters</option>
-                        @foreach($semesters as $sem)
-                            <option value="{{ $sem->id }}" {{ (string)$semesterId === (string)$sem->id ? 'selected' : '' }}>
-                                {{ $sem->term ?? $sem->semester_name }} {{ $sem->academic_year }}
+                        <?php $__currentLoopData = $semesters; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sem): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($sem->id); ?>" <?php echo e((string)$semesterId === (string)$sem->id ? 'selected' : ''); ?>>
+                                <?php echo e($sem->term ?? $sem->semester_name); ?> <?php echo e($sem->academic_year); ?>
+
                             </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
 
                 <div class="col-12 col-md-3">
                     <button class="btn btn-outline-secondary btn-sm" type="submit">Apply</button>
-                    <a href="{{ route('coordinator.manage-stipend-releases') }}" class="btn btn-outline-secondary btn-sm">
+                    <a href="<?php echo e(route('coordinator.manage-stipend-releases')); ?>" class="btn btn-outline-secondary btn-sm">
                         Reset
                     </a>
                 </div>
@@ -151,8 +154,8 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($releases as $release)
-                    @php
+                <?php $__empty_1 = true; $__currentLoopData = $releases; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $release): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <?php
                         $batch = $release->scholarshipBatch;
                         $schName = $batch?->scholarship?->scholarship_name ?? 'N/A';
                         $batchLabel = $batch ? ('Batch ' . $batch->batch_number) : 'N/A';
@@ -181,43 +184,41 @@
                         // unique modal ids
                         $editModalId = 'editReleaseModal_' . $release->id;
                         $deleteModalId = 'deleteReleaseModal_' . $release->id;
-                    @endphp
+                    ?>
 
                     <tr>
-                        <td>{{ $schName }}</td>
-                        <td>{{ $batchLabel }}</td>
-                        <td>{{ $releaseSemLabel }}</td>
+                        <td><?php echo e($schName); ?></td>
+                        <td><?php echo e($batchLabel); ?></td>
+                        <td><?php echo e($releaseSemLabel); ?></td>
 
-                        <td class="fw-semibold">{{ $release->title }}</td>
-                        <td class="text-end">₱ {{ number_format((float)$release->amount, 2) }}</td>
-                        <td><span class="badge {{ $badge }}">{{ $statusLabel }}</span></td>
+                        <td class="fw-semibold"><?php echo e($release->title); ?></td>
+                        <td class="text-end">₱ <?php echo e(number_format((float)$release->amount, 2)); ?></td>
+                        <td><span class="badge <?php echo e($badge); ?>"><?php echo e($statusLabel); ?></span></td>
                         <td class="text-end">
-                            <a href="{{ route('coordinator.stipend-releases.form', $release->id) }}" class="btn btn-sm btn-outline-secondary">
+                            <a href="<?php echo e(route('coordinator.stipend-releases.form', $release->id)); ?>" class="btn btn-sm btn-outline-secondary">
                                 Form
                             </a>
 
-                            {{-- EDIT (Modal) --}}
+                            
                             <button type="button"
                                     class="btn btn-sm btn-outline-primary"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#{{ $editModalId }}">
+                                    data-bs-target="#<?php echo e($editModalId); ?>">
                                 Edit
                             </button>
 
-                            {{-- DELETE (Modal) --}}
+                            
                             <button type="button"
                                     class="btn btn-sm btn-outline-danger"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#{{ $deleteModalId }}">
+                                    data-bs-target="#<?php echo e($deleteModalId); ?>">
                                 Delete
                             </button>
                         </td>
                     </tr>
 
-                    {{-- =========================
-                         EDIT MODAL (Status only)
-                         ========================= --}}
-                    <div class="modal fade modal-bisu" id="{{ $editModalId }}" tabindex="-1" aria-hidden="true">
+                    
+                    <div class="modal fade modal-bisu" id="<?php echo e($editModalId); ?>" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered modal-md">
                             <div class="modal-content">
                                 <div class="modal-header">
@@ -228,16 +229,16 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
 
-                                <form action="{{ route('coordinator.stipend-releases.update', $release->id) }}" method="POST">
-                                    @csrf
-                                    @method('PUT')
+                                <form action="<?php echo e(route('coordinator.stipend-releases.update', $release->id)); ?>" method="POST">
+                                    <?php echo csrf_field(); ?>
+                                    <?php echo method_field('PUT'); ?>
 
-                                    {{-- REQUIRED BY VALIDATION (hidden, unchanged) --}}
-                                    <input type="hidden" name="batch_id" value="{{ $release->batch_id }}">
-                                    <input type="hidden" name="semester_id" value="{{ $release->semester_id }}">
-                                    <input type="hidden" name="title" value="{{ $release->title }}">
-                                    <input type="hidden" name="amount" value="{{ $release->amount }}">
-                                    <input type="hidden" name="notes" value="{{ $release->notes }}">
+                                    
+                                    <input type="hidden" name="batch_id" value="<?php echo e($release->batch_id); ?>">
+                                    <input type="hidden" name="semester_id" value="<?php echo e($release->semester_id); ?>">
+                                    <input type="hidden" name="title" value="<?php echo e($release->title); ?>">
+                                    <input type="hidden" name="amount" value="<?php echo e($release->amount); ?>">
+                                    <input type="hidden" name="notes" value="<?php echo e($release->notes); ?>">
 
                                     <div class="modal-body">
                                         <div class="help-note mb-3">
@@ -247,49 +248,49 @@
                                         <div class="row g-3">
                                             <div class="col-12">
                                                 <label class="form-label mb-1">Scholarship</label>
-                                                <input type="text" class="form-control form-control-sm" value="{{ $schName }}" readonly>
-                                                {{-- <div class="readonly-hint mt-1">Read-only</div> --}}
+                                                <input type="text" class="form-control form-control-sm" value="<?php echo e($schName); ?>" readonly>
+                                                
                                             </div>
 
                                             <div class="col-md-6">
                                                 <label class="form-label mb-1">Batch</label>
-                                                <input type="text" class="form-control form-control-sm" value="{{ $batchLabel }}" readonly>
-                                                {{-- <div class="readonly-hint mt-1">Read-only</div> --}}
+                                                <input type="text" class="form-control form-control-sm" value="<?php echo e($batchLabel); ?>" readonly>
+                                                
                                             </div>
 
                                             <div class="col-md-6">
                                                 <label class="form-label mb-1">Release Semester</label>
-                                                <input type="text" class="form-control form-control-sm" value="{{ $releaseSemLabel }}" readonly>
-                                                {{-- <div class="readonly-hint mt-1">Read-only</div> --}}
+                                                <input type="text" class="form-control form-control-sm" value="<?php echo e($releaseSemLabel); ?>" readonly>
+                                                
                                             </div>
 
                                             <div class="col-12">
                                                 <label class="form-label mb-1">Title</label>
-                                                <input type="text" class="form-control form-control-sm" value="{{ $release->title }}" readonly>
-                                                {{-- <div class="readonly-hint mt-1">Read-only</div> --}}
+                                                <input type="text" class="form-control form-control-sm" value="<?php echo e($release->title); ?>" readonly>
+                                                
                                             </div>
 
                                             <div class="col-md-6">
                                                 <label class="form-label mb-1">Amount</label>
-                                                <input type="text" class="form-control form-control-sm" value="₱ {{ number_format((float)$release->amount, 2) }}" readonly>
-                                                {{-- <div class="readonly-hint mt-1">Read-only</div> --}}
+                                                <input type="text" class="form-control form-control-sm" value="₱ <?php echo e(number_format((float)$release->amount, 2)); ?>" readonly>
+                                                
                                             </div>
 
                                             <div class="col-md-6">
                                                 <label class="form-label mb-1">Status (Editable)</label>
                                                 <select name="status" class="form-select form-select-sm" required>
-                                                    <option value="for_billing" {{ $release->status === 'for_billing' ? 'selected' : '' }}>For Billing</option>
-                                                    <option value="for_check" {{ $release->status === 'for_check' ? 'selected' : '' }}>For Check</option>
-                                                    <option value="for_release" {{ $release->status === 'for_release' ? 'selected' : '' }}>For Release</option>
-                                                    <option value="received" {{ $release->status === 'received' ? 'selected' : '' }}>Received</option>
+                                                    <option value="for_billing" <?php echo e($release->status === 'for_billing' ? 'selected' : ''); ?>>For Billing</option>
+                                                    <option value="for_check" <?php echo e($release->status === 'for_check' ? 'selected' : ''); ?>>For Check</option>
+                                                    <option value="for_release" <?php echo e($release->status === 'for_release' ? 'selected' : ''); ?>>For Release</option>
+                                                    <option value="received" <?php echo e($release->status === 'received' ? 'selected' : ''); ?>>Received</option>
                                                 </select>
-                                                {{-- <div class="readonly-hint mt-1">This is the only editable field.</div> --}}
+                                                
                                             </div>
 
                                             <div class="col-12">
                                                 <label class="form-label mb-1">Notes</label>
-                                                <textarea class="form-control form-control-sm" rows="3" readonly>{{ $release->notes }}</textarea>
-                                                {{-- <div class="readonly-hint mt-1">Read-only</div> --}}
+                                                <textarea class="form-control form-control-sm" rows="3" readonly><?php echo e($release->notes); ?></textarea>
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -303,10 +304,8 @@
                         </div>
                     </div>
 
-                    {{-- =========================
-                         DELETE MODAL (Confirm)
-                         ========================= --}}
-                    <div class="modal fade modal-bisu" id="{{ $deleteModalId }}" tabindex="-1" aria-hidden="true">
+                    
+                    <div class="modal fade modal-bisu" id="<?php echo e($deleteModalId); ?>" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered modal-md">
                             <div class="modal-content">
                                 <div class="modal-header">
@@ -324,13 +323,13 @@
 
                                     <div class="border rounded-3 p-3">
                                         <div class="row g-2 small">
-                                            <div class="col-12"><span class="text-muted">Scholarship:</span> <span class="fw-semibold">{{ $schName }}</span></div>
-                                            <div class="col-12"><span class="text-muted">Batch:</span> <span class="fw-semibold">{{ $batchLabel }}</span></div>
-                                            <div class="col-12"><span class="text-muted">Release Semester:</span> <span class="fw-semibold">{{ $releaseSemLabel }}</span></div>
-                                            <div class="col-12"><span class="text-muted">Title:</span> <span class="fw-semibold">{{ $release->title }}</span></div>
-                                            <div class="col-12"><span class="text-muted">Amount:</span> <span class="fw-semibold">₱ {{ number_format((float)$release->amount, 2) }}</span></div>
-                                            <div class="col-12"><span class="text-muted">Status:</span> <span class="badge {{ $badge }}">{{ $statusLabel }}</span></div>
-                                            <div class="col-12"><span class="text-muted">Notes:</span> <span class="fw-semibold">{{ $release->notes ?: 'None' }}</span></div>
+                                            <div class="col-12"><span class="text-muted">Scholarship:</span> <span class="fw-semibold"><?php echo e($schName); ?></span></div>
+                                            <div class="col-12"><span class="text-muted">Batch:</span> <span class="fw-semibold"><?php echo e($batchLabel); ?></span></div>
+                                            <div class="col-12"><span class="text-muted">Release Semester:</span> <span class="fw-semibold"><?php echo e($releaseSemLabel); ?></span></div>
+                                            <div class="col-12"><span class="text-muted">Title:</span> <span class="fw-semibold"><?php echo e($release->title); ?></span></div>
+                                            <div class="col-12"><span class="text-muted">Amount:</span> <span class="fw-semibold">₱ <?php echo e(number_format((float)$release->amount, 2)); ?></span></div>
+                                            <div class="col-12"><span class="text-muted">Status:</span> <span class="badge <?php echo e($badge); ?>"><?php echo e($statusLabel); ?></span></div>
+                                            <div class="col-12"><span class="text-muted">Notes:</span> <span class="fw-semibold"><?php echo e($release->notes ?: 'None'); ?></span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -338,9 +337,9 @@
                                 <div class="modal-footer bg-white">
                                     <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
 
-                                    <form action="{{ route('coordinator.stipend-releases.destroy', $release->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
+                                    <form action="<?php echo e(route('coordinator.stipend-releases.destroy', $release->id)); ?>" method="POST" class="d-inline">
+                                        <?php echo csrf_field(); ?>
+                                        <?php echo method_field('DELETE'); ?>
                                         <button type="submit" class="btn btn-danger btn-sm">Yes, Delete</button>
                                     </form>
                                 </div>
@@ -348,18 +347,20 @@
                         </div>
                     </div>
 
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="7" class="text-center text-muted py-4">No release schedules found.</td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
 
     <div class="card-body">
-        {{ $releases->links() }}
+        <?php echo e($releases->links()); ?>
+
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/manage-stipend-releases.blade.php ENDPATH**/ ?>
