@@ -272,17 +272,14 @@ class CoordinatorController extends Controller
         $scholarsQuery->where('scholars.batch_id', $batchId);
     }
 
-    // Search
+  
+    // Search (AUTO: Student ID OR Name)
     if ($q !== '') {
-        if ($searchType === 'student_id') {
-            $scholarsQuery->where('users.student_id', 'ILIKE', "%{$q}%");
-        } else {
-            // name
-            $scholarsQuery->where(function ($w) use ($q) {
-                $w->where('users.lastname', 'ILIKE', "%{$q}%")
-                  ->orWhere('users.firstname', 'ILIKE', "%{$q}%");
-            });
-        }
+        $scholarsQuery->where(function ($w) use ($q) {
+            $w->where('users.student_id', 'ILIKE', "%{$q}%")
+            ->orWhere('users.lastname', 'ILIKE', "%{$q}%")
+            ->orWhere('users.firstname', 'ILIKE', "%{$q}%");
+        });
     }
 
     // Alphabetical sorting (your request)
@@ -2791,7 +2788,7 @@ public function addSelectedUploadedScholars(Request $request)
         }
     });
 
-    $msg = 'Added: ' . count($added) . ' | Skipped: ' . $skipped;
+    $msg = 'Added: ' . count($added);
     return redirect()->route('coordinator.manage-scholars')->with('success', $msg);
 }
 

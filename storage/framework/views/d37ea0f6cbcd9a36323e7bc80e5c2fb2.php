@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 
 <style>
     :root{
@@ -53,46 +53,45 @@
 
 </style>
 
-{{-- Flash --}}
-@if(session('success'))
+
+<?php if(session('success')): ?>
     <div class="alert alert-success alert-dismissible fade show">
-        {{ session('success') }}
+        <?php echo e(session('success')); ?>
+
         <button class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-@endif
+<?php endif; ?>
 
-@if(session('error'))
+<?php if(session('error')): ?>
     <div class="alert alert-danger alert-dismissible fade show">
-        {{ session('error') }}
+        <?php echo e(session('error')); ?>
+
         <button class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-@endif
+<?php endif; ?>
 
-{{-- Header --}}
+
 <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
     <div>
         <h2 class="page-title-bisu">Upload Scholars</h2>
-        {{-- <div class="subtext">
-            Upload an <strong>Excel/CSV</strong> file. The system will match rows against your student database and check
-            enrollment status in the <strong>current semester</strong>.
-        </div> --}}
+        
 
-        @if(!empty($currentSemester))
+        <?php if(!empty($currentSemester)): ?>
             <div class="mt-1">
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
                     Current Semester:
-                    <strong>{{ $currentSemester->term ?? $currentSemester->semester_name }} {{ $currentSemester->academic_year }}</strong>
+                    <strong><?php echo e($currentSemester->term ?? $currentSemester->semester_name); ?> <?php echo e($currentSemester->academic_year); ?></strong>
                 </span>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 
-    <a href="{{ route('coordinator.manage-scholars') }}" class="btn btn-outline-secondary btn-sm">
+    <a href="<?php echo e(route('coordinator.manage-scholars')); ?>" class="btn btn-outline-secondary btn-sm">
         ← Back to Manage Scholars
     </a>
 </div>
 
-{{-- Upload Card --}}
+
 <div class="card shadow-sm mb-3">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <div class="fw-bold text-secondary">Upload File</div>
@@ -100,8 +99,8 @@
     </div>
 
     <div class="card-body">
-        <form action="{{ route('coordinator.scholars.upload.process') }}" method="POST" enctype="multipart/form-data">
-            @csrf
+        <form action="<?php echo e(route('coordinator.scholars.upload.process')); ?>" method="POST" enctype="multipart/form-data">
+            <?php echo csrf_field(); ?>
 
             <div class="row g-3 align-items-end">
                 <div class="col-12 col-md-8">
@@ -113,10 +112,7 @@
                         accept=".xlsx,.xls,.csv"
                         required
                     >
-                    {{-- <div class="form-text">
-                        The system will auto-detect headers like <code>First Name</code>, <code>FIRSTNAME</code>, <code>first_name</code>, etc.
-                        It only reads: <strong>First Name, Last Name, Year Level, Enrollment Status</strong>.
-                    </div> --}}
+                    
                 </div>
 
                 <div class="col-12 col-md-4 d-flex gap-2">
@@ -124,7 +120,7 @@
                         Process File
                     </button>
 
-                    <a href="{{ route('coordinator.manage-scholars') }}" class="btn btn-outline-secondary btn-sm w-100">
+                    <a href="<?php echo e(route('coordinator.manage-scholars')); ?>" class="btn btn-outline-secondary btn-sm w-100">
                         Cancel
                     </a>
                 </div>
@@ -133,8 +129,8 @@
     </div>
 </div>
 
-{{-- ✅ RESULTS MODAL --}}
-@if(session('results'))
+
+<?php if(session('results')): ?>
 <div class="modal fade" id="resultsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
@@ -149,51 +145,50 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            {{-- Main action: Add selected as scholars --}}
-            <form method="POST" action="{{ route('coordinator.scholars.upload.add-selected') }}">
-                @csrf
+            
+            <form method="POST" action="<?php echo e(route('coordinator.scholars.upload.add-selected')); ?>">
+                <?php echo csrf_field(); ?>
 
-                <input type="hidden" name="results_json" value='@json(session("results"))'>
+                <input type="hidden" name="results_json" value='<?php echo json_encode(session("results"), 15, 512) ?>'>
 
                 <div class="modal-body">
 
-                    {{-- Assignment controls --}}
+                    
                     <div class="card border mb-3">
                         <div class="card-body">
                             <div class="row g-2 align-items-end">
 
-                                {{-- Scholarship --}}
+                                
                                 <div class="col-12 col-md-6">
                                     <label class="form-label fw-semibold text-secondary mb-1">Assign Scholarship</label>
                                     <select name="scholarship_id" id="scholarship_id" class="form-select form-select-sm" required>
                                         <option value="">Select scholarship...</option>
-                                        @foreach(($scholarships ?? []) as $s)
-                                            <option value="{{ $s->id }}">{{ $s->scholarship_name }}</option>
-                                        @endforeach
+                                        <?php $__currentLoopData = ($scholarships ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <option value="<?php echo e($s->id); ?>"><?php echo e($s->scholarship_name); ?></option>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </select>
                                 </div>
 
-                                {{-- Batch --}}
+                                
                                 <div class="col-12 col-md-6" id="batch_wrap">
                                     <label class="form-label fw-semibold text-secondary mb-1">Batch (optional)</label>
                                     <select name="batch_id" id="batch_id" class="form-select form-select-sm">
                                         <option value="" selected>No batch</option>
-                                        @foreach(($batches ?? []) as $b)
+                                        <?php $__currentLoopData = ($batches ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <option
-                                                value="{{ $b->id }}"
-                                                data-scholarship-id="{{ $b->scholarship_id }}"
+                                                value="<?php echo e($b->id); ?>"
+                                                data-scholarship-id="<?php echo e($b->scholarship_id); ?>"
                                             >
-                                                Batch {{ $b->batch_number }}
-                                                ({{ $b->semester->term ?? '' }} {{ $b->semester->academic_year ?? '' }})
+                                                Batch <?php echo e($b->batch_number); ?>
+
+                                                (<?php echo e($b->semester->term ?? ''); ?> <?php echo e($b->semester->academic_year ?? ''); ?>)
                                             </option>
-                                        @endforeach
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </select>
-                                    {{-- <div class="form-text">
-                                        If your scholarship has batches (TDP/TES), choose a batch. Otherwise leave as No batch.
-                                    </div> --}}
+                                    
                                 </div>
 
-                                {{-- Status --}}
+                                
                                 <input type="hidden" name="status" value="active">
 
 
@@ -207,7 +202,7 @@
                         </div>
                     </div>
 
-                    {{-- Results table --}}
+                    
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover mb-0">
                             <thead class="thead-bisu">
@@ -223,58 +218,59 @@
                             </thead>
 
                             <tbody>
-                                @foreach(session('results') as $index => $result)
-                                    @php
+                                <?php $__currentLoopData = session('results'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $result): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php
                                         $verified = !empty($result['user']);
                                         $isScholar = !empty($result['is_scholar']);
                                         $enrollStatus = $result['enrollment_status'] ?? 'not_enrolled';
                                         $canSelect = $verified && ($enrollStatus === 'enrolled') && !$isScholar;
-                                    @endphp
+                                    ?>
 
-                                    <tr class="{{ $canSelect ? '' : 'row-disabled' }}">
+                                    <tr class="<?php echo e($canSelect ? '' : 'row-disabled'); ?>">
                                         <td class="text-center">
-                                            @if($canSelect)
-                                                <input type="checkbox" name="selected_indexes[]" value="{{ $index }}">
-                                            @else
+                                            <?php if($canSelect): ?>
+                                                <input type="checkbox" name="selected_indexes[]" value="<?php echo e($index); ?>">
+                                            <?php else: ?>
                                                 <span class="badge badge-na">-</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
 
-                                        <td>{{ $result['data']['last_name'] ?? '' }}</td>
-                                        <td>{{ $result['data']['first_name'] ?? '' }}</td>
-                                        <td>{{ $result['data']['year_level'] ?? '' }}</td>
+                                        <td><?php echo e($result['data']['last_name'] ?? ''); ?></td>
+                                        <td><?php echo e($result['data']['first_name'] ?? ''); ?></td>
+                                        <td><?php echo e($result['data']['year_level'] ?? ''); ?></td>
 
                                         <td>
-                                            @if($verified)
+                                            <?php if($verified): ?>
                                                 <span class="badge bg-success-subtle text-success">Verified</span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="badge bg-danger-subtle text-danger">Not Verified</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
 
                                         <td>
-                                            @if($enrollStatus === 'enrolled')
+                                            <?php if($enrollStatus === 'enrolled'): ?>
                                                 <span class="badge bg-success-subtle text-success">ENROLLED</span>
-                                            @elseif($enrollStatus === 'dropped')
+                                            <?php elseif($enrollStatus === 'dropped'): ?>
                                                 <span class="badge bg-danger-subtle text-danger">DROPPED</span>
-                                            @elseif($enrollStatus === 'graduated')
+                                            <?php elseif($enrollStatus === 'graduated'): ?>
                                                 <span class="badge bg-primary-subtle text-primary">GRADUATED</span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="badge bg-secondary-subtle text-secondary">NOT ENROLLED</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
 
                                         <td>
-                                            @if($isScholar)
+                                            <?php if($isScholar): ?>
                                                 <span class="badge bg-warning-subtle text-warning">
-                                                    {{ $result['existing_scholarship_name'] ?? 'SCHOLAR' }}
+                                                    <?php echo e($result['existing_scholarship_name'] ?? 'SCHOLAR'); ?>
+
                                                 </span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="badge bg-secondary-subtle text-secondary">NO</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tbody>
 
                         </table>
@@ -296,15 +292,15 @@
         </div>
     </div>
 </div>
-@endif
+<?php endif; ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    @if(session('results'))
+    <?php if(session('results')): ?>
         const el = document.getElementById('resultsModal');
         const resultsModal = new bootstrap.Modal(el, { backdrop: 'static' });
         resultsModal.show();
-    @endif
+    <?php endif; ?>
 });
 </script>
 
@@ -355,4 +351,6 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/upload-scholars.blade.php ENDPATH**/ ?>

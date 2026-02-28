@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 
 <style>
     .page-title-blue {
@@ -28,24 +28,26 @@
     }
 </style>
 
-{{-- Flash --}}
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show">
-        {{ session('success') }}
-        <button class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-@if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show">
-        {{ session('error') }}
-        <button class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
 
-{{-- Header --}}
+<?php if(session('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show">
+        <?php echo e(session('success')); ?>
+
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+<?php if(session('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <?php echo e(session('error')); ?>
+
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+
+
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-2 mb-3">
 
-    {{-- LEFT: Title + subtitle --}}
+    
     <div>
         <h2 class="page-title-blue">Add Scholar (Manual)</h2>
         <div class="subtext">
@@ -53,32 +55,32 @@
         </div>
     </div>
 
-    {{-- RIGHT: Back button + current semester badge --}}
+    
     <div class="d-flex flex-column align-items-md-end gap-2">
 
-        <a href="{{ route('coordinator.manage-scholars') }}"
+        <a href="<?php echo e(route('coordinator.manage-scholars')); ?>"
            class="btn btn-outline-secondary btn-sm">
             ← Back to Manage Scholars
         </a>
 
         <div>
-            @if($currentSemester)
+            <?php if($currentSemester): ?>
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
                     Current Semester:
-                    <strong>{{ $currentSemester->term ?? $currentSemester->semester_name }} {{ $currentSemester->academic_year }}</strong>
+                    <strong><?php echo e($currentSemester->term ?? $currentSemester->semester_name); ?> <?php echo e($currentSemester->academic_year); ?></strong>
                 </span>
-            @else
+            <?php else: ?>
                 <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
                     No current semester set
                 </span>
-            @endif
+            <?php endif; ?>
         </div>
 
     </div>
 </div>
 
 
-{{-- Search Card --}}
+
 <div class="card shadow-sm mb-3">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <strong class="text-secondary">Search Student</strong>
@@ -86,28 +88,28 @@
     </div>
 
     <div class="card-body">
-        <form method="GET" action="{{ route('coordinator.scholars.create') }}">
+        <form method="GET" action="<?php echo e(route('coordinator.scholars.create')); ?>">
             <div class="row g-2 align-items-end">
                 <div class="col-md-8">
                     <label class="form-label fw-semibold text-secondary mb-1">Search</label>
-                    <input type="text" name="q" value="{{ $q ?? '' }}"
+                    <input type="text" name="q" value="<?php echo e($q ?? ''); ?>"
                            class="form-control form-control-sm"
                            placeholder="Lastname, Firstname, or Student ID...">
                 </div>
                 <div class="col-md-4 d-flex gap-2">
                     <button class="btn btn-bisu-primary btn-sm w-100" type="submit">Search</button>
-                    <a class="btn btn-outline-secondary btn-sm w-100" href="{{ route('coordinator.scholars.create') }}">Clear</a>
+                    <a class="btn btn-outline-secondary btn-sm w-100" href="<?php echo e(route('coordinator.scholars.create')); ?>">Clear</a>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-{{-- Candidate Results --}}
+
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <strong class="text-secondary">Search Results</strong>
-        {{-- <small class="text-muted">Click "Add Scholar" only if eligible</small> --}}
+        
     </div>
 
     <div class="table-responsive">
@@ -124,70 +126,71 @@
                 </tr>
             </thead>
             <tbody>
-                @if(($candidates ?? collect())->count() === 0)
+                <?php if(($candidates ?? collect())->count() === 0): ?>
                     <tr>
                         <td colspan="7" class="text-center text-muted py-4">
-                            @if(($q ?? '') === '')
+                            <?php if(($q ?? '') === ''): ?>
                                 Search a student to show results.
-                            @else
+                            <?php else: ?>
                                 No matching students found.
-                            @endif
+                            <?php endif; ?>
                         </td>
                     </tr>
-                @else
-                    @foreach($candidates as $c)
-                        @php
+                <?php else: ?>
+                    <?php $__currentLoopData = $candidates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php
                             $disabled = (!$c->is_enrolled_current) || ($c->is_scholar) || (!$currentSemester);
-                        @endphp
+                        ?>
                         <tr>
                             <td class="text-start">
-                                {{ $c->user->lastname }}, {{ $c->user->firstname }}
+                                <?php echo e($c->user->lastname); ?>, <?php echo e($c->user->firstname); ?>
+
                             </td>
-                            <td class="text-start">{{ $c->user->student_id ?? 'N/A' }}</td>
-                            <td class="text-start">{{ $c->user->course->course_name ?? 'N/A' }}</td>
-                            <td class="text-start">{{ $c->user->yearLevel->year_level_name ?? 'N/A' }}</td>
+                            <td class="text-start"><?php echo e($c->user->student_id ?? 'N/A'); ?></td>
+                            <td class="text-start"><?php echo e($c->user->course->course_name ?? 'N/A'); ?></td>
+                            <td class="text-start"><?php echo e($c->user->yearLevel->year_level_name ?? 'N/A'); ?></td>
                             <td class="text-start">
-                                @if($c->is_enrolled_current)
+                                <?php if($c->is_enrolled_current): ?>
                                     <span class="badge bg-success-subtle text-success">ENROLLED</span>
-                                @else
+                                <?php else: ?>
                                     <span class="badge bg-danger-subtle text-danger">NOT ENROLLED</span>
-                                @endif
+                                <?php endif; ?>
                             </td>
                             <td class="text-start">
-                                @if($c->is_scholar)
+                                <?php if($c->is_scholar): ?>
                                     <span class="badge bg-warning-subtle text-warning">YES</span>
-                                @else
+                                <?php else: ?>
                                     <span class="badge bg-secondary-subtle text-secondary">NO</span>
-                                @endif
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <button type="button"
                                         class="btn btn-sm btn-bisu-primary"
                                         data-bs-toggle="modal"
                                         data-bs-target="#addScholarModal"
-                                        data-student-id="{{ $c->user->id }}"
-                                        data-student-name="{{ $c->user->firstname }} {{ $c->user->lastname }}"
-                                        {{ $disabled ? 'disabled' : '' }}>
+                                        data-student-id="<?php echo e($c->user->id); ?>"
+                                        data-student-name="<?php echo e($c->user->firstname); ?> <?php echo e($c->user->lastname); ?>"
+                                        <?php echo e($disabled ? 'disabled' : ''); ?>>
                                     Add Scholar
                                 </button>
 
-                                @if(!$currentSemester)
+                                <?php if(!$currentSemester): ?>
                                     <div class="small text-muted mt-1">No current semester</div>
-                                @elseif($c->is_scholar)
+                                <?php elseif($c->is_scholar): ?>
                                     <div class="small text-muted mt-1">Already a scholar</div>
-                                @elseif(!$c->is_enrolled_current)
+                                <?php elseif(!$c->is_enrolled_current): ?>
                                     <div class="small text-muted mt-1">Not enrolled current sem</div>
-                                @endif
+                                <?php endif; ?>
                             </td>
                         </tr>
-                    @endforeach
-                @endif
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
 </div>
 
-{{-- Scholar Records --}}
+
 <div class="card shadow-sm">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <strong class="text-secondary">Scholar Records</strong>
@@ -207,52 +210,54 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($scholars as $s)
+                <?php $__empty_1 = true; $__currentLoopData = $scholars; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <tr>
-                        <td class="text-start">{{ $s->user->lastname ?? 'N/A' }}, {{ $s->user->firstname ?? 'N/A' }}</td>
-                        <td class="text-start">{{ $s->user->student_id ?? 'N/A' }}</td>
-                        <td class="text-start">{{ $s->scholarship->scholarship_name ?? 'N/A' }}</td>
-                        <td class="text-start">{{ $s->scholarshipBatch->batch_number ?? 'N/A' }}</td>
+                        <td class="text-start"><?php echo e($s->user->lastname ?? 'N/A'); ?>, <?php echo e($s->user->firstname ?? 'N/A'); ?></td>
+                        <td class="text-start"><?php echo e($s->user->student_id ?? 'N/A'); ?></td>
+                        <td class="text-start"><?php echo e($s->scholarship->scholarship_name ?? 'N/A'); ?></td>
+                        <td class="text-start"><?php echo e($s->scholarshipBatch->batch_number ?? 'N/A'); ?></td>
                         <td class="text-start">
-                            @if(($s->status ?? '') === 'active')
+                            <?php if(($s->status ?? '') === 'active'): ?>
                                 <span class="badge bg-success-subtle text-success">
                                     ACTIVE
                                 </span>
-                            @elseif(($s->status ?? '') === 'inactive')
+                            <?php elseif(($s->status ?? '') === 'inactive'): ?>
                                 <span class="badge bg-danger-subtle text-danger">
                                     INACTIVE
                                 </span>
-                            @else
+                            <?php else: ?>
                                 <span class="badge bg-secondary-subtle text-secondary">
-                                    {{ strtoupper($s->status ?? 'N/A') }}
+                                    <?php echo e(strtoupper($s->status ?? 'N/A')); ?>
+
                                 </span>
-                            @endif
+                            <?php endif; ?>
                         </td>
-                        <td class="text-start">{{ $s->date_added ?? '' }}</td>
+                        <td class="text-start"><?php echo e($s->date_added ?? ''); ?></td>
                     </tr>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="6" class="text-center text-muted py-4">
                             No scholars found.
                         </td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
 
     <div class="card-body pt-3">
-        {{ $scholars->links() }}
+        <?php echo e($scholars->links()); ?>
+
     </div>
 </div>
 
-{{-- ===================================================== --}}
-{{-- MODAL: Add Scholar (ENHANCED) --}}
-{{-- ===================================================== --}}
+
+
+
 <div class="modal fade" id="addScholarModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <form method="POST" action="{{ route('coordinator.scholars.store') }}" class="modal-content border-0 shadow">
-            @csrf
+        <form method="POST" action="<?php echo e(route('coordinator.scholars.store')); ?>" class="modal-content border-0 shadow">
+            <?php echo csrf_field(); ?>
 
             <div class="modal-header" style="background:#003366; color:#fff;">
                 <div class="d-flex flex-column">
@@ -265,7 +270,7 @@
             <div class="modal-body p-4">
                 <input type="hidden" name="student_id" id="modal_student_id">
 
-                {{-- Student Preview --}}
+                
                 <div class="p-3 rounded-3 border mb-3" style="background:#f8fafc;">
                     <div class="small text-muted mb-1">Selected Student</div>
                     <input type="text" id="modal_student_name"
@@ -274,49 +279,51 @@
                 </div>
 
                 <div class="row g-3">
-                    {{-- Scholarship --}}
+                    
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary mb-1">
                             Scholarship <span class="text-danger">*</span>
                         </label>
                         <select name="scholarship_id" id="modal_scholarship_id" class="form-select form-select-sm" required>
                             <option value="">Select scholarship...</option>
-                            @foreach($scholarships as $sch)
-                                <option value="{{ $sch->id }}">
-                                    {{ $sch->scholarship_name }}
+                            <?php $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sch): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($sch->id); ?>">
+                                    <?php echo e($sch->scholarship_name); ?>
+
                                 </option>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                         <div class="form-text">Example: DOST, DOST-JLSS, TES, TDP</div>
                     </div>
 
-                    {{-- Batch (depends on scholarship) --}}
+                    
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary mb-1">
                             Batch <span class="text-danger">*</span>
                         </label>
 
-                        {{-- This is the real field submitted --}}
+                        
                         <select name="batch_id" id="modal_batch_id" class="form-select form-select-sm" required disabled>
                             <option value="">Select scholarship first...</option>
                         </select>
 
                         <div class="form-text">Batch list changes based on selected scholarship.</div>
 
-                        {{-- Hidden “all batches” data source (from your existing $batches) --}}
+                        
                         <select id="__all_batches" class="d-none">
-                            @foreach($batches as $b)
+                            <?php $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <option
-                                    value="{{ $b->id }}"
-                                    data-scholarship-id="{{ $b->scholarship_id }}"
+                                    value="<?php echo e($b->id); ?>"
+                                    data-scholarship-id="<?php echo e($b->scholarship_id); ?>"
                                 >
-                                    Batch {{ $b->batch_number }}
+                                    Batch <?php echo e($b->batch_number); ?>
+
                                 </option>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
 
-                    {{-- Date Added --}}
+                    
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary mb-1">
                             Date Added <span class="text-danger">*</span>
@@ -325,7 +332,7 @@
                         <div class="form-text">This will be saved as the scholar’s official start date.</div>
                     </div>
 
-                    {{-- Notes / Info --}}
+                    
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary mb-1">Note</label>
                         <div class="alert alert-info py-2 mb-0 small">
@@ -335,17 +342,17 @@
                     </div>
                 </div>
 
-                {{-- Errors --}}
-                @if ($errors->any())
+                
+                <?php if($errors->any()): ?>
                     <div class="alert alert-danger mt-3 mb-0">
                         <div class="fw-semibold">Please fix the errors:</div>
                         <ul class="mb-0">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
+                            <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <li><?php echo e($error); ?></li>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </ul>
                     </div>
-                @endif
+                <?php endif; ?>
             </div>
 
             <div class="modal-footer bg-light">
@@ -428,4 +435,6 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/create-scholar.blade.php ENDPATH**/ ?>

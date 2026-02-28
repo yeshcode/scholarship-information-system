@@ -1,15 +1,15 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
 
-@php
+<?php $__env->startSection('page-content'); ?>
+
+<?php
     $tdpTesScholarships = collect($scholarships ?? [])
         ->filter(function ($s) {
             $name = strtoupper(trim($s->scholarship_name ?? ''));
             return str_contains($name, 'TDP') || str_contains($name, 'TES');
         })
         ->values();
-@endphp
+?>
 
 <style>
     :root{
@@ -108,22 +108,24 @@
     }
 </style>
 
-{{-- Flash Messages --}}
-@if(session('success'))
+
+<?php if(session('success')): ?>
     <div class="alert alert-success alert-dismissible fade show">
-        {{ session('success') }}
+        <?php echo e(session('success')); ?>
+
         <button class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-@endif
+<?php endif; ?>
 
-@if(session('error'))
+<?php if(session('error')): ?>
     <div class="alert alert-danger alert-dismissible fade show">
-        {{ session('error') }}
+        <?php echo e(session('error')); ?>
+
         <button class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-@endif
+<?php endif; ?>
 
-{{-- Header --}}
+
 <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
     <div>
         <h2 class="page-title-bisu">Scholarship Batches</h2>
@@ -133,18 +135,18 @@
     </div>
 
     <div class="d-flex gap-2">
-        {{-- ✅ Search removed --}}
+        
         <button type="button" class="btn btn-bisu btn-sm" data-bs-toggle="modal" data-bs-target="#addBatchModal">
             Add Batch
         </button>
     </div>
 </div>
 
-{{-- Table Card --}}
+
 <div class="card card-bisu shadow-sm">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <div class="fw-bold text-secondary">Batch List</div>
-        <small class="text-muted">Showing {{ $batches->count() }} of {{ $batches->total() }}</small>
+        <small class="text-muted">Showing <?php echo e($batches->count()); ?> of <?php echo e($batches->total()); ?></small>
     </div>
 
     <div class="card-body p-0">
@@ -160,69 +162,70 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($batches as $batch)
-                        @php
+                    <?php $__empty_1 = true; $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $batch): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                        <?php
                             $schName = $batch->scholarship->scholarship_name ?? 'N/A';
                             $semTerm = $batch->semester->term ?? 'N/A';
                             $semAy = $batch->semester->academic_year ?? '';
                             $semLabel = $semTerm . ' ' . $semAy;
                             $dateAdded = $batch->created_at ? $batch->created_at->format('M d, Y') : '—';
                             $dateUpdated = $batch->updated_at ? $batch->updated_at->format('M d, Y') : '—';
-                        @endphp
+                        ?>
                         <tr>
-                            <td><span class="badge-soft">{{ $schName }}</span></td>
-                            <td>{{ $semLabel }}</td>
-                            <td class="fw-bold">Batch {{ $batch->batch_number }}</td>
+                            <td><span class="badge-soft"><?php echo e($schName); ?></span></td>
+                            <td><?php echo e($semLabel); ?></td>
+                            <td class="fw-bold">Batch <?php echo e($batch->batch_number); ?></td>
 
                             <td>
-                                <div class="fw-semibold">{{ $dateAdded }}</div>
-                                <div class="small-muted">Updated: {{ $dateUpdated }}</div>
+                                <div class="fw-semibold"><?php echo e($dateAdded); ?></div>
+                                <div class="small-muted">Updated: <?php echo e($dateUpdated); ?></div>
                             </td>
 
                             <td class="text-end">
-                                {{-- ✅ EDIT MODAL TRIGGER --}}
+                                
                                 <button type="button"
                                         class="action-btn action-edit me-2"
                                         data-bs-toggle="modal"
                                         data-bs-target="#editBatchModal"
-                                        data-id="{{ $batch->id }}"
-                                        data-scholarship="{{ $batch->scholarship_id }}"
-                                        data-semester="{{ $batch->semester_id }}"
-                                        data-batchnumber="{{ $batch->batch_number }}">
+                                        data-id="<?php echo e($batch->id); ?>"
+                                        data-scholarship="<?php echo e($batch->scholarship_id); ?>"
+                                        data-semester="<?php echo e($batch->semester_id); ?>"
+                                        data-batchnumber="<?php echo e($batch->batch_number); ?>">
                                     Edit
                                 </button>
 
-                                {{-- ✅ DELETE MODAL TRIGGER --}}
+                                
                                 <button type="button"
                                         class="action-btn action-del"
                                         data-bs-toggle="modal"
                                         data-bs-target="#deleteBatchModal"
-                                        data-id="{{ $batch->id }}"
-                                        data-schname="{{ e($schName) }}"
-                                        data-sem="{{ e($semLabel) }}"
-                                        data-bn="{{ e($batch->batch_number) }}">
+                                        data-id="<?php echo e($batch->id); ?>"
+                                        data-schname="<?php echo e(e($schName)); ?>"
+                                        data-sem="<?php echo e(e($semLabel)); ?>"
+                                        data-bn="<?php echo e(e($batch->batch_number)); ?>">
                                     Delete
                                 </button>
                             </td>
                         </tr>
-                    @empty
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
                             <td colspan="5" class="text-center py-4 text-muted">
                                 No batches found.
                             </td>
                         </tr>
-                    @endforelse
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
 
     <div class="card-footer bg-white">
-        {{ $batches->withQueryString()->links() }}
+        <?php echo e($batches->withQueryString()->links()); ?>
+
     </div>
 </div>
 
-{{-- ✅ ADD BATCH MODAL --}}
+
 <div class="modal fade modal-bisu" id="addBatchModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -235,16 +238,16 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            <form method="POST" action="{{ route('coordinator.scholarship-batches.store') }}">
-                @csrf
+            <form method="POST" action="<?php echo e(route('coordinator.scholarship-batches.store')); ?>">
+                <?php echo csrf_field(); ?>
 
                 <div class="modal-body">
-                    @if($tdpTesScholarships->isEmpty())
+                    <?php if($tdpTesScholarships->isEmpty()): ?>
                         <div class="alert alert-warning mb-0">
                             No TDP/TES scholarship found in your database.
                             Please create the scholarship first (TDP or TES), then come back here.
                         </div>
-                    @else
+                    <?php else: ?>
                         <div class="help-note mb-3">
                             Tip: Use batch labels like <strong>13</strong>, <strong>13A</strong>, or <strong>Batch-13</strong>.
                         </div>
@@ -254,9 +257,9 @@
                                 <label class="form-label fw-semibold text-secondary mb-1">Scholarship (TDP / TES)</label>
                                 <select name="scholarship_id" class="form-select form-select-sm" required>
                                     <option value="">Select scholarship...</option>
-                                    @foreach($tdpTesScholarships as $s)
-                                        <option value="{{ $s->id }}">{{ $s->scholarship_name }}</option>
-                                    @endforeach
+                                    <?php $__currentLoopData = $tdpTesScholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($s->id); ?>"><?php echo e($s->scholarship_name); ?></option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </select>
                             </div>
 
@@ -264,11 +267,12 @@
                                 <label class="form-label fw-semibold text-secondary mb-1">Semester</label>
                                 <select name="semester_id" class="form-select form-select-sm" required>
                                     <option value="">Select semester...</option>
-                                    @foreach(($semesters ?? []) as $sem)
-                                        <option value="{{ $sem->id }}">
-                                            {{ $sem->term ?? $sem->semester_name }} {{ $sem->academic_year }}
+                                    <?php $__currentLoopData = ($semesters ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sem): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($sem->id); ?>">
+                                            <?php echo e($sem->term ?? $sem->semester_name); ?> <?php echo e($sem->academic_year); ?>
+
                                         </option>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </select>
                             </div>
 
@@ -277,12 +281,12 @@
                                 <input type="text" name="batch_number" class="form-control form-control-sm" placeholder="e.g., 13" required>
                             </div>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-bisu btn-sm" {{ $tdpTesScholarships->isEmpty() ? 'disabled' : '' }}>
+                    <button type="submit" class="btn btn-bisu btn-sm" <?php echo e($tdpTesScholarships->isEmpty() ? 'disabled' : ''); ?>>
                         Save Batch
                     </button>
                 </div>
@@ -292,7 +296,7 @@
     </div>
 </div>
 
-{{-- ✅ EDIT BATCH MODAL --}}
+
 <div class="modal fade modal-bisu" id="editBatchModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -306,28 +310,29 @@
             </div>
 
             <form id="editBatchForm" method="POST" action="">
-                @csrf
-                @method('PUT')
+                <?php echo csrf_field(); ?>
+                <?php echo method_field('PUT'); ?>
 
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-semibold text-secondary mb-1">Scholarship</label>
                             <select id="edit_scholarship_id" name="scholarship_id" required class="form-select form-select-sm">
-                                @foreach(($scholarships ?? []) as $s)
-                                    <option value="{{ $s->id }}">{{ $s->scholarship_name }}</option>
-                                @endforeach
+                                <?php $__currentLoopData = ($scholarships ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($s->id); ?>"><?php echo e($s->scholarship_name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
 
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-semibold text-secondary mb-1">Semester</label>
                             <select id="edit_semester_id" name="semester_id" required class="form-select form-select-sm">
-                                @foreach(($semesters ?? []) as $sem)
-                                    <option value="{{ $sem->id }}">
-                                        {{ $sem->term ?? $sem->semester_name }} {{ $sem->academic_year }}
+                                <?php $__currentLoopData = ($semesters ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sem): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($sem->id); ?>">
+                                        <?php echo e($sem->term ?? $sem->semester_name); ?> <?php echo e($sem->academic_year); ?>
+
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
 
@@ -349,7 +354,7 @@
     </div>
 </div>
 
-{{-- ✅ DELETE CONFIRM MODAL --}}
+
 <div class="modal fade modal-bisu" id="deleteBatchModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -378,8 +383,8 @@
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
 
                 <form id="deleteBatchForm" method="POST" action="">
-                    @csrf
-                    @method('DELETE')
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('DELETE'); ?>
                     <button type="submit" class="btn btn-danger btn-sm">Yes, Delete</button>
                 </form>
             </div>
@@ -388,7 +393,7 @@
     </div>
 </div>
 
-{{-- ✅ JS: Fill edit/delete modals + set correct form action --}}
+
 <script>
 document.addEventListener('DOMContentLoaded', function(){
 
@@ -404,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function(){
             const batchNumber = btn.getAttribute('data-batchnumber');
 
             // Set form action (PUT) to your update route
-            const updateUrl = `{{ url('/coordinator/scholarship-batches') }}/${id}`;
+            const updateUrl = `<?php echo e(url('/coordinator/scholarship-batches')); ?>/${id}`;
             document.getElementById('editBatchForm').action = updateUrl;
 
             // Fill fields
@@ -430,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function(){
             document.getElementById('del_batch').textContent = bn;
 
             // Set form action (DELETE) to your destroy route
-            const deleteUrl = `{{ url('/coordinator/scholarship-batches') }}/${id}`;
+            const deleteUrl = `<?php echo e(url('/coordinator/scholarship-batches')); ?>/${id}`;
             document.getElementById('deleteBatchForm').action = deleteUrl;
         });
     }
@@ -438,8 +443,8 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 
-{{-- ✅ Auto-open ADD modal if validation error happened --}}
-@if($errors->any())
+
+<?php if($errors->any()): ?>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     const modalEl = document.getElementById('addBatchModal');
@@ -449,6 +454,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
 });
 </script>
-@endif
+<?php endif; ?>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/scholarship-batches.blade.php ENDPATH**/ ?>
