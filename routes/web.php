@@ -170,7 +170,14 @@ Route::get('/test-mail', function () {
         Route::get('/manage-scholars', [CoordinatorController::class, 'manageScholars'])->name('coordinator.manage-scholars');
         Route::get('/manage-scholars/create', [CoordinatorController::class, 'createScholar'])->name('coordinator.scholars.create');
         Route::post('/manage-scholars', [CoordinatorController::class, 'storeScholar'])->name('coordinator.scholars.store');
-        
+
+        // ✅ page/listing (GET)
+        Route::get('/manage-scholars', [CoordinatorController::class, 'manageScholars'])->name('coordinator.manage-scholars');
+        // ✅ UPDATE scholar status (PATCH)  <-- THIS is what your modal should call
+        Route::patch('/scholars/{scholar}/status', [CoordinatorController::class, 'updateScholarStatus'])->name('coordinator.scholars.update-status');
+        // ✅ optional delete (DELETE)
+        Route::delete('/scholars/{scholar}', [CoordinatorController::class, 'destroyScholar'])->name('coordinator.scholars.destroy');
+
         //Bulk Upload Scholars
         Route::get('/scholars/upload', [CoordinatorController::class, 'uploadScholars'])->name('coordinator.scholars.upload');
         Route::post('/scholars/upload/add-selected', [CoordinatorController::class, 'addSelectedUploadedScholars'])->name('coordinator.scholars.upload.add-selected');
@@ -282,6 +289,13 @@ Route::get('/test-mail', function () {
        // Reports (Coordinator)
         Route::get('/reports/list-of-scholars', [CoordinatorController::class, 'reportListOfScholars'])->name('coordinator.reports.list-of-scholars');
         Route::get('/reports/summary-of-scholarships', [CoordinatorController::class, 'reportSummaryOfScholarships'])->name('coordinator.reports.summary-of-scholarships');
+        // ✅ DOWNLOAD PDF
+        Route::get('/reports/list-of-scholars/pdf', [CoordinatorController::class, 'reportListOfScholarsPdf'])->name('coordinator.reports.list-of-scholars.pdf');
+        Route::get('/reports/summary-of-scholarships/pdf', [CoordinatorController::class, 'reportSummaryOfScholarshipsPdf'])->name('coordinator.reports.summary-of-scholarships.pdf');
+        // ✅ DOWNLOAD DOCX
+        Route::get('/reports/list-of-scholars/docx', [CoordinatorController::class, 'reportListOfScholarsDocx'])->name('coordinator.reports.list-of-scholars.docx');
+        Route::get('/reports/summary-of-scholarships/docx', [CoordinatorController::class, 'reportSummaryOfScholarshipsDocx'])->name('coordinator.reports.summary-of-scholarships.docx');
+
 
         //notification
         Route::get('/stipends/claim-notifications', [CoordinatorController::class, 'claimNotifications'])->name('coordinator.stipends.claim-notifications');

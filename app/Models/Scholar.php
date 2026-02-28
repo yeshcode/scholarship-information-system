@@ -3,47 +3,94 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\Semester;
 
 class Scholar extends Model
 {
     protected $fillable = [
-        'student_id',     // FK to users table (as student)
-        'batch_id', 
-        'scholarship_id',      // FK to scholarship_batches table
-        'updated_by', 
-        'date_added',    // FK to users table (as coordinator/updater)
-        'status',         // e.g., 'active', 'inactive'
+        'student_id',
+        'batch_id',
+        'scholarship_id',
+        'updated_by',
+        'date_added',
+        'date_removed',   // ✅ NEW
+        'status',
     ];
 
-    // Relationships
-    // belongsTo: Scholar belongs to a user (as student, via student_id)
-    public function user()
+    // ✅ Optional (recommended) if these are DATE columns in DB
+    protected $casts = [
+        'date_added'   => 'date',
+        'date_removed' => 'date',
+    ];
+
+    /**
+     * ✅ Scope: scholar is considered active/valid within a given semester
+     * Rules:
+     * - status = active
+     * - date_added <= semester end_date
+     * - date_removed is null OR date_removed > semester start_date
+     */
+    public function scopeActiveInSemester(Builder $q, ?Semester $sem): Builder
     {
-        return $this->belongsTo(User::class, 'student_id', 'id');  // FK: student_id, related PK: user_id (since User uses custom PK)
+        if (!$sem) return $q;
+
+        // ✅ null-safe dates
+        $start = $sem->start_date ?? $sem->end_date;       // prefer start_date
+        $end   = $sem->end_date ?? $sem->start_date;       // prefer end_date
+
+        // If still missing, don’t filter (avoid returning empty results)
+        if (!$start || !$end) return $q;
+
+        return $q
+            // ✅ allow old rows where status is NULL (treat as active)
+            ->where(function ($w) {
+                $w->whereNull('scholars.status')
+                ->orWhere('scholars.status', 'active');
+            })
+            ->whereDate('scholars.date_added', '<=', $end)
+            ->where(function ($w) use ($start) {
+                $w->whereNull('scholars.date_removed')
+                ->orWhereDate('scholars.date_removed', '>', $start);
+            });
     }
 
-    // belongsTo: Scholar belongs to a scholarship batch (via batch_id)
+    public function scopeActiveRoster($q)
+    {
+        return $q->where(function($w){
+                $w->whereNull('scholars.status')
+                ->orWhere('scholars.status', 'active');
+            })
+            ->whereNull('scholars.date_removed');
+    }
+
+    // =========================
+    // Relationships
+    // =========================
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'student_id', 'id');
+    }
+
     public function scholarshipBatch()
     {
         return $this->belongsTo(ScholarshipBatch::class, 'batch_id', 'id');
     }
 
-     // NEW: belongsTo: Scholar belongs to a scholarship (direct, via scholarship_id)
-     public function scholarship()
-     {
-         return $this->belongsTo(Scholarship::class, 'scholarship_id', 'id');
-     }
-
-    // belongsTo: Scholar belongs to a user (as updater/coordinator, via updated_by)
-    public function updater()
+    public function scholarship()
     {
-        return $this->belongsTo(User::class, 'updated_by', 'id');  // FK: updated_by, related PK: user_id
+        return $this->belongsTo(Scholarship::class, 'scholarship_id', 'id');
     }
 
-    // hasMany: Scholar has many stipends (via scholar_id in stipends table)
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by', 'id');
+    }
+
     public function stipends()
     {
-        return $this->hasMany(Stipend::class, 'scholar_id', 'id');  // FK in stipends: scholar_id, local PK: id
+        return $this->hasMany(Stipend::class, 'scholar_id', 'id');
     }
 
     public function enrollments()

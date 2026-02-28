@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 
 <style>
     :root{
@@ -65,7 +65,7 @@
     .desc-textarea{ min-height: 140px; }
 </style>
 
-{{-- Header --}}
+
 <div class="page-head mb-3">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         <div>
@@ -75,50 +75,50 @@
             </div>
         </div>
 
-        <a href="{{ route('coordinator.manage-scholarships') }}" class="btn btn-outline-brand">
+        <a href="<?php echo e(route('coordinator.manage-scholarships')); ?>" class="btn btn-outline-brand">
             ← Back
         </a>
     </div>
 </div>
 
-{{-- Errors --}}
-@if($errors->any())
+
+<?php if($errors->any()): ?>
     <div class="alert alert-danger">
         <div class="fw-semibold">Please fix the following:</div>
         <ul class="mb-0">
-            @foreach($errors->all() as $e)
-                <li>{{ $e }}</li>
-            @endforeach
+            <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $e): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <li><?php echo e($e); ?></li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </ul>
     </div>
-@endif
+<?php endif; ?>
 
-<form action="{{ route('coordinator.scholarships.store') }}" method="POST" class="form-card">
-    @csrf
+<form action="<?php echo e(route('coordinator.scholarships.store')); ?>" method="POST" class="form-card">
+    <?php echo csrf_field(); ?>
     <div class="topbar"></div>
 
     <div class="card-body p-4">
 
-        {{-- Name --}}
+        
         <div class="mb-3">
             <label class="form-label fw-semibold brand-text mb-1">Scholarship Name <span class="text-danger">*</span></label>
             <input type="text"
                    name="scholarship_name"
                    class="form-control"
-                   value="{{ old('scholarship_name') }}"
+                   value="<?php echo e(old('scholarship_name')); ?>"
                    placeholder="e.g., DOST, TES, TDP"
                    required>
-            {{-- <div class="help-text mt-1">Use the official scholarship title.</div> --}}
+            
         </div>
 
-        {{-- Benefactor + Status --}}
+        
         <div class="row g-3">
             <div class="col-12 col-md-8">
                 <label class="form-label fw-semibold brand-text mb-1">Benefactor <span class="text-danger">*</span></label>
                 <input type="text"
                        name="benefactor"
                        class="form-control"
-                       value="{{ old('benefactor') }}"
+                       value="<?php echo e(old('benefactor')); ?>"
                        placeholder="e.g., Government / Private Sponsor"
                        required>
             </div>
@@ -126,14 +126,14 @@
             <div class="col-12 col-md-4">
                 <label class="form-label fw-semibold brand-text mb-1">Status <span class="text-danger">*</span></label>
                 <select name="status" class="form-select" required>
-                    <option value="open" {{ old('status','open') === 'open' ? 'selected' : '' }}>Open</option>
-                    <option value="closed" {{ old('status') === 'closed' ? 'selected' : '' }}>Closed</option>
+                    <option value="open" <?php echo e(old('status','open') === 'open' ? 'selected' : ''); ?>>Open</option>
+                    <option value="closed" <?php echo e(old('status') === 'closed' ? 'selected' : ''); ?>>Closed</option>
                 </select>
-                {{-- <div class="help-text mt-1">Set to Open when accepting applicants.</div> --}}
+                
             </div>
         </div>
 
-        {{-- Dates --}}
+        
         <div class="row g-3 mt-1">
             <div class="col-12 col-md-6">
                 <div class="section-box">
@@ -141,8 +141,8 @@
                     <input type="date"
                            name="application_date"
                            class="form-control"
-                           value="{{ old('application_date') }}">
-                    {{-- <div class="help-text mt-1">Optional. Leave blank if not applicable.</div> --}}
+                           value="<?php echo e(old('application_date')); ?>">
+                    
                 </div>
             </div>
 
@@ -152,13 +152,13 @@
                     <input type="date"
                            name="deadline"
                            class="form-control"
-                           value="{{ old('deadline') }}">
-                    {{-- <div class="help-text mt-1">Optional. Leave blank if there is no deadline.</div> --}}
+                           value="<?php echo e(old('deadline')); ?>">
+                    
                 </div>
             </div>
         </div>
 
-        {{-- Description --}}
+        
         <div class="mt-3">
             <div class="section-box">
                 <div class="fw-bold brand-text mb-2">Description <span class="text-danger">*</span></div>
@@ -166,12 +166,12 @@
                           class="form-control desc-textarea"
                           rows="5"
                           placeholder="Brief overview of the scholarship..."
-                          required>{{ old('description') }}</textarea>
-                {{-- <div class="help-text mt-2">Keep it clear and student-friendly.</div> --}}
+                          required><?php echo e(old('description')); ?></textarea>
+                
             </div>
         </div>
 
-        {{-- Requirements --}}
+        
         <div class="mt-3">
             <div class="section-box">
                 <div class="fw-bold brand-text mb-2">Requirements <span class="text-danger">*</span></div>
@@ -179,8 +179,8 @@
                           class="form-control req-textarea"
                           rows="8"
                           placeholder="Enter the requirement..."
-                          required>{{ old('requirements') }}</textarea>
-                {{-- <div class="help-text mt-2">Tip: Use new lines for each requirement (e.g., Valid ID, COR, Grades).</div> --}}
+                          required><?php echo e(old('requirements')); ?></textarea>
+                
             </div>
         </div>
 
@@ -192,7 +192,7 @@
         </div>
 
         <div class="d-flex gap-2">
-            <a href="{{ route('coordinator.manage-scholarships') }}" class="btn btn-outline-brand">
+            <a href="<?php echo e(route('coordinator.manage-scholarships')); ?>" class="btn btn-outline-brand">
                 Cancel
             </a>
             <button type="submit" class="btn btn-brand">
@@ -202,4 +202,5 @@
     </div>
 </form>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/create-scholarship.blade.php ENDPATH**/ ?>

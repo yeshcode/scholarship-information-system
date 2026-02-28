@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 
 <style>
     :root{
@@ -69,22 +69,24 @@
     }
 </style>
 
-{{-- Flash --}}
-@if(session('success'))
+
+<?php if(session('success')): ?>
     <div class="alert alert-success alert-dismissible fade show">
-        {{ session('success') }}
+        <?php echo e(session('success')); ?>
+
         <button class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-@endif
+<?php endif; ?>
 
-@if(session('error'))
+<?php if(session('error')): ?>
     <div class="alert alert-danger alert-dismissible fade show">
-        {{ session('error') }}
+        <?php echo e(session('error')); ?>
+
         <button class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-@endif
+<?php endif; ?>
 
-{{-- Header --}}
+
 <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
     <div>
         <h2 class="page-title-bisu">Manage Scholars</h2>
@@ -92,17 +94,17 @@
     </div>
 
     <div class="d-flex gap-2">
-        <a href="{{ route('coordinator.scholars.create') }}" class="btn btn-bisu btn-sm">
+        <a href="<?php echo e(route('coordinator.scholars.create')); ?>" class="btn btn-bisu btn-sm">
             Add Scholar
         </a>
-        <a href="{{ route('coordinator.scholars.upload') }}" class="btn btn-bisu btn-sm">
+        <a href="<?php echo e(route('coordinator.scholars.upload')); ?>" class="btn btn-bisu btn-sm">
             Upload File Scholars
         </a>
 
     </div>
 </div>
 
-{{-- Filters --}}
+
 <div class="card card-bisu shadow-sm mb-3">
     <div class="card-header d-flex align-items-center justify-content-between">
         <div class="fw-bold text-secondary">Filters</div>
@@ -110,20 +112,21 @@
     </div>
 
     <div class="card-body">
-        <form id="filterForm" method="GET" action="{{ route('coordinator.manage-scholars') }}">
+        <form id="filterForm" method="GET" action="<?php echo e(route('coordinator.manage-scholars')); ?>">
 
-            {{-- Row 1: Scholarship + Batch side-by-side --}}
+            
             <div class="row g-3">
                 <div class="col-12 col-md-6">
                     <label class="filter-label">Scholarship</label>
                     <select name="scholarship_id" id="scholarship_id" class="form-select form-select-sm">
                         <option value="">All Scholarships</option>
-                        @foreach($scholarships as $s)
-                            <option value="{{ $s->id }}"
-                                {{ (string)request('scholarship_id') === (string)$s->id ? 'selected' : '' }}>
-                                {{ $s->scholarship_name }}
+                        <?php $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($s->id); ?>"
+                                <?php echo e((string)request('scholarship_id') === (string)$s->id ? 'selected' : ''); ?>>
+                                <?php echo e($s->scholarship_name); ?>
+
                             </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
 
@@ -132,19 +135,20 @@
                     <select name="batch_id" id="batch_id" class="form-select form-select-sm">
                         <option value="">All Batches</option>
 
-                        @foreach(($batchOptions ?? []) as $b)
-                            <option value="{{ $b->id }}"
-                                {{ (string)request('batch_id') === (string)$b->id ? 'selected' : '' }}>
-                                Batch {{ $b->batch_number }}
-                                ({{ $b->semester->term ?? '' }} {{ $b->semester->academic_year ?? '' }})
+                        <?php $__currentLoopData = ($batchOptions ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($b->id); ?>"
+                                <?php echo e((string)request('batch_id') === (string)$b->id ? 'selected' : ''); ?>>
+                                Batch <?php echo e($b->batch_number); ?>
+
+                                (<?php echo e($b->semester->term ?? ''); ?> <?php echo e($b->semester->academic_year ?? ''); ?>)
                             </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                     <div id="batchHelp" class="form-text text-muted"></div>
                 </div>
             </div>
 
-            {{-- Row 2: Long search (below) --}}
+            
             <div class="row g-3 mt-1">
                 <div class="col-12">
                     <label class="filter-label">Search Student</label>
@@ -152,7 +156,7 @@
                         type="text"
                         name="q"
                         id="q"
-                        value="{{ request('q') }}"
+                        value="<?php echo e(request('q')); ?>"
                         class="form-control form-control-sm"
                         placeholder="Type student name or ID"
                         autocomplete="off"
@@ -164,20 +168,22 @@
     </div>
 </div>
 
-{{-- Table --}}
+
 <div class="card card-bisu shadow-sm">
     <div class="card-header d-flex align-items-center justify-content-between">
         <div class="fw-bold text-secondary">Scholar List</div>
 
-        @if(isset($selectedSemester))
+        <?php if(isset($selectedSemester)): ?>
             <small class="text-muted">
                 Semester:
                 <strong>
-                    {{ $selectedSemester->term ?? $selectedSemester->semester_name ?? '' }}
-                    {{ $selectedSemester->academic_year ?? '' }}
+                    <?php echo e($selectedSemester->term ?? $selectedSemester->semester_name ?? ''); ?>
+
+                    <?php echo e($selectedSemester->academic_year ?? ''); ?>
+
                 </strong>
             </small>
-        @endif
+        <?php endif; ?>
     </div>
 
     <div class="table-responsive">
@@ -199,8 +205,8 @@
             </thead>
 
             <tbody>
-                @forelse($scholars as $scholar)
-                    @php
+                <?php $__empty_1 = true; $__currentLoopData = $scholars; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $scholar): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <?php
                         // Enrollment info from controller aliases (recommended)
                         $enrolledStatus = $scholar->enrolled_status ?? 'not_enrolled';
                         $semLabel = ($scholar->enrolled_term && $scholar->enrolled_academic_year)
@@ -210,33 +216,34 @@
                         $schName = strtoupper($scholar->scholarship->scholarship_name ?? '');
                         $isTdpTesRow = str_contains($schName, 'TDP') || str_contains($schName, 'TES');
                         $batchLabel = $isTdpTesRow ? ($scholar->scholarshipBatch->batch_number ?? 'N/A') : 'N/A';
-                    @endphp
+                    ?>
 
                     <tr>
-                        <td>{{ $scholar->u_student_id ?? $scholar->user->student_id ?? 'N/A' }}</td>
-                        <td>{{ $scholar->u_lastname ?? $scholar->user->lastname ?? 'N/A' }}</td>
-                        <td>{{ $scholar->u_firstname ?? $scholar->user->firstname ?? 'N/A' }}</td>
+                        <td><?php echo e($scholar->u_student_id ?? $scholar->user->student_id ?? 'N/A'); ?></td>
+                        <td><?php echo e($scholar->u_lastname ?? $scholar->user->lastname ?? 'N/A'); ?></td>
+                        <td><?php echo e($scholar->u_firstname ?? $scholar->user->firstname ?? 'N/A'); ?></td>
 
                         <td>
-                            @if($enrolledStatus === 'enrolled')
+                            <?php if($enrolledStatus === 'enrolled'): ?>
                                 <span class="badge bg-success-subtle text-success">ENROLLED</span>
-                            @elseif($enrolledStatus === 'dropped')
+                            <?php elseif($enrolledStatus === 'dropped'): ?>
                                 <span class="badge bg-danger-subtle text-danger">DROPPED</span>
-                            @elseif($enrolledStatus === 'graduated')
+                            <?php elseif($enrolledStatus === 'graduated'): ?>
                                 <span class="badge bg-primary-subtle text-primary">GRADUATED</span>
-                            @else
+                            <?php else: ?>
                                 <span class="badge bg-secondary-subtle text-secondary">NOT ENROLLED</span>
-                            @endif
+                            <?php endif; ?>
                         </td>
 
-                        <td>{{ $semLabel }}</td>
-                        <td>{{ $scholar->scholarship->scholarship_name ?? 'N/A' }}</td>
-                        <td>{{ $batchLabel }}</td>
+                        <td><?php echo e($semLabel); ?></td>
+                        <td><?php echo e($scholar->scholarship->scholarship_name ?? 'N/A'); ?></td>
+                        <td><?php echo e($batchLabel); ?></td>
                         <td>
-                            {{ $scholar->date_added ? \Carbon\Carbon::parse($scholar->date_added)->format('M d, Y') : 'N/A' }}
+                            <?php echo e($scholar->date_added ? \Carbon\Carbon::parse($scholar->date_added)->format('M d, Y') : 'N/A'); ?>
+
                         </td>
-                        <td>{{ $scholar->user->course->course_name ?? 'N/A' }}</td>
-                        <td>{{ $scholar->user->yearLevel->year_level_name ?? 'N/A' }}</td>
+                        <td><?php echo e($scholar->user->course->course_name ?? 'N/A'); ?></td>
+                        <td><?php echo e($scholar->user->yearLevel->year_level_name ?? 'N/A'); ?></td>
 
                         <td>
                             <div class="d-flex gap-1">
@@ -245,9 +252,9 @@
                                     class="btn btn-bisu btn-primary"
                                     data-bs-toggle="modal"
                                     data-bs-target="#updateScholarModal"
-                                    data-id="{{ $scholar->id }}"
-                                    data-name="{{ ($scholar->u_lastname ?? '') }}, {{ ($scholar->u_firstname ?? '') }}"
-                                    data-status="{{ $scholar->status ?? 'active' }}"
+                                    data-id="<?php echo e($scholar->id); ?>"
+                                    data-name="<?php echo e(($scholar->u_lastname ?? '')); ?>, <?php echo e(($scholar->u_firstname ?? '')); ?>"
+                                    data-status="<?php echo e($scholar->status ?? 'active'); ?>"
                                 >
                                     Update
                                 </button>
@@ -259,21 +266,21 @@
                                     class="btn btn-sm btn-danger"
                                     data-bs-toggle="modal"
                                     data-bs-target="#deleteScholarModal"
-                                    data-id="{{ $scholar->id }}"
-                                    data-name="{{ ($scholar->u_lastname ?? $scholar->user->lastname ?? '') }}, {{ ($scholar->u_firstname ?? $scholar->user->firstname ?? '') }}"
+                                    data-id="<?php echo e($scholar->id); ?>"
+                                    data-name="<?php echo e(($scholar->u_lastname ?? $scholar->user->lastname ?? '')); ?>, <?php echo e(($scholar->u_firstname ?? $scholar->user->firstname ?? '')); ?>"
                                     >
                                     Delete
                                 </button>
                             </div>
                         </td>
                     </tr>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="10" class="text-center text-muted py-4">
                             No scholars found.
                         </td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
             </tbody>
         </table>
 
@@ -282,8 +289,8 @@
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <form method="POST" id="updateScholarForm">
-                        @csrf
-                        @method('PATCH')
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('PATCH'); ?>
 
                 <div class="modal-header">
                 <h5 class="modal-title">Update Scholar Status</h5>
@@ -325,8 +332,8 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <form method="POST" id="deleteScholarForm">
-        @csrf
-        @method('DELETE')
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('DELETE'); ?>
 
         <div class="modal-header">
           <h5 class="modal-title">Delete Scholar</h5>
@@ -357,11 +364,12 @@
 </div>
     </div>
 
-    @if(method_exists($scholars, 'links'))
+    <?php if(method_exists($scholars, 'links')): ?>
         <div class="card-body">
-            {{ $scholars->links() }}
+            <?php echo e($scholars->links()); ?>
+
         </div>
-    @endif
+    <?php endif; ?>
 </div>
 
 <script>
@@ -423,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const dateWrap    = document.getElementById('dateRemovedWrap');
   const dateInput   = document.getElementById('dateRemoved');
 
-  const updateUrlTemplate = @json(route('coordinator.scholars.update-status', ['scholar' => '__ID__']));
+  const updateUrlTemplate = <?php echo json_encode(route('coordinator.scholars.update-status', ['scholar' => '__ID__']), 512) ?>;
 
   function toggleDate() {
     if (!statusSel || !dateWrap || !dateInput) return;
@@ -463,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const delForm  = document.getElementById('deleteScholarForm');
   const delName  = document.getElementById('deleteScholarName');
 
-  const deleteUrlTemplate = @json(route('coordinator.scholars.destroy', ['scholar' => '__ID__']));
+  const deleteUrlTemplate = <?php echo json_encode(route('coordinator.scholars.destroy', ['scholar' => '__ID__']), 512) ?>;
 
   delModal?.addEventListener('show.bs.modal', function (event) {
     const btn = event.relatedTarget;
@@ -480,4 +488,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/manage-scholars.blade.php ENDPATH**/ ?>
