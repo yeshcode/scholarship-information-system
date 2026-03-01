@@ -37,6 +37,7 @@
     .profile-wrap{
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
     }
+
     .card-soft{
         border: 1px solid <?php echo e($line); ?>;
         border-radius: 18px;
@@ -44,10 +45,12 @@
         overflow: hidden;
         background: #fff;
     }
+
     .profile-hero{
         background: linear-gradient(135deg, <?php echo e($theme); ?> 0%, #0b3d8f 55%, #1b5fbf 100%);
         color: #fff;
     }
+
     .avatar{
         width: 72px; height: 72px;
         border-radius: 20px;
@@ -57,7 +60,9 @@
         font-weight: 800;
         font-size: 1.35rem;
         letter-spacing: .04em;
+        flex: 0 0 auto;
     }
+
     .pill{
         display:inline-flex;
         align-items:center;
@@ -69,18 +74,23 @@
         background: rgba(255,255,255,.12);
         color:#fff;
         gap:.35rem;
+        white-space: nowrap;
     }
+
     .pill-light{
         border: 1px solid rgba(11,46,94,.18);
         background: rgba(11,46,94,.06);
         color: <?php echo e($theme); ?>;
+        white-space: nowrap;
     }
+
     .label{
         font-size: .78rem;
         color: #6b7280;
         font-weight: 700;
         margin-bottom: .35rem;
     }
+
     .value-box{
         background: #f9fbff;
         border: 1px solid <?php echo e($line); ?>;
@@ -92,8 +102,12 @@
         color: #111827;
         font-weight: 600;
         font-size: .95rem;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
     .value-box.muted{ color:#6b7280; font-weight:600; }
+
+    /* Tabs */
     .nav-pills .nav-link{
         font-weight: 800;
         color: <?php echo e($theme); ?>;
@@ -103,6 +117,8 @@
         background: <?php echo e($theme); ?>;
         color:#fff;
     }
+
+    /* Brand button */
     .btn-brand{
         background: <?php echo e($theme); ?>;
         color:#fff;
@@ -111,12 +127,99 @@
         padding: .55rem 1rem;
     }
     .btn-brand:hover{ opacity: .92; color:#fff; }
+
+    /* Table header */
     .table thead th{
         font-size: .75rem;
         text-transform: uppercase;
         letter-spacing: .04em;
         color: #6b7280;
         border-bottom: 1px solid <?php echo e($line); ?>;
+    }
+
+    /* ===================== RESPONSIVE UPGRADES ===================== */
+
+    /* Make tabs scrollable on mobile */
+    .tabs-scroll{
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 2px;
+        scrollbar-width: thin;
+    }
+    .tabs-scroll::-webkit-scrollbar{ height: 6px; }
+    .tabs-scroll::-webkit-scrollbar-thumb{ background: rgba(0,0,0,.15); border-radius: 999px; }
+
+    .tabs-scroll .nav{
+        flex-wrap: nowrap;
+        white-space: nowrap;
+    }
+    .tabs-scroll .nav .nav-item{ flex: 0 0 auto; }
+
+    /* Reduce hero padding on small screens */
+    @media (max-width: 575.98px){
+        .profile-hero .p-4{ padding: 1rem !important; }
+        .card-soft .p-3{ padding: 1rem !important; }
+        .avatar{ width: 58px; height: 58px; border-radius: 16px; font-size: 1.1rem; }
+        .hero-name{ font-size: 1.05rem !important; }
+        .hero-email{ font-size: .85rem !important; }
+        .btn-brand{ width: 100%; }
+    }
+
+    /* Better hero layout on small screens */
+    .hero-top{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .hero-left{
+        display:flex;
+        align-items:center;
+        gap: 1rem;
+        min-width: 0;
+        flex: 1 1 520px;
+    }
+    .hero-meta{
+        min-width: 0;
+    }
+    .hero-meta .hero-email{
+        opacity:.9;
+        font-size:.92rem;
+        overflow-wrap:anywhere;
+        word-break: break-word;
+    }
+    .hero-right{
+        max-width: 340px;
+        flex: 1 1 260px;
+    }
+    @media (max-width: 767.98px){
+        .hero-right{
+            max-width: 100%;
+            text-align: left !important;
+        }
+    }
+
+    /* Make inner card sections not feel tight on small screens */
+    .section-card{
+        background:#fff;
+    }
+
+    /* Make hero pills smaller on mobile only */
+    @media (max-width: 575.98px){
+        .pill{
+            padding: .22rem .5rem;
+            font-size: .68rem;
+            font-weight: 700;
+            gap: .25rem;
+            border-radius: 999px;
+        }
+
+        /* tighter spacing between pills */
+        .hero-meta .d-flex.flex-wrap.gap-2{
+            gap: .35rem !important;
+            margin-top: .5rem !important;
+        }
     }
 </style>
 
@@ -147,16 +250,16 @@
         
         <div class="card-soft profile-hero mb-4">
             <div class="p-4 p-md-5">
-                <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
-                    <div class="d-flex align-items-center gap-3">
+                <div class="hero-top">
+                    <div class="hero-left">
                         <div class="avatar"><?php echo e($initials); ?></div>
 
-                        <div>
-                            <div class="fw-bold" style="font-size:1.25rem; line-height:1.2;">
+                        <div class="hero-meta">
+                            <div class="fw-bold hero-name" style="font-size:1.25rem; line-height:1.2;">
                                 <?php echo e($fullName ?: 'N/A'); ?>
 
                             </div>
-                            <div style="opacity:.9; font-size:.92rem;">
+                            <div class="hero-email">
                                 <?php echo e($user->bisu_email ?? $user->email ?? 'N/A'); ?>
 
                             </div>
@@ -189,7 +292,7 @@
                         </div>
                     </div>
 
-                    <div class="text-start text-md-end" style="max-width: 320px;">
+                    <div class="hero-right text-start text-md-end">
                         <div class="fw-bold" style="font-size:1rem;">My Profile</div>
                         <div style="opacity:.9; font-size:.9rem;">
                             <?php if($isStudent && !$isAdminLike): ?>
@@ -208,35 +311,37 @@
             <div class="p-3 p-md-4">
 
                 
-                <ul class="nav nav-pills gap-2 mb-4" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tabOverview" type="button">
-                            Overview
-                        </button>
-                    </li>
-
-                    <?php if($isStudent && !$isAdminLike): ?>
+                <div class="tabs-scroll mb-4">
+                    <ul class="nav nav-pills gap-2" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabAcademic" type="button">
-                                Academic
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tabOverview" type="button">
+                                Overview
                             </button>
                         </li>
-                    <?php endif; ?>
 
-                    <?php if($isStudent && !$isAdminLike): ?>
+                        <?php if($isStudent && !$isAdminLike): ?>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabAcademic" type="button">
+                                    Academic
+                                </button>
+                            </li>
+                        <?php endif; ?>
+
+                        <?php if($isStudent && !$isAdminLike): ?>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabContact" type="button">
+                                    Contact
+                                </button>
+                            </li>
+                        <?php endif; ?>
+
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabContact" type="button">
-                                Contact
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabSecurity" type="button">
+                                Security
                             </button>
                         </li>
-                    <?php endif; ?>
-
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabSecurity" type="button">
-                            Security
-                        </button>
-                    </li>
-                </ul>
+                    </ul>
+                </div>
 
                 <div class="tab-content">
 
@@ -244,9 +349,9 @@
                     <div class="tab-pane fade show active" id="tabOverview">
                         <div class="row g-4">
                             <div class="col-lg-6">
-                                <div class="card border-0" style="background:#fff;">
+                                <div class="card border-0 section-card">
                                     <div class="card-body p-0">
-                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                                             <div class="fw-bold" style="color:<?php echo e($theme); ?>;">Account Information</div>
                                             <span class="pill-light">Read-only</span>
                                         </div>
@@ -287,7 +392,7 @@
 
                             
                             <div class="col-lg-6">
-                                <div class="card border-0" style="background:#fff;">
+                                <div class="card border-0 section-card">
                                     <div class="card-body p-0">
                                         <div class="fw-bold mb-3" style="color:<?php echo e($theme); ?>;">Quick Summary</div>
 
@@ -305,7 +410,7 @@
 
                                                 <div class="col-12">
                                                     <div class="label">Course</div>
-                                                    <div class="value-box" style="white-space:normal;"><?php echo e($courseName); ?></div>
+                                                    <div class="value-box"><?php echo e($courseName); ?></div>
                                                 </div>
 
                                                 <div class="col-12">
@@ -350,7 +455,7 @@
 
                                     <div class="col-12">
                                         <div class="label">Course</div>
-                                        <div class="value-box" style="white-space:normal;"><?php echo e($courseName); ?></div>
+                                        <div class="value-box"><?php echo e($courseName); ?></div>
                                     </div>
 
                                     <div class="col-md-6">
@@ -368,26 +473,26 @@
 
                                     <div class="col-12">
                                         <div class="label">Scholarship</div>
-                                            <?php if($isScholar): ?>
-                                                <div class="value-box" style="background:#ecfdf5; border:1px solid #bbf7d0;">
-                                                    <div>
-                                                        <div class="fw-bold text-success">
-                                                            <?php echo e($scholarshipName); ?>
+                                        <?php if($isScholar): ?>
+                                            <div class="value-box" style="background:#ecfdf5; border:1px solid #bbf7d0;">
+                                                <div>
+                                                    <div class="fw-bold text-success">
+                                                        <?php echo e($scholarshipName); ?>
+
+                                                    </div>
+                                                    <?php if(!empty($batchNumber)): ?>
+                                                        <div class="small text-muted">
+                                                            Batch: <?php echo e($batchNumber); ?>
 
                                                         </div>
-                                                        <?php if(!empty($batchNumber)): ?>
-                                                            <div class="small text-muted">
-                                                                Batch: <?php echo e($batchNumber); ?>
-
-                                                            </div>
-                                                        <?php endif; ?>
-                                                    </div>
+                                                    <?php endif; ?>
                                                 </div>
-                                            <?php else: ?>
-                                                <div class="value-box muted">
-                                                    No active scholarship
-                                                </div>
-                                            <?php endif; ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="value-box muted">
+                                                No active scholarship
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
 
                                     <?php if(!empty($batchNumber)): ?>
@@ -400,9 +505,8 @@
                             </div>
 
                             <div class="col-lg-6">
-                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                                     <div class="fw-bold" style="color:<?php echo e($theme); ?>;">Enrollment History</div>
-                                    
                                 </div>
 
                                 <div class="table-responsive">
@@ -449,8 +553,6 @@
                                         </tbody>
                                     </table>
                                 </div>
-
-                                
                             </div>
                         </div>
                     </div>
@@ -463,7 +565,7 @@
                             <div class="col-lg-7">
                                 <div class="fw-bold mb-3" style="color:<?php echo e($theme); ?>;">Contact Information</div>
 
-                                <form action="<?php echo e(route('profile.update-contact')); ?>" method="POST" class="card border-0" style="background:#fff;">
+                                <form action="<?php echo e(route('profile.update-contact')); ?>" method="POST" class="card border-0 section-card">
                                     <?php echo csrf_field(); ?>
                                     <div class="card-body p-0">
 
@@ -515,7 +617,7 @@ unset($__errorArgs, $__bag); ?>
                             <div class="col-lg-7">
                                 <div class="fw-bold mb-3" style="color:<?php echo e($theme); ?>;">Change Password</div>
 
-                                <form action="<?php echo e(route('profile.update-password')); ?>" method="POST" class="card border-0" style="background:#fff;">
+                                <form action="<?php echo e(route('profile.update-password')); ?>" method="POST" class="card border-0 section-card">
                                     <?php echo csrf_field(); ?>
                                     <div class="card-body p-0">
 

@@ -287,7 +287,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <div class="form-text">Example: DOST, DOST-JLSS, TES, TDP</div>
+                        {{-- <div class="form-text">Example: DOST, DOST-JLSS, TES, TDP</div> --}}
                     </div>
 
                     {{-- Batch (depends on scholarship) --}}
@@ -301,7 +301,7 @@
                             <option value="">Select scholarship first...</option>
                         </select>
 
-                        <div class="form-text">Batch list changes based on selected scholarship.</div>
+                        {{-- <div class="form-text">Batch list changes based on selected scholarship.</div> --}}
 
                         {{-- Hidden “all batches” data source (from your existing $batches) --}}
                         <select id="__all_batches" class="d-none">
@@ -322,18 +322,18 @@
                             Date Added <span class="text-danger">*</span>
                         </label>
                         <input type="date" name="date_added" class="form-control form-control-sm" required>
-                        <div class="form-text">This will be saved as the scholar’s official start date.</div>
+                        {{-- <div class="form-text">This will be saved as the scholar’s official start date.</div> --}}
                     </div>
 
                     {{-- Notes / Info --}}
-                    <div class="col-md-6">
+                    {{-- <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary mb-1">Note</label>
                         <div class="alert alert-info py-2 mb-0 small">
                             <strong>Reminder:</strong> Semester and Status are removed here.
                             This modal is only for linking the student to a scholarship + batch.
                         </div>
                     </div>
-                </div>
+                </div> --}}
 
                 {{-- Errors --}}
                 @if ($errors->any())
