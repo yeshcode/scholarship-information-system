@@ -1,8 +1,8 @@
-{{-- resources/views/super-admin/semesters.blade.php --}}
-@php $fullWidth = true; @endphp
-@extends('layouts.app')
 
-@section('content')
+<?php $fullWidth = true; ?>
+
+
+<?php $__env->startSection('content'); ?>
 
 <style>
     :root{
@@ -187,14 +187,14 @@
 
 <div class="container py-4">
 
-    {{-- HEADER --}}
+    
     <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2 mb-3">
         <div>
             <h2 class="page-title">Manage Semesters</h2>
             <div class="page-sub">Add, edit, and manage semester records (term, academic year, and dates).</div>
         </div>
 
-        {{-- ✅ Add button on RIGHT --}}
+        
         <div class="d-flex justify-content-end w-100 w-md-auto">
             <button type="button"
                     class="btn btn-bisu btn-bisu-primary shadow-sm"
@@ -205,32 +205,34 @@
         </div>
     </div>
 
-    {{-- FLASH --}}
-    @if(session('success'))
+    
+    <?php if(session('success')): ?>
         <div class="alert alert-success alert-dismissible fade show">
-            {{ session('success') }}
+            <?php echo e(session('success')); ?>
+
             <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    <?php endif; ?>
 
-    @if(session('error'))
+    <?php if(session('error')): ?>
         <div class="alert alert-danger alert-dismissible fade show">
-            {{ session('error') }}
+            <?php echo e(session('error')); ?>
+
             <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    <?php endif; ?>
 
-    @if($errors->any())
+    <?php if($errors->any()): ?>
         <div class="alert alert-danger">
             <ul class="mb-0 ps-3">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <li><?php echo e($error); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </ul>
         </div>
-    @endif
+    <?php endif; ?>
 
-    {{-- TABLE --}}
+    
     <div class="table-card">
         <div class="table-responsive" style="max-height: calc(100vh - 260px);">
             <table class="table modern-table mb-0">
@@ -246,30 +248,34 @@
                 </thead>
 
                 <tbody>
-                @forelse($semesters ?? [] as $semester)
+                <?php $__empty_1 = true; $__currentLoopData = $semesters ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $semester): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <tr>
                         <td data-label="Term" class="fw-semibold text-dark">
-                            {{ $semester->term }}
+                            <?php echo e($semester->term); ?>
+
                         </td>
 
                         <td data-label="Academic Year" class="text-secondary">
-                            {{ $semester->academic_year }}
+                            <?php echo e($semester->academic_year); ?>
+
                         </td>
 
                         <td data-label="Start Date" class="text-secondary">
-                            {{ $semester->start_date }}
+                            <?php echo e($semester->start_date); ?>
+
                         </td>
 
                         <td data-label="End Date" class="text-secondary">
-                            {{ $semester->end_date }}
+                            <?php echo e($semester->end_date); ?>
+
                         </td>
 
                         <td data-label="Current">
-                            @if($semester->is_current)
+                            <?php if($semester->is_current): ?>
                                 <span class="badge-soft badge-current">Yes</span>
-                            @else
+                            <?php else: ?>
                                 <span class="badge-soft">No</span>
-                            @endif
+                            <?php endif; ?>
                         </td>
 
                         <td data-label="Actions" class="text-center">
@@ -279,12 +285,12 @@
                                         class="btn btn-sm btn-bisu btn-bisu-outline"
                                         data-bs-toggle="modal"
                                         data-bs-target="#editSemesterModal"
-                                        data-id="{{ $semester->id }}"
-                                        data-term="{{ $semester->term }}"
-                                        data-academic_year="{{ $semester->academic_year }}"
-                                        data-start_date="{{ $semester->start_date }}"
-                                        data-end_date="{{ $semester->end_date }}"
-                                        data-is_current="{{ $semester->is_current ? 1 : 0 }}">
+                                        data-id="<?php echo e($semester->id); ?>"
+                                        data-term="<?php echo e($semester->term); ?>"
+                                        data-academic_year="<?php echo e($semester->academic_year); ?>"
+                                        data-start_date="<?php echo e($semester->start_date); ?>"
+                                        data-end_date="<?php echo e($semester->end_date); ?>"
+                                        data-is_current="<?php echo e($semester->is_current ? 1 : 0); ?>">
                                     Edit
                                 </button>
 
@@ -292,25 +298,25 @@
                                         class="btn btn-sm btn-bisu btn-bisu-danger"
                                         data-bs-toggle="modal"
                                         data-bs-target="#deleteSemesterModal"
-                                        data-id="{{ $semester->id }}"
-                                        data-term="{{ $semester->term }}"
-                                        data-academic_year="{{ $semester->academic_year }}"
-                                        data-start_date="{{ $semester->start_date }}"
-                                        data-end_date="{{ $semester->end_date }}"
-                                        data-is_current="{{ $semester->is_current ? 1 : 0 }}">
+                                        data-id="<?php echo e($semester->id); ?>"
+                                        data-term="<?php echo e($semester->term); ?>"
+                                        data-academic_year="<?php echo e($semester->academic_year); ?>"
+                                        data-start_date="<?php echo e($semester->start_date); ?>"
+                                        data-end_date="<?php echo e($semester->end_date); ?>"
+                                        data-is_current="<?php echo e($semester->is_current ? 1 : 0); ?>">
                                     Delete
                                 </button>
 
                             </div>
                         </td>
                     </tr>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="6" class="text-center py-4 text-muted">
                             No semesters found. Click <strong>Add Semester</strong> to create one.
                         </td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
                 </tbody>
 
             </table>
@@ -318,9 +324,7 @@
     </div>
 </div>
 
-{{-- =========================
-    CREATE MODAL
-========================= --}}
+
 <div class="modal fade" id="createSemesterModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -333,8 +337,8 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <form method="POST" action="{{ route('admin.semesters.store') }}">
-        @csrf
+      <form method="POST" action="<?php echo e(route('admin.semesters.store')); ?>">
+        <?php echo csrf_field(); ?>
 
         <div class="modal-body">
 
@@ -387,9 +391,7 @@
   </div>
 </div>
 
-{{-- =========================
-    EDIT MODAL
-========================= --}}
+
 <div class="modal fade" id="editSemesterModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -403,8 +405,8 @@
       </div>
 
       <form method="POST" id="editSemesterForm" action="">
-        @csrf
-        @method('PUT')
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('PUT'); ?>
 
         <div class="modal-body">
 
@@ -455,9 +457,7 @@
   </div>
 </div>
 
-{{-- =========================
-    DELETE MODAL
-========================= --}}
+
 <div class="modal fade" id="deleteSemesterModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -471,8 +471,8 @@
       </div>
 
       <form method="POST" id="deleteSemesterForm" action="">
-        @csrf
-        @method('DELETE')
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('DELETE'); ?>
 
         <div class="modal-body">
             <div class="danger-box">
@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function(){
         const endDate = btn.getAttribute('data-end_date') || '';
         const isCurrent = btn.getAttribute('data-is_current') === '1';
 
-        editForm.action = `{{ url('/admin/semesters') }}/${id}`;
+        editForm.action = `<?php echo e(url('/admin/semesters')); ?>/${id}`;
 
         document.getElementById('edit_term').value = term;
         document.getElementById('edit_academic_year').value = academicYear;
@@ -541,7 +541,7 @@ document.addEventListener('DOMContentLoaded', function(){
         const endDate = btn.getAttribute('data-end_date') || '';
         const isCurrent = btn.getAttribute('data-is_current') === '1';
 
-        deleteForm.action = `{{ url('/admin/semesters') }}/${id}`;
+        deleteForm.action = `<?php echo e(url('/admin/semesters')); ?>/${id}`;
 
         document.getElementById('delete_semester_title').textContent = `${term} - ${academicYear}`;
         document.getElementById('delete_semester_dates').textContent = `Start: ${startDate} | End: ${endDate}`;
@@ -551,4 +551,5 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/semesters.blade.php ENDPATH**/ ?>

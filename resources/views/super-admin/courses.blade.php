@@ -184,7 +184,7 @@
                     class="btn btn-bisu btn-bisu-primary shadow-sm"
                     data-bs-toggle="modal"
                     data-bs-target="#createCourseModal">
-                + Add Course
+                Add Course
             </button>
         </div>
     </div>
@@ -253,7 +253,7 @@
                                         data-name="{{ $course->course_name }}"
                                         data-description="{{ $course->course_description }}"
                                         data-college_id="{{ $course->college_id }}">
-                                    ✏️ Edit
+                                    Edit
                                 </button>
 
                                 <button type="button"
@@ -264,7 +264,7 @@
                                         data-name="{{ $course->course_name }}"
                                         data-description="{{ $course->course_description }}"
                                         data-college="{{ $course->college->college_name ?? 'N/A' }}">
-                                    🗑️ Delete
+                                    Delete
                                 </button>
 
                             </div>
@@ -335,7 +335,7 @@
 
         <div class="modal-footer border-top-0">
           <button type="button" class="btn btn-bisu btn-bisu-outline" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-bisu btn-bisu-primary">✅ Add Course</button>
+          <button type="submit" class="btn btn-bisu btn-bisu-primary">Add Course</button>
         </div>
 
       </form>
@@ -387,7 +387,7 @@
 
         <div class="modal-footer border-top-0">
           <button type="button" class="btn btn-bisu btn-bisu-outline" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-bisu btn-bisu-primary">💾 Save Changes</button>
+          <button type="submit" class="btn btn-bisu btn-bisu-primary">Save Changes</button>
         </div>
 
       </form>

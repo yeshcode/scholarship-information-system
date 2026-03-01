@@ -184,7 +184,7 @@
                     class="btn btn-bisu btn-bisu-primary shadow-sm"
                     data-bs-toggle="modal"
                     data-bs-target="#createYearLevelModal">
-                + Add Year Level
+                Add Year Level
             </button>
         </div>
     </div>
@@ -241,7 +241,7 @@
                                         data-bs-target="#editYearLevelModal"
                                         data-id="{{ $yearLevel->id }}"
                                         data-name="{{ $yearLevel->year_level_name }}">
-                                    ✏️ Edit
+                                    Edit
                                 </button>
 
                                 <button type="button"
@@ -250,7 +250,7 @@
                                         data-bs-target="#deleteYearLevelModal"
                                         data-id="{{ $yearLevel->id }}"
                                         data-name="{{ $yearLevel->year_level_name }}">
-                                    🗑️ Delete
+                                    Delete
                                 </button>
 
                             </div>
@@ -259,7 +259,7 @@
                 @empty
                     <tr>
                         <td colspan="2" class="text-center py-4 text-muted">
-                            No year levels found. Click <strong>+ Add Year Level</strong> to create one.
+                            No year levels found. Click <strong>Add Year Level</strong> to create one.
                         </td>
                     </tr>
                 @endforelse
@@ -302,7 +302,7 @@
 
         <div class="modal-footer border-top-0">
           <button type="button" class="btn btn-bisu btn-bisu-outline" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-bisu btn-bisu-primary">✅ Add Year Level</button>
+          <button type="submit" class="btn btn-bisu btn-bisu-primary">Add Year Level</button>
         </div>
 
       </form>
@@ -339,7 +339,7 @@
 
         <div class="modal-footer border-top-0">
           <button type="button" class="btn btn-bisu btn-bisu-outline" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-bisu btn-bisu-primary">💾 Save Changes</button>
+          <button type="submit" class="btn btn-bisu btn-bisu-primary">Save Changes</button>
         </div>
 
       </form>

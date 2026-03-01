@@ -216,6 +216,61 @@
         font-size: 1.4rem;
         margin-bottom: .6rem;
     }
+
+    /* ===== Mobile responsiveness patch (keep same design) ===== */
+@media (max-width: 575.98px){
+
+    /* container spacing */
+    .container-fluid.container-xl{
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    /* hero spacing + readable title */
+    .bisu-hero{
+        padding: 16px !important; /* keeps same style, just smaller padding */
+    }
+    .bisu-hero h2{
+        font-size: 1.25rem !important;
+        line-height: 1.2;
+    }
+
+    /* make hero buttons stack nicely */
+    .bisu-hero .d-flex.gap-2{
+        flex-direction: column;
+        width: 100%;
+    }
+    .bisu-hero .d-flex.gap-2 .btn,
+    .bisu-hero .d-flex.gap-2 .badge{
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+
+    /* badges should not overflow */
+    .badge{
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* reduce card header spacing slightly */
+    .card-header{
+        padding: .85rem 1rem !important;
+    }
+
+    /* prevent long details from overflowing */
+    .wrap-anywhere{
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    /* empty state: not too tall on phones */
+    .empty-state{
+        min-height: 160px;
+    }
+}
 </style>
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/student/scholarships/show.blade.php ENDPATH**/ ?>

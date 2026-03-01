@@ -174,7 +174,18 @@ use UsesActiveSemester;
     return view('student.announcements', compact('announcements', 'viewedIds'));
 }
 
+public function markAsRead($id)
+{
+    $notification = Notification::where('id', $id)
+        ->where('recipient_user_id', Auth::id())
+        ->firstOrFail();
 
+    if (!$notification->is_read) {
+        $notification->update(['is_read' => true]);
+    }
+
+    return back()->with('success', 'Marked as read.');
+}
 
     public function scholarships()
     {

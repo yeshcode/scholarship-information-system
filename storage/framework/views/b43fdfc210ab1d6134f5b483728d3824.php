@@ -261,16 +261,7 @@
 
 
                                 <!-- Delete (hard) -->
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-danger"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#deleteScholarModal"
-                                    data-id="<?php echo e($scholar->id); ?>"
-                                    data-name="<?php echo e(($scholar->u_lastname ?? $scholar->user->lastname ?? '')); ?>, <?php echo e(($scholar->u_firstname ?? $scholar->user->firstname ?? '')); ?>"
-                                    >
-                                    Delete
-                                </button>
+                                
                             </div>
                         </td>
                     </tr>

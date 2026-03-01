@@ -141,6 +141,58 @@
     @media (max-width: 991.98px){
         .scholarship-card:hover{ transform: none; }
     }
+
+    /* ===== Mobile responsiveness patch (keep same design) ===== */
+@media (max-width: 575.98px){
+
+    /* container spacing */
+    .container-fluid.container-xl{
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    /* title spacing */
+    .page-title-blue{
+        font-size: 1.35rem;
+        line-height: 1.15;
+    }
+
+    /* keep badge from forcing overflow */
+    .scholarship-card .badge{
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: .78rem;
+        padding: .35rem .6rem;
+    }
+
+    /* make card padding a bit tighter */
+    .scholarship-card .card-body{
+        padding: 14px !important; /* keeps same look, just fits mobile better */
+    }
+
+    /* footer becomes stacked if too tight */
+    .scholarship-card .mt-auto.d-flex{
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: .6rem;
+    }
+
+    /* make the view button full width on very small screens */
+    .btn-bisu-primary{
+        width: 100%;
+        justify-content: center;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    /* improve long text wrapping */
+    .wrap-anywhere{
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+}
 </style>
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/student/scholarships/index.blade.php ENDPATH**/ ?>

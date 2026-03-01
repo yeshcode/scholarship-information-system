@@ -11,8 +11,8 @@
         --brand-line:#bcd6ff;   /* blue border */
 
         /* Neutrals */
-        --ink:#0f172a;
-        --muted:#64748b;
+        --ink:#1e293b;          /* ✅ softened ink */
+        --muted:#6b7280;        /* ✅ softer muted */
         --line:#e5e7eb;
         --bg:#f2f7ff;
         --card:#ffffff;
@@ -31,24 +31,25 @@
         max-width: 1240px;
         margin: 0 auto;
         padding: 16px;
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        font-family: "Inter", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        font-weight: 400; /* ✅ not bold */
         color: var(--ink);
     }
 
     /* ✅ Blue background wash */
     .page-shell{
         background:
-            radial-gradient(1100px 380px at 10% 0%, rgba(11,46,94,.18) 0%, rgba(11,46,94,0) 55%),
+            radial-gradient(1100px 380px at 10% 0%, rgba(11,46,94,.14) 0%, rgba(11,46,94,0) 55%),
             linear-gradient(180deg, var(--bg), #ffffff);
         border-radius: 22px;
         padding: 12px;
-        border: 1px solid rgba(188,214,255,.7);
+        border: 1px solid rgba(188,214,255,.65);
     }
 
     /* ✅ Blue header */
     .header{
         background:
-            radial-gradient(900px 220px at 15% 0%, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 55%),
+            radial-gradient(900px 220px at 15% 0%, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 55%),
             linear-gradient(135deg, var(--brand), var(--brand-600));
         border: 1px solid rgba(255,255,255,.18);
         border-radius: 22px;
@@ -57,21 +58,24 @@
         align-items:center;
         justify-content:space-between;
         gap:14px;
-        box-shadow: 0 .8rem 2.2rem rgba(2,6,23,.18);
+        box-shadow: 0 .75rem 2rem rgba(2,6,23,.16);
         margin-bottom: 14px;
         color:#fff;
     }
+
+    /* ✅ clean header typography (no heavy bold) */
     .title h2{
         margin:0;
-        font-size: 1.55rem;
-        font-weight: 950;
+        font-size: 1.45rem;
+        font-weight: 600;
         letter-spacing: .2px;
         color:#fff;
     }
     .title p{
         margin:6px 0 0;
         color: rgba(255,255,255,.85);
-        font-size: .95rem;
+        font-size: .92rem;
+        font-weight: 400;
         line-height: 1.35;
         max-width: 60ch;
     }
@@ -82,7 +86,7 @@
         border: 1px solid var(--line);
         border-radius: 20px;
         padding: 18px;
-        box-shadow: 0 .55rem 1.6rem rgba(15,23,42,.06);
+        box-shadow: 0 .45rem 1.25rem rgba(15,23,42,.06); /* ✅ softer */
         margin-bottom: 14px;
         width: 100%;
         position: relative;
@@ -94,6 +98,7 @@
         left:0; top:0; right:0;
         height: 4px;
         background: linear-gradient(90deg, var(--brand), var(--brand-600));
+        opacity: .9;
     }
     .card:hover{ border-color: var(--brand-line); }
 
@@ -108,13 +113,21 @@
         background: var(--brand-soft);
         border: 1px solid var(--brand-line);
         color: var(--brand);
-        font-weight: 950;
+        font-weight: 600; /* ✅ softer */
         flex: 0 0 auto;
     }
-    .name{ margin:0; font-weight: 950; font-size: .98rem; color: var(--ink); }
+
+    /* ✅ clean name */
+    .name{
+        margin:0;
+        font-weight: 500;
+        font-size: .95rem;
+        color: var(--brand-700);
+    }
     .sub{
         margin:4px 0 0;
         font-size: .82rem;
+        font-weight: 400;
         color: var(--muted);
         display:flex;
         flex-wrap:wrap;
@@ -125,7 +138,8 @@
     /* Pills */
     .pill{
         display:inline-flex; align-items:center; gap:6px;
-        font-size: .75rem;
+        font-size: .72rem;
+        font-weight: 500;
         padding:4px 10px;
         border-radius:999px;
         border:1px solid var(--line);
@@ -137,25 +151,25 @@
         background: var(--brand-soft);
         border-color: var(--brand-line);
         color: var(--brand);
-        font-weight: 900;
+        font-weight: 500;
     }
     .pill-scheduled{
         background: var(--warn-bg);
         border-color: var(--warn-line);
         color: var(--warn);
-        font-weight: 900;
+        font-weight: 500;
     }
 
-    /* ✅ Tabs - visibly blue */
+    /* ✅ Tabs - blue but minimal */
     .tabs{
         display:flex;
         gap:10px;
         flex-wrap:wrap;
         padding:10px;
-        border:1px solid rgba(188,214,255,.9);
+        border:1px solid rgba(188,214,255,.85);
         border-radius: 20px;
-        background: rgba(255,255,255,.85);
-        box-shadow: 0 .45rem 1.2rem rgba(15,23,42,.05);
+        background: rgba(255,255,255,.9);
+        box-shadow: 0 .3rem .9rem rgba(15,23,42,.05);
         margin-bottom: 14px;
     }
     .tab{
@@ -165,8 +179,8 @@
         color: var(--ink);
         border-radius:16px;
         padding:10px 14px;
-        font-weight: 900;
-        font-size: .92rem;
+        font-weight: 500; /* ✅ not bold */
+        font-size: .9rem;
         display:inline-flex;
         align-items:center;
         gap:8px;
@@ -181,21 +195,21 @@
         background: linear-gradient(180deg, var(--brand-soft), #ffffff);
         border-color: var(--brand-line);
         color: var(--brand);
-        box-shadow: 0 .35rem 1rem rgba(18,63,133,.12);
+        box-shadow: 0 .25rem .8rem rgba(18,63,133,.10);
     }
     .tab.active-scheduled{
         background: var(--warn-bg);
         border-color: var(--warn-line);
         color: var(--warn);
-        box-shadow: 0 .35rem 1rem rgba(154, 52, 18, .08);
+        box-shadow: 0 .25rem .8rem rgba(154, 52, 18, .07);
     }
 
     /* Post content */
     .post-title{
-        font-weight: 950;
-        font-size: 1.08rem;
-        color: var(--ink);
-        margin-top: 12px;
+        font-weight: 600; /* ✅ not heavy */
+        font-size: 1rem;
+        color: var(--brand-700);
+        margin-top: 10px;
     }
     .post-body{
         margin-top: 8px;
@@ -203,8 +217,9 @@
         white-space:pre-line;
         word-break:break-word;
         overflow-wrap:anywhere;
-        line-height: 1.75;
-        font-size: .95rem;
+        line-height: 1.65;
+        font-size: .92rem;
+        font-weight: 400;
     }
     .post-body.clamp{
         display: -webkit-box;
@@ -216,7 +231,7 @@
         border:none;
         background:transparent;
         color: var(--brand-600);
-        font-weight: 900;
+        font-weight: 500; /* ✅ softer */
         padding: 0;
         cursor:pointer;
         margin-top:10px;
@@ -237,7 +252,7 @@
         background:var(--card);
         border:1px solid var(--line);
         border-radius:20px;
-        box-shadow: 0 18px 55px rgba(0,0,0,.25);
+        box-shadow: 0 18px 55px rgba(0,0,0,.22);
         overflow:hidden;
         display:flex;
         flex-direction:column;
@@ -247,13 +262,18 @@
         display:flex; align-items:center; justify-content:space-between; gap:10px;
         border-bottom:1px solid #eef2f7;
         background:
-            radial-gradient(900px 220px at 0% 0%, rgba(11,46,94,.12), rgba(255,255,255,0) 55%),
+            radial-gradient(900px 220px at 0% 0%, rgba(11,46,94,.10), rgba(255,255,255,0) 55%),
             linear-gradient(180deg, #ffffff, #f8fbff);
     }
-    .modal-head h3{ margin:0; font-size:1rem; font-weight:950; color:var(--ink); }
+    .modal-head h3{
+        margin:0;
+        font-size: .98rem;
+        font-weight: 600;
+        color: var(--brand-700);
+    }
     .modal-close{
         border:none; background:#f1f5f9; color:#0f172a;
-        border-radius:12px; padding:8px 10px; cursor:pointer; font-weight:900;
+        border-radius:12px; padding:8px 10px; cursor:pointer; font-weight: 500;
     }
     .modal-body{
         padding:16px;
@@ -268,11 +288,12 @@
         padding:10px 12px;
         outline:none;
         background:#fff;
-        font-size:.95rem;
+        font-size:.92rem;
+        font-weight: 400;
     }
     .input:focus, .textarea:focus{
         border-color: var(--brand-line);
-        box-shadow: 0 0 0 .25rem rgba(11, 46, 94, .16);
+        box-shadow: 0 0 0 .25rem rgba(11, 46, 94, .14);
     }
     .textarea{ min-height:120px; resize:vertical; }
 
@@ -293,6 +314,7 @@
         display:flex; gap:10px; align-items:flex-start;
         background:#fff;
         transition: background .12s ease, border-color .12s ease, transform .08s ease;
+        font-weight: 400;
     }
     .aud-item:hover{
         background: var(--brand-soft);
@@ -300,8 +322,12 @@
         transform: translateY(-1px);
     }
     .aud-item input{ margin-top:3px; }
-    .aud-item b{ display:block; color:var(--ink); font-weight:950; }
-    .aud-item small{ color:var(--muted); }
+    .aud-item b{
+        display:block;
+        color:var(--brand-700);
+        font-weight: 500; /* ✅ softer */
+    }
+    .aud-item small{ color:var(--muted); font-weight: 400; }
 
     .pick-box{
         margin-top:12px;
@@ -322,12 +348,13 @@
         border-radius:999px;
         padding:6px 10px;
         font-size:12px;
+        font-weight: 400;
         display:inline-flex; align-items:center; gap:8px;
     }
     .chip button{
         border:none; background:#f1f5f9;
         border-radius:999px; padding:2px 8px;
-        cursor:pointer; font-weight:900;
+        cursor:pointer; font-weight: 600;
     }
 
     .results{ max-height:240px; overflow:auto; }
@@ -340,8 +367,8 @@
         transition: background .12s ease, border-color .12s ease;
     }
     .res:hover{ background: var(--brand-soft); border-color: var(--brand-line); }
-    .res b{ color:var(--ink); font-weight:950; }
-    .res small{ color:var(--muted); }
+    .res b{ color:var(--brand-700); font-weight: 500; }
+    .res small{ color:var(--muted); font-weight: 400; }
 
     .footer-actions{
         margin-top:14px;
@@ -355,13 +382,13 @@
         border-top: 1px solid #eef2f7;
     }
 
-    /* ===== Modern button system (blue themed) ===== */
+    /* ===== Modern button system (blue themed but simple) ===== */
     .btnx{
         border: 1px solid transparent;
         border-radius: 12px;
         padding: 9px 12px;
-        font-weight: 900;
-        font-size: .92rem;
+        font-weight: 500; /* ✅ not bold */
+        font-size: .88rem;
         display: inline-flex;
         align-items: center;
         gap: 8px;
@@ -372,16 +399,16 @@
         white-space: nowrap;
     }
     .btnx:active{ transform: translateY(1px); }
-    .btnx:focus{ outline: none; box-shadow: 0 0 0 .25rem rgba(11, 46, 94, .18); }
+    .btnx:focus{ outline: none; box-shadow: 0 0 0 .25rem rgba(11, 46, 94, .16); }
 
     .btnx-primary{
         background: linear-gradient(180deg, var(--brand), var(--brand-600));
-        border-color: rgba(18,63,133,.55);
+        border-color: rgba(18,63,133,.50);
         color: #fff;
     }
     .btnx-primary:hover{
         filter: brightness(1.03);
-        box-shadow: 0 .45rem 1.2rem rgba(11, 46, 94, .22);
+        box-shadow: 0 .35rem 1rem rgba(11, 46, 94, .18);
         color:#fff;
     }
 
@@ -393,7 +420,7 @@
     .btnx-secondary:hover{
         background: #f8fafc;
         border-color: #cbd5e1;
-        box-shadow: 0 .3rem .9rem rgba(15,23,42,.06);
+        box-shadow: 0 .25rem .8rem rgba(15,23,42,.05);
     }
 
     .btnx-soft{
@@ -430,16 +457,16 @@
         padding: 7px 10px;
         border-radius: 11px;
         font-size: 12px;
-        font-weight: 950;
+        font-weight: 500;
     }
 
     /* Pagination wrap */
     .pagination-wrap{
-        border:1px solid rgba(188,214,255,.9);
+        border:1px solid rgba(188,214,255,.85);
         border-radius: 18px;
         background:#fff;
         padding: 10px 12px;
-        box-shadow: 0 .35rem 1rem rgba(15,23,42,.05);
+        box-shadow: 0 .25rem .8rem rgba(15,23,42,.05);
     }
 
     /* Mobile */
@@ -449,22 +476,57 @@
     }
 
     #openModalBtn{
-    width: auto !important;
-    flex: 0 0 auto;          /* don't grow */
-    align-self: center;
-    padding: 10px 14px;      /* consistent size */
-    border-radius: 14px;
-}
-
-/* ✅ On mobile, make it full width ONLY if you want */
-@media (max-width: 576px){
-    #openModalBtn{
-        width: 100% !important;   /* remove this line if you want it still small */
-        justify-content: center;
+        width: auto !important;
+        flex: 0 0 auto;
+        align-self: center;
+        padding: 10px 14px;
+        border-radius: 14px;
     }
+
+    @media (max-width: 576px){
+        #openModalBtn{
+            width: 100% !important;
+            justify-content: center;
+        }
+    }
+
+    /* ✅ Make layout less wide */
+.wrap{
+    max-width: 1040px;   /* was 1240px */
+    margin: 0 auto;
+    padding: 16px;
 }
 
-    
+/* ✅ Shell not too stretched */
+.page-shell{
+    max-width: 1040px;   /* keep same as wrap */
+    margin: 0 auto;
+}
+
+/* ✅ Cards not full-width (centered) */
+.card{
+    width: 100%;
+    max-width: 920px;    /* control card width */
+    margin: 0 auto 14px; /* center cards */
+}
+
+/* ✅ Keep header aligned with cards */
+.header{
+    max-width: 920px;
+    margin: 0 auto 14px;
+}
+
+/* ✅ Keep tabs aligned with cards */
+.tabs{
+    max-width: 920px;
+    margin: 0 auto 14px;
+}
+
+/* ✅ Keep pagination aligned with cards */
+.pagination-wrap{
+    max-width: 920px;
+    margin: 12px auto 0;
+}
 </style>
 
 @php
@@ -607,7 +669,7 @@
             @csrf
             @method('PATCH')
 
-            <label class="sub" style="font-weight:950;">New Schedule Date & Time</label>
+            <label class="sub" style="color:var(--muted);">New Schedule Date & Time</label>
             <input type="datetime-local" name="posted_at" class="input" id="editPostedAt" required>
 
             <div class="footer-actions">
@@ -631,24 +693,23 @@
 
             <div class="grid">
                 <div>
-                    <label class="sub" style="font-weight:950;">Title</label>
+                    <label class="sub" style="color:var(--muted);">Title</label>
                     <input class="input" name="title" placeholder="Announcement title…" required>
                 </div>
                 <div>
-                    <label class="sub" style="font-weight:950;">Posting Time</label>
+                    <label class="sub" style="color:var(--muted);">Posting Time</label>
                     <input class="input" type="datetime-local" name="posted_at"
                            value="{{ now()->format('Y-m-d\TH:i') }}" required>
-                    {{-- <small class="sub">Default is current date/time, but you can schedule it.</small> --}}
                 </div>
             </div>
 
             <div style="margin-top:10px;">
-                <label class="sub" style="font-weight:950;">Description</label>
+                <label class="sub" style="color:var(--muted);">Description</label>
                 <textarea class="textarea" name="description" placeholder="What do you want to announce?" required></textarea>
             </div>
 
             <div style="margin-top:10px;">
-                <label class="sub" style="font-weight:950;">Audience</label>
+                <label class="sub" style="color:var(--muted);">Audience</label>
                 <div class="aud" id="audienceCards">
                     <label class="aud-item">
                         <input type="radio" name="audience" value="all_students" checked>
@@ -673,7 +734,7 @@
             <div class="pick-box" id="pickerBox">
                 <div class="pick-top">
                     <div>
-                        <b style="color:var(--ink); font-weight:950;">Select recipients</b><br>
+                        <b style="color:var(--brand-700); font-weight:500;">Select recipients</b><br>
                         <small class="sub">Type a name / student id / email to search</small>
                     </div>
                     <span class="pill" id="pickedCount">0 selected</span>

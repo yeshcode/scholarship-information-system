@@ -74,6 +74,26 @@
             border-radius: 12px;
             box-shadow: 0 10px 24px rgba(11,46,94,.06);
         }
+
+        /* ===== Global mobile safety (NO design change) ===== */
+html, body{
+    max-width: 100%;
+    overflow-x: hidden; /* prevents side scrolling on small phones */
+}
+
+/* Make headings scale down a bit on phones */
+@media (max-width: 575.98px){
+    .page-title-blue{
+        font-size: 1.35rem;
+        line-height: 1.15;
+        margin-bottom: .45rem;
+    }
+
+    /* slightly tighter card padding (still same design) */
+    .content-card{
+        border-radius: 12px;
+    }
+}
     </style>
 </head>
 
