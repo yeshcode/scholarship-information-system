@@ -50,6 +50,9 @@
             padding: .55rem 1.05rem;
             border-radius: 12px;
             box-shadow: 0 10px 24px rgba(11,46,94,.18);
+            position: relative;
+            z-index: 1052;
+            pointer-events: auto;
         }
         .btn-login:hover{ background: var(--brand2); }
 
@@ -159,6 +162,25 @@
             border:1px solid rgba(229,231,235,.9);
             box-shadow: 0 10px 24px rgba(11,46,94,.14);
             background:#fff;
+        }
+
+        /* Always keep navbar above any hero/sections/overlays */
+        .nav-guest{
+            position: sticky;
+            top: 0;
+            z-index: 1050; /* higher than most custom sections */
+        }
+
+        /* If any decorative pseudo layer overlaps, don't block clicks */
+        .hero::before,
+        .hero::after,
+        .stat-card::before{
+            pointer-events: none;
+        }
+
+        #guestNav{
+            position: relative;
+            z-index: 1051;
         }
 
     </style>

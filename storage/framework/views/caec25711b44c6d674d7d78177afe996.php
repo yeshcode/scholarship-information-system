@@ -1,8 +1,8 @@
-{{-- resources/views/super-admin/colleges.blade.php --}}
-@php $fullWidth = true; @endphp
-@extends('layouts.app')
 
-@section('content')
+<?php $fullWidth = true; ?>
+
+
+<?php $__env->startSection('content'); ?>
 
 <style>
     :root{
@@ -74,7 +74,6 @@
     }
     .btn-bisu-danger:hover{ background: var(--danger); color:#fff; }
 
-    /* Actions wrap */
     .actions-wrap{
         display:flex;
         justify-content:center;
@@ -111,10 +110,8 @@
         border-color: rgba(11,46,94,.35);
         box-shadow: 0 0 0 .2rem rgba(11,46,94,.12);
     }
-    .hint{
-        font-size:.84rem;
-        color:var(--muted);
-    }
+    .hint{ font-size:.84rem; color:var(--muted); }
+
     .danger-box{
         border:1px solid rgba(179,0,0,.25);
         background:#fdecec;
@@ -122,11 +119,10 @@
         padding:.9rem 1rem;
     }
 
-    /* ===== Responsive ===== */
+    /* Responsive */
     @media (max-width: 576px){
         .page-title{ font-size: 1.45rem; }
         .page-sub{ font-size: .86rem; }
-
         .modern-table th, .modern-table td{
             padding: 10px 10px;
             font-size: .88rem;
@@ -135,7 +131,7 @@
         .modal-content{ border-radius: 16px; }
     }
 
-    /* ===== Mobile table -> cards ===== */
+    /* Mobile table -> cards */
     @media (max-width: 768px){
         .modern-table thead{ display:none; }
         .modern-table, .modern-table tbody, .modern-table tr, .modern-table td{
@@ -175,65 +171,68 @@
 
 <div class="container py-4">
 
-    {{-- HEADER --}}
+    
     <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2 mb-3">
         <div>
-            <h2 class="page-title">Manage Colleges</h2>
-            <div class="page-sub">Add, edit, and remove colleges used in the system.</div>
+            <h2 class="page-title">Manage Year Levels</h2>
+            <div class="page-sub">Add, edit, and remove year levels used in the system.</div>
         </div>
 
-        {{-- Bootstrap-only responsive full width on mobile --}}
+        
         <div class="d-flex justify-content-end w-100 w-md-auto">
             <button type="button"
                     class="btn btn-bisu btn-bisu-primary shadow-sm"
                     data-bs-toggle="modal"
-                    data-bs-target="#createCollegeModal">
-                Add College
+                    data-bs-target="#createYearLevelModal">
+                Add Year Level
             </button>
         </div>
     </div>
 
-    {{-- FLASH --}}
-    @if(session('success'))
+    
+    <?php if(session('success')): ?>
         <div class="alert alert-success alert-dismissible fade show">
-            {{ session('success') }}
+            <?php echo e(session('success')); ?>
+
             <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    <?php endif; ?>
 
-    @if(session('error'))
+    <?php if(session('error')): ?>
         <div class="alert alert-danger alert-dismissible fade show">
-            {{ session('error') }}
+            <?php echo e(session('error')); ?>
+
             <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    <?php endif; ?>
 
-    @if($errors->any())
+    <?php if($errors->any()): ?>
         <div class="alert alert-danger">
             <ul class="mb-0 ps-3">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <li><?php echo e($error); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </ul>
         </div>
-    @endif
+    <?php endif; ?>
 
-    {{-- TABLE --}}
+    
     <div class="table-card">
         <div class="table-responsive" style="max-height: calc(100vh - 260px);">
             <table class="table modern-table mb-0">
                 <thead class="sticky-top">
                     <tr>
-                        <th>College Name</th>
+                        <th>Year Level Name</th>
                         <th class="text-center" style="width: 240px;">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                @forelse($colleges ?? [] as $college)
+                <?php $__empty_1 = true; $__currentLoopData = $yearLevels ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $yearLevel): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <tr>
-                        <td data-label="College Name" class="fw-semibold text-dark">
-                            {{ $college->college_name }}
+                        <td data-label="Year Level Name" class="fw-semibold text-dark">
+                            <?php echo e($yearLevel->year_level_name); ?>
+
                         </td>
 
                         <td data-label="Actions" class="text-center">
@@ -242,31 +241,31 @@
                                 <button type="button"
                                         class="btn btn-sm btn-bisu btn-bisu-outline"
                                         data-bs-toggle="modal"
-                                        data-bs-target="#editCollegeModal"
-                                        data-id="{{ $college->id }}"
-                                        data-name="{{ $college->college_name }}">
+                                        data-bs-target="#editYearLevelModal"
+                                        data-id="<?php echo e($yearLevel->id); ?>"
+                                        data-name="<?php echo e($yearLevel->year_level_name); ?>">
                                     Edit
                                 </button>
 
                                 <button type="button"
                                         class="btn btn-sm btn-bisu btn-bisu-danger"
                                         data-bs-toggle="modal"
-                                        data-bs-target="#deleteCollegeModal"
-                                        data-id="{{ $college->id }}"
-                                        data-name="{{ $college->college_name }}">
+                                        data-bs-target="#deleteYearLevelModal"
+                                        data-id="<?php echo e($yearLevel->id); ?>"
+                                        data-name="<?php echo e($yearLevel->year_level_name); ?>">
                                     Delete
                                 </button>
 
                             </div>
                         </td>
                     </tr>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="2" class="text-center py-4 text-muted">
-                            No colleges found. Click <strong>Add College</strong> to create one.
+                            No year levels found. Click <strong>Add Year Level</strong> to create one.
                         </td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
                 </tbody>
 
             </table>
@@ -274,39 +273,37 @@
     </div>
 </div>
 
-{{-- =========================
-    CREATE MODAL
-========================= --}}
-<div class="modal fade" id="createCollegeModal" tabindex="-1" aria-hidden="true">
+
+<div class="modal fade" id="createYearLevelModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
 
       <div class="modal-header">
         <div>
-            <h5 class="modal-title mb-0">Add College</h5>
-            <div class="hint">Create a new college record.</div>
+            <h5 class="modal-title mb-0">Add Year Level</h5>
+            <div class="hint">Create a new year level record.</div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <form method="POST" action="{{ route('admin.colleges.store') }}">
-        @csrf
+      <form method="POST" action="<?php echo e(route('admin.year-levels.store')); ?>">
+        <?php echo csrf_field(); ?>
 
         <div class="modal-body">
           <div class="mb-2">
-            <label class="form-label" for="create_college_name">College Name</label>
+            <label class="form-label" for="create_year_level_name">Year Level Name</label>
             <input type="text"
-                   name="college_name"
-                   id="create_college_name"
+                   name="year_level_name"
+                   id="create_year_level_name"
                    class="form-control"
-                   placeholder="e.g. College of Science"
+                   placeholder="e.g. 1st Year"
                    required>
           </div>
         </div>
 
         <div class="modal-footer border-top-0">
           <button type="button" class="btn btn-bisu btn-bisu-outline" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-bisu btn-bisu-primary">Add College</button>
+          <button type="submit" class="btn btn-bisu btn-bisu-primary">Add Year Level</button>
         </div>
 
       </form>
@@ -315,35 +312,33 @@
   </div>
 </div>
 
-{{-- =========================
-    EDIT MODAL
-========================= --}}
-<div class="modal fade" id="editCollegeModal" tabindex="-1" aria-hidden="true">
+
+<div class="modal fade" id="editYearLevelModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
 
       <div class="modal-header">
         <div>
-            <h5 class="modal-title mb-0">Edit College</h5>
-            <div class="hint">Update the college name.</div>
+            <h5 class="modal-title mb-0">Edit Year Level</h5>
+            <div class="hint">Update the year level name.</div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <form method="POST" id="editCollegeForm" action="">
-        @csrf
-        @method('PUT')
+      <form method="POST" id="editYearLevelForm" action="">
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('PUT'); ?>
 
         <div class="modal-body">
           <div class="mb-2">
-            <label class="form-label" for="edit_college_name">College Name</label>
-            <input type="text" name="college_name" id="edit_college_name" class="form-control" required>
+            <label class="form-label" for="edit_year_level_name">Year Level Name</label>
+            <input type="text" name="year_level_name" id="edit_year_level_name" class="form-control" required>
           </div>
         </div>
 
         <div class="modal-footer border-top-0">
           <button type="button" class="btn btn-bisu btn-bisu-outline" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-bisu btn-bisu-primary">💾 Save Changes</button>
+          <button type="submit" class="btn btn-bisu btn-bisu-primary">Save Changes</button>
         </div>
 
       </form>
@@ -352,10 +347,8 @@
   </div>
 </div>
 
-{{-- =========================
-    DELETE MODAL
-========================= --}}
-<div class="modal fade" id="deleteCollegeModal" tabindex="-1" aria-hidden="true">
+
+<div class="modal fade" id="deleteYearLevelModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
 
@@ -367,14 +360,14 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <form method="POST" id="deleteCollegeForm" action="">
-        @csrf
-        @method('DELETE')
+      <form method="POST" id="deleteYearLevelForm" action="">
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('DELETE'); ?>
 
         <div class="modal-body">
             <div class="danger-box">
-                <div class="fw-bold mb-1" id="delete_college_name">College</div>
-                <div class="text-muted small">Deleting this college may affect related records.</div>
+                <div class="fw-bold mb-1" id="delete_year_level_name">Year Level</div>
+                <div class="text-muted small">Deleting this year level may affect related records.</div>
             </div>
         </div>
 
@@ -395,8 +388,8 @@
 document.addEventListener('DOMContentLoaded', function(){
 
     // EDIT MODAL
-    const editModal = document.getElementById('editCollegeModal');
-    const editForm  = document.getElementById('editCollegeForm');
+    const editModal = document.getElementById('editYearLevelModal');
+    const editForm  = document.getElementById('editYearLevelForm');
 
     editModal?.addEventListener('show.bs.modal', function (event) {
         const btn = event.relatedTarget;
@@ -405,29 +398,27 @@ document.addEventListener('DOMContentLoaded', function(){
         const id = btn.getAttribute('data-id');
         const name = btn.getAttribute('data-name') || '';
 
-        // IMPORTANT: this must match your route pattern
-        editForm.action = `{{ url('/admin/colleges') }}/${id}`;
-
-        document.getElementById('edit_college_name').value = name;
+        editForm.action = `<?php echo e(url('/admin/year-levels')); ?>/${id}`;
+        document.getElementById('edit_year_level_name').value = name;
     });
 
     // DELETE MODAL
-    const deleteModal = document.getElementById('deleteCollegeModal');
-    const deleteForm  = document.getElementById('deleteCollegeForm');
+    const deleteModal = document.getElementById('deleteYearLevelModal');
+    const deleteForm  = document.getElementById('deleteYearLevelForm');
 
     deleteModal?.addEventListener('show.bs.modal', function (event) {
         const btn = event.relatedTarget;
         if(!btn) return;
 
         const id = btn.getAttribute('data-id');
-        const name = btn.getAttribute('data-name') || 'College';
+        const name = btn.getAttribute('data-name') || 'Year Level';
 
-        deleteForm.action = `{{ url('/admin/colleges') }}/${id}`;
-
-        document.getElementById('delete_college_name').textContent = name;
+        deleteForm.action = `<?php echo e(url('/admin/year-levels')); ?>/${id}`;
+        document.getElementById('delete_year_level_name').textContent = name;
     });
 
 });
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/year-levels.blade.php ENDPATH**/ ?>

@@ -161,10 +161,31 @@ use UsesActiveSemester;
         ->orderByDesc('posted_at')
         ->paginate(10);
 
-    return view('student.announcements', compact('announcements'));
+        // ✅ Get IDs that the student already opened/read
+        $announcementIds = $announcements->getCollection()->pluck('id');
+
+        $viewedIds = AnnouncementView::where('user_id', $userId)
+            ->whereIn('announcement_id', $announcementIds)
+            ->pluck('announcement_id')
+            ->map(fn($id) => (int)$id)
+            ->toArray();
+
+
+    return view('student.announcements', compact('announcements', 'viewedIds'));
 }
 
+public function markAsRead($id)
+{
+    $notification = Notification::where('id', $id)
+        ->where('recipient_user_id', Auth::id())
+        ->firstOrFail();
 
+    if (!$notification->is_read) {
+        $notification->update(['is_read' => true]);
+    }
+
+    return back()->with('success', 'Marked as read.');
+}
 
     public function scholarships()
     {

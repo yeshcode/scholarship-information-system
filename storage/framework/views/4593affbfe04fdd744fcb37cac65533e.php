@@ -1,8 +1,8 @@
-{{-- resources/views/super-admin/colleges.blade.php --}}
-@php $fullWidth = true; @endphp
-@extends('layouts.app')
 
-@section('content')
+<?php $fullWidth = true; ?>
+
+
+<?php $__env->startSection('content'); ?>
 
 <style>
     :root{
@@ -74,7 +74,6 @@
     }
     .btn-bisu-danger:hover{ background: var(--danger); color:#fff; }
 
-    /* Actions wrap */
     .actions-wrap{
         display:flex;
         justify-content:center;
@@ -102,19 +101,17 @@
         font-size:.9rem;
         color:#0f172a;
     }
-    .form-control{
+    .form-control, .form-select{
         border-radius:14px;
         border:1px solid var(--line);
         padding:.7rem .9rem;
     }
-    .form-control:focus{
+    .form-control:focus, .form-select:focus{
         border-color: rgba(11,46,94,.35);
         box-shadow: 0 0 0 .2rem rgba(11,46,94,.12);
     }
-    .hint{
-        font-size:.84rem;
-        color:var(--muted);
-    }
+    .hint{ font-size:.84rem; color:var(--muted); }
+
     .danger-box{
         border:1px solid rgba(179,0,0,.25);
         background:#fdecec;
@@ -126,7 +123,6 @@
     @media (max-width: 576px){
         .page-title{ font-size: 1.45rem; }
         .page-sub{ font-size: .86rem; }
-
         .modern-table th, .modern-table td{
             padding: 10px 10px;
             font-size: .88rem;
@@ -175,65 +171,80 @@
 
 <div class="container py-4">
 
-    {{-- HEADER --}}
+    
     <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2 mb-3">
         <div>
-            <h2 class="page-title">Manage Colleges</h2>
-            <div class="page-sub">Add, edit, and remove colleges used in the system.</div>
+            <h2 class="page-title">Manage Courses</h2>
+            <div class="page-sub">Create, update, and remove courses linked to colleges.</div>
         </div>
 
-        {{-- Bootstrap-only responsive full width on mobile --}}
+        
         <div class="d-flex justify-content-end w-100 w-md-auto">
             <button type="button"
                     class="btn btn-bisu btn-bisu-primary shadow-sm"
                     data-bs-toggle="modal"
-                    data-bs-target="#createCollegeModal">
-                Add College
+                    data-bs-target="#createCourseModal">
+                Add Course
             </button>
         </div>
     </div>
 
-    {{-- FLASH --}}
-    @if(session('success'))
+    
+    <?php if(session('success')): ?>
         <div class="alert alert-success alert-dismissible fade show">
-            {{ session('success') }}
+            <?php echo e(session('success')); ?>
+
             <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    <?php endif; ?>
 
-    @if(session('error'))
+    <?php if(session('error')): ?>
         <div class="alert alert-danger alert-dismissible fade show">
-            {{ session('error') }}
+            <?php echo e(session('error')); ?>
+
             <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    <?php endif; ?>
 
-    @if($errors->any())
+    <?php if($errors->any()): ?>
         <div class="alert alert-danger">
             <ul class="mb-0 ps-3">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <li><?php echo e($error); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </ul>
         </div>
-    @endif
+    <?php endif; ?>
 
-    {{-- TABLE --}}
+    
     <div class="table-card">
-        <div class="table-responsive" style="max-height: calc(100vh - 260px);">
-            <table class="table modern-table mb-0">
+        <div class="table-responsive" style="max-height: calc(100vh - 300px);">
+            <table class="table modern-table mb-0" id="coursesTable">
                 <thead class="sticky-top">
                     <tr>
-                        <th>College Name</th>
+                        <th style="width: 24%;">Course Name</th>
+                        <th>Course Description</th>
+                        <th style="width: 22%;">College</th>
                         <th class="text-center" style="width: 240px;">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                @forelse($colleges ?? [] as $college)
+                <?php $__empty_1 = true; $__currentLoopData = $courses ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $course): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <tr>
-                        <td data-label="College Name" class="fw-semibold text-dark">
-                            {{ $college->college_name }}
+                        <td data-label="Course Name" class="fw-semibold text-dark">
+                            <?php echo e($course->course_name); ?>
+
+                        </td>
+
+                        <td data-label="Description" class="text-secondary">
+                            <?php echo e($course->course_description ?? 'N/A'); ?>
+
+                        </td>
+
+                        <td data-label="College" class="text-secondary">
+                            <?php echo e($course->college->college_name ?? 'N/A'); ?>
+
                         </td>
 
                         <td data-label="Actions" class="text-center">
@@ -242,31 +253,35 @@
                                 <button type="button"
                                         class="btn btn-sm btn-bisu btn-bisu-outline"
                                         data-bs-toggle="modal"
-                                        data-bs-target="#editCollegeModal"
-                                        data-id="{{ $college->id }}"
-                                        data-name="{{ $college->college_name }}">
+                                        data-bs-target="#editCourseModal"
+                                        data-id="<?php echo e($course->id); ?>"
+                                        data-name="<?php echo e($course->course_name); ?>"
+                                        data-description="<?php echo e($course->course_description); ?>"
+                                        data-college_id="<?php echo e($course->college_id); ?>">
                                     Edit
                                 </button>
 
                                 <button type="button"
                                         class="btn btn-sm btn-bisu btn-bisu-danger"
                                         data-bs-toggle="modal"
-                                        data-bs-target="#deleteCollegeModal"
-                                        data-id="{{ $college->id }}"
-                                        data-name="{{ $college->college_name }}">
+                                        data-bs-target="#deleteCourseModal"
+                                        data-id="<?php echo e($course->id); ?>"
+                                        data-name="<?php echo e($course->course_name); ?>"
+                                        data-description="<?php echo e($course->course_description); ?>"
+                                        data-college="<?php echo e($course->college->college_name ?? 'N/A'); ?>">
                                     Delete
                                 </button>
 
                             </div>
                         </td>
                     </tr>
-                @empty
+               <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
-                        <td colspan="2" class="text-center py-4 text-muted">
-                            No colleges found. Click <strong>Add College</strong> to create one.
+                        <td colspan="4" class="text-center py-4 text-muted">
+                            No courses found. Click <strong>+ Add Course</strong> to create one.
                         </td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
                 </tbody>
 
             </table>
@@ -274,76 +289,56 @@
     </div>
 </div>
 
-{{-- =========================
-    CREATE MODAL
-========================= --}}
-<div class="modal fade" id="createCollegeModal" tabindex="-1" aria-hidden="true">
+
+<div class="modal fade" id="createCourseModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
 
       <div class="modal-header">
         <div>
-            <h5 class="modal-title mb-0">Add College</h5>
-            <div class="hint">Create a new college record.</div>
+            <h5 class="modal-title mb-0">Add Course</h5>
+            <div class="hint">Create a new course and assign it to a college.</div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <form method="POST" action="{{ route('admin.colleges.store') }}">
-        @csrf
+      <form method="POST" action="<?php echo e(route('admin.courses.store')); ?>">
+        <?php echo csrf_field(); ?>
 
         <div class="modal-body">
-          <div class="mb-2">
-            <label class="form-label" for="create_college_name">College Name</label>
+          <div class="mb-3">
+            <label class="form-label" for="create_course_name">Course Name</label>
             <input type="text"
-                   name="college_name"
-                   id="create_college_name"
+                   name="course_name"
+                   id="create_course_name"
                    class="form-control"
-                   placeholder="e.g. College of Science"
+                   placeholder="e.g. Bachelor of Science in Computer Science"
                    required>
           </div>
-        </div>
 
-        <div class="modal-footer border-top-0">
-          <button type="button" class="btn btn-bisu btn-bisu-outline" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-bisu btn-bisu-primary">Add College</button>
-        </div>
+          <div class="mb-3">
+            <label class="form-label" for="create_course_description">Course Description</label>
+            <textarea name="course_description"
+                      id="create_course_description"
+                      class="form-control"
+                      rows="3"
+                      placeholder="Optional"></textarea>
+          </div>
 
-      </form>
-
-    </div>
-  </div>
-</div>
-
-{{-- =========================
-    EDIT MODAL
-========================= --}}
-<div class="modal fade" id="editCollegeModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <div>
-            <h5 class="modal-title mb-0">Edit College</h5>
-            <div class="hint">Update the college name.</div>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-
-      <form method="POST" id="editCollegeForm" action="">
-        @csrf
-        @method('PUT')
-
-        <div class="modal-body">
           <div class="mb-2">
-            <label class="form-label" for="edit_college_name">College Name</label>
-            <input type="text" name="college_name" id="edit_college_name" class="form-control" required>
+            <label class="form-label" for="create_college_id">College</label>
+            <select name="college_id" id="create_college_id" class="form-select" required>
+                <option value="">Select College</option>
+                <?php $__currentLoopData = ($colleges ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $college): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($college->id); ?>"><?php echo e($college->college_name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
           </div>
         </div>
 
         <div class="modal-footer border-top-0">
           <button type="button" class="btn btn-bisu btn-bisu-outline" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-bisu btn-bisu-primary">💾 Save Changes</button>
+          <button type="submit" class="btn btn-bisu btn-bisu-primary">Add Course</button>
         </div>
 
       </form>
@@ -352,10 +347,58 @@
   </div>
 </div>
 
-{{-- =========================
-    DELETE MODAL
-========================= --}}
-<div class="modal fade" id="deleteCollegeModal" tabindex="-1" aria-hidden="true">
+
+<div class="modal fade" id="editCourseModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <div>
+            <h5 class="modal-title mb-0">Edit Course</h5>
+            <div class="hint">Update course details and assigned college.</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="POST" id="editCourseForm" action="">
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('PUT'); ?>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="edit_course_name">Course Name</label>
+            <input type="text" name="course_name" id="edit_course_name" class="form-control" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="edit_course_description">Course Description</label>
+            <textarea name="course_description" id="edit_course_description" class="form-control" rows="3"></textarea>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="edit_college_id">College</label>
+            <select name="college_id" id="edit_college_id" class="form-select" required>
+                <option value="">Select College</option>
+                <?php $__currentLoopData = ($colleges ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $college): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($college->id); ?>"><?php echo e($college->college_name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer border-top-0">
+          <button type="button" class="btn btn-bisu btn-bisu-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-bisu btn-bisu-primary">Save Changes</button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="deleteCourseModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
 
@@ -367,14 +410,21 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <form method="POST" id="deleteCollegeForm" action="">
-        @csrf
-        @method('DELETE')
+      <form method="POST" id="deleteCourseForm" action="">
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('DELETE'); ?>
 
         <div class="modal-body">
             <div class="danger-box">
-                <div class="fw-bold mb-1" id="delete_college_name">College</div>
-                <div class="text-muted small">Deleting this college may affect related records.</div>
+                <div class="fw-bold mb-1" id="delete_course_name">Course</div>
+                <div class="text-muted small mb-2" id="delete_course_desc">No description</div>
+                <div class="text-muted small">
+                    <strong>College:</strong> <span id="delete_course_college">N/A</span>
+                </div>
+            </div>
+
+            <div class="mt-3 text-muted small">
+                Deleting this course may affect students assigned to it.
             </div>
         </div>
 
@@ -394,9 +444,9 @@
 <script>
 document.addEventListener('DOMContentLoaded', function(){
 
-    // EDIT MODAL
-    const editModal = document.getElementById('editCollegeModal');
-    const editForm  = document.getElementById('editCollegeForm');
+    // EDIT MODAL FILL
+    const editModal = document.getElementById('editCourseModal');
+    const editForm  = document.getElementById('editCourseForm');
 
     editModal?.addEventListener('show.bs.modal', function (event) {
         const btn = event.relatedTarget;
@@ -404,30 +454,42 @@ document.addEventListener('DOMContentLoaded', function(){
 
         const id = btn.getAttribute('data-id');
         const name = btn.getAttribute('data-name') || '';
+        const desc = btn.getAttribute('data-description') || '';
+        const collegeId = btn.getAttribute('data-college_id') || '';
 
-        // IMPORTANT: this must match your route pattern
-        editForm.action = `{{ url('/admin/colleges') }}/${id}`;
+        editForm.action = `<?php echo e(url('/admin/courses')); ?>/${id}`;
 
-        document.getElementById('edit_college_name').value = name;
+        document.getElementById('edit_course_name').value = name;
+        document.getElementById('edit_course_description').value = desc;
+
+        const select = document.getElementById('edit_college_id');
+        if(select){
+            select.value = collegeId;
+        }
     });
 
-    // DELETE MODAL
-    const deleteModal = document.getElementById('deleteCollegeModal');
-    const deleteForm  = document.getElementById('deleteCollegeForm');
+    // DELETE MODAL FILL
+    const deleteModal = document.getElementById('deleteCourseModal');
+    const deleteForm  = document.getElementById('deleteCourseForm');
 
     deleteModal?.addEventListener('show.bs.modal', function (event) {
         const btn = event.relatedTarget;
         if(!btn) return;
 
         const id = btn.getAttribute('data-id');
-        const name = btn.getAttribute('data-name') || 'College';
+        const name = btn.getAttribute('data-name') || 'Course';
+        const desc = btn.getAttribute('data-description') || 'No description provided.';
+        const college = btn.getAttribute('data-college') || 'N/A';
 
-        deleteForm.action = `{{ url('/admin/colleges') }}/${id}`;
+        deleteForm.action = `<?php echo e(url('/admin/courses')); ?>/${id}`;
 
-        document.getElementById('delete_college_name').textContent = name;
+        document.getElementById('delete_course_name').textContent = name;
+        document.getElementById('delete_course_desc').textContent = desc;
+        document.getElementById('delete_course_college').textContent = college;
     });
 
 });
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/courses.blade.php ENDPATH**/ ?>

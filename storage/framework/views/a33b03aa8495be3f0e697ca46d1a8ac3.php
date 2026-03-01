@@ -122,7 +122,7 @@
     </div>
 
     <div class="d-flex gap-2">
-      <a class="btn btn-outline-primary btn-sm"
+      <a class="btn btn-bisu btn-sm"
         href="<?php echo e(route('coordinator.stipends.claim-notifications')); ?>">
           Notifications
           <?php if(!empty($claimUnreadCount) && $claimUnreadCount > 0): ?>
@@ -137,10 +137,10 @@
 </div>
 
 
+
 <div class="card card-bisu shadow-sm mb-3">
     <div class="card-header d-flex align-items-center justify-content-between">
         <div class="fw-bold text-secondary">Filters</div>
-        
     </div>
 
     <div class="card-body">
@@ -165,14 +165,18 @@
                     <select name="batch_id" id="batch_id" class="form-select form-select-sm">
                         <option value="">All batches</option>
                         <?php $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <option value="<?php echo e($b->id); ?>" <?php echo e((string)request('batch_id')===(string)$b->id?'selected':''); ?>>
+                            <option
+                                value="<?php echo e($b->id); ?>"
+                                data-sch="<?php echo e($b->scholarship_id); ?>"
+                                <?php echo e((string)request('batch_id')===(string)$b->id?'selected':''); ?>
+
+                            >
                                 Batch <?php echo e($b->batch_number); ?>
 
                                 (<?php echo e($b->semester->term ?? ''); ?> <?php echo e($b->semester->academic_year ?? ''); ?>)
                             </option>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
-                    
                 </div>
 
                 <div class="col-12 col-md-4">
@@ -183,9 +187,7 @@
                         <option value="released"    <?php echo e(request('stipend_status')==='released'?'selected':''); ?>>Released</option>
                         <option value="returned"    <?php echo e(request('stipend_status')==='returned'?'selected':''); ?>>Returned</option>
                         <option value="waiting"     <?php echo e(request('stipend_status')==='waiting'?'selected':''); ?>>Waiting</option>
-
                     </select>
-
                 </div>
             </div>
 
@@ -297,10 +299,10 @@
                                 Release
                             </button>
 
-                            <a href="<?php echo e(route('coordinator.stipends.edit', $stipend->id)); ?>" class="text-primary me-2">Edit</a>
+                            
                             <button
                                   type="button"
-                                  class="btn btn-link p-0 text-danger openDeleteModal"
+                                  class="btn btn-bisu p-1 text-danger openDeleteModal"
                                   data-bs-toggle="modal"
                                   data-bs-target="#deleteStipendModal"
                                   data-stipend-id="<?php echo e($stipend->id); ?>"
@@ -683,7 +685,38 @@ document.addEventListener('DOMContentLoaded', function () {
     window.__stipendFilterTT = setTimeout(() => filterForm.submit(), 300);
   }
 
-  scholarshipFilter?.addEventListener('change', () => filterForm.submit());
+  // ✅ Filter batch dropdown based on scholarship (PAGE FILTERS ONLY)
+  function filterBatchByScholarship(){
+    if (!batchFilter) return;
+
+    const sch = scholarshipFilter?.value || '';
+    const opts = Array.from(batchFilter.options);
+
+    // keep "All batches" visible
+    opts.forEach(opt => {
+      if (!opt.value) return;
+      const optSch = opt.getAttribute('data-sch') || '';
+      opt.hidden = (sch && optSch !== sch);
+    });
+
+    // if current selection becomes hidden, clear it
+    const selected = batchFilter.selectedOptions?.[0];
+    if (selected && selected.hidden) {
+      batchFilter.value = '';
+    }
+  }
+
+  // initial run (when page loads with existing query)
+  filterBatchByScholarship();
+
+  // events
+  scholarshipFilter?.addEventListener('change', () => {
+    filterBatchByScholarship();
+    // optional: clear batch when scholarship changes (cleaner filtering)
+    // batchFilter.value = '';
+    filterForm.submit();
+  });
+
   batchFilter?.addEventListener('change', () => filterForm.submit());
   statusFilter?.addEventListener('change', () => filterForm.submit());
   qFilter?.addEventListener('input', submitFiltersDebounced);

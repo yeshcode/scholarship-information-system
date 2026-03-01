@@ -254,7 +254,7 @@
 
 
                                 <!-- Delete (hard) -->
-                                <button
+                                {{-- <button
                                     type="button"
                                     class="btn btn-sm btn-danger"
                                     data-bs-toggle="modal"
@@ -263,7 +263,7 @@
                                     data-name="{{ ($scholar->u_lastname ?? $scholar->user->lastname ?? '') }}, {{ ($scholar->u_firstname ?? $scholar->user->firstname ?? '') }}"
                                     >
                                     Delete
-                                </button>
+                                </button> --}}
                             </div>
                         </td>
                     </tr>

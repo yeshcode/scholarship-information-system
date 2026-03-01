@@ -1,6 +1,6 @@
-@extends('layouts.app')
 
-@section('content')
+
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid container-xl py-4">
 
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
@@ -11,8 +11,8 @@
     </div>
 
     <div class="row g-3">
-        @forelse($scholarships as $scholarship)
-            @php
+        <?php $__empty_1 = true; $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $scholarship): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+            <?php
                 $statusRaw = strtolower(trim((string)($scholarship->status ?? '')));
                 $statusLabel = $scholarship->status ?? 'N/A';
 
@@ -28,48 +28,52 @@
 
                 $desc = trim((string)($scholarship->description ?? ''));
                 $benefactor = trim((string)($scholarship->benefactor ?? ''));
-            @endphp
+            ?>
 
-            {{-- ✅ 3 cards per row on lg, 2 on md, 1 on sm --}}
+            
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card border-0 shadow-sm rounded-4 h-100 scholarship-card">
                     <div class="card-body p-3 p-md-4 d-flex flex-column">
 
-                        {{-- Top row: title + status --}}
+                        
                         <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
                             <div class="fw-bold text-bisu wrap-anywhere" style="font-size:1.05rem;">
-                                {{ $scholarship->scholarship_name }}
+                                <?php echo e($scholarship->scholarship_name); ?>
+
                             </div>
 
-                            @if(!empty($scholarship->status))
-                                <span class="badge rounded-pill px-3 py-2 {{ $badgeClass }}">
-                                    {{ $statusLabel }}
+                            <?php if(!empty($scholarship->status)): ?>
+                                <span class="badge rounded-pill px-3 py-2 <?php echo e($badgeClass); ?>">
+                                    <?php echo e($statusLabel); ?>
+
                                 </span>
-                            @endif
+                            <?php endif; ?>
                         </div>
 
-                        {{-- Benefactor --}}
-                        @if($benefactor !== '')
+                        
+                        <?php if($benefactor !== ''): ?>
                             <div class="small text-muted mb-2 wrap-anywhere">
                                 <i class="bi bi-building me-1"></i>
                                 <span class="fw-semibold">Benefactor:</span>
-                                {{ \Illuminate\Support\Str::limit($benefactor, 55) }}
-                            </div>
-                        @endif
+                                <?php echo e(\Illuminate\Support\Str::limit($benefactor, 55)); ?>
 
-                        {{-- Description preview --}}
+                            </div>
+                        <?php endif; ?>
+
+                        
                         <div class="text-muted small mb-3 clamp-3" style="white-space: pre-line;">
-                            {{ $desc !== '' ? $desc : 'No description provided yet.' }}
+                            <?php echo e($desc !== '' ? $desc : 'No description provided yet.'); ?>
+
                         </div>
 
-                        {{-- Footer pinned to bottom --}}
+                        
                         <div class="mt-auto d-flex justify-content-between align-items-center pt-2">
                             <div class="text-muted small">
                                 <i class="bi bi-info-circle me-1"></i>
                                 Tap to view full details
                             </div>
 
-                            <a href="{{ route('student.scholarships.show', $scholarship->id) }}"
+                            <a href="<?php echo e(route('student.scholarships.show', $scholarship->id)); ?>"
                                class="btn btn-bisu-primary btn-sm rounded-pill px-3">
                                 View
                                 <i class="bi bi-arrow-right ms-1"></i>
@@ -79,7 +83,7 @@
                     </div>
                 </div>
             </div>
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <div class="col-12">
                 <div class="text-center py-5">
                     <div class="mb-2" style="font-size: 2.2rem;">🎓</div>
@@ -87,14 +91,15 @@
                     <p class="text-muted mb-0">Please check again later.</p>
                 </div>
             </div>
-        @endforelse
+        <?php endif; ?>
     </div>
 
-    @if(method_exists($scholarships, 'links'))
+    <?php if(method_exists($scholarships, 'links')): ?>
         <div class="d-flex justify-content-center mt-4">
-            {{ $scholarships->links() }}
+            <?php echo e($scholarships->links()); ?>
+
         </div>
-    @endif
+    <?php endif; ?>
 </div>
 
 <style>
@@ -189,4 +194,5 @@
     }
 }
 </style>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/student/scholarships/index.blade.php ENDPATH**/ ?>

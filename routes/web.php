@@ -170,9 +170,7 @@ Route::get('/test-mail', function () {
         Route::get('/manage-scholars', [CoordinatorController::class, 'manageScholars'])->name('coordinator.manage-scholars');
         Route::get('/manage-scholars/create', [CoordinatorController::class, 'createScholar'])->name('coordinator.scholars.create');
         Route::post('/manage-scholars', [CoordinatorController::class, 'storeScholar'])->name('coordinator.scholars.store');
-
-        // ✅ page/listing (GET)
-        Route::get('/manage-scholars', [CoordinatorController::class, 'manageScholars'])->name('coordinator.manage-scholars');
+    
         // ✅ UPDATE scholar status (PATCH)  <-- THIS is what your modal should call
         Route::patch('/scholars/{scholar}/status', [CoordinatorController::class, 'updateScholarStatus'])->name('coordinator.scholars.update-status');
         // ✅ optional delete (DELETE)
@@ -224,7 +222,6 @@ Route::get('/test-mail', function () {
         Route::delete('/manage-stipends/{id}', [CoordinatorController::class, 'destroyStipend'])->name('coordinator.stipends.destroy');
         Route::get('/manage-stipends/{id}/delete', [CoordinatorController::class, 'confirmDeleteStipend'])->name('coordinator.stipends.confirm-delete');
         // Stipends
-        Route::get('/manage-stipends', [CoordinatorController::class, 'manageStipends'])->name('coordinator.manage-stipends');
         Route::post('/manage-stipends/bulk-assign', [CoordinatorController::class, 'bulkAssignStipends'])->name('coordinator.stipends.bulk-assign');
 
         // keep your existing create/edit if you still want
@@ -232,7 +229,7 @@ Route::get('/test-mail', function () {
         Route::post('/manage-stipends', [CoordinatorController::class, 'storeStipend'])->name('coordinator.stipends.store');
 
         Route::post('/manage-stipends/bulk-assign-v2', [CoordinatorController::class, 'bulkAssignStipendsV2'])->name('coordinator.stipends.bulk-assign-v2');
-        Route::get('/coordinator/stipends/eligible-for-release', [CoordinatorController::class, 'eligibleScholarsForRelease'])->name('coordinator.stipends.eligible-for-release');
+        Route::get('/stipends/eligible-for-release', [CoordinatorController::class, 'eligibleScholarsForRelease'])->name('coordinator.stipends.eligible-for-release');
 
         Route::get('/stipend-releases/by-batch', [CoordinatorController::class, 'releasesByBatch'])->name('coordinator.stipend-releases.by-batch');
         Route::get('/stipends/pick-meta', [CoordinatorController::class, 'stipendPickMeta'])->name('coordinator.stipends.pick-meta');
@@ -323,7 +320,8 @@ Route::get('/test-mail', function () {
 
             Route::get('/notifications', [StudentController::class, 'notifications'])->name('student.notifications');
             Route::get('/notifications/{id}/open', [StudentController::class, 'open'])->name('student.notifications.open');
-           
+            Route::post('/notifications/{id}/read', [StudentController::class, 'markAsRead'])->name('student.notifications.read');
+
             Route::post('/profile/update-contact', [ProfileController::class, 'updateContact'])->name('profile.update-contact');
 
             //Questions

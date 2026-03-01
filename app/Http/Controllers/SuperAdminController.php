@@ -1457,7 +1457,8 @@ public function enrollStudents(Request $request)
     // Search
     if ($search) {
         $query->where(function ($q) use ($search) {
-            $q->where('firstname', 'ILIKE', "%{$search}%")
+            $q->where('student_id', 'ILIKE', "%{$search}%")  
+              ->orwhere('firstname', 'ILIKE', "%{$search}%")
               ->orWhere('lastname', 'ILIKE', "%{$search}%")
               ->orWhere('bisu_email', 'ILIKE', "%{$search}%")
               ->orWhereHas('course', fn($c) => $c->where('course_name', 'ILIKE', "%{$search}%"))
@@ -1508,7 +1509,8 @@ public function enrollStudents(Request $request)
     $students = $query
         ->orderBy('lastname')
         ->orderBy('firstname')
-        ->paginate(20);
+        ->paginate(20)
+        ->withQueryString();
 
     $semesters = Semester::orderBy('start_date', 'desc')->get();
 
@@ -1674,15 +1676,32 @@ public function enrollmentRecords()
 
 
 
-public function enrollmentRecordsByYear($academicYear)
+public function enrollmentRecordsByYear(Request $request, $academicYear)
 {
-    // Get all enrollments where the semester has this academic year
+    $q = trim((string) $request->get('q', ''));
+
     $enrollments = Enrollment::query()
         ->join('users', 'users.id', '=', 'enrollments.user_id')
         ->join('semesters', 'semesters.id', '=', 'enrollments.semester_id')
         ->select('enrollments.*')
-        ->with(['user', 'semester', 'course','yearLevel'])
+        ->with([
+            'user.college',
+            'course',
+            'semester',
+            'yearLevel',
+            'user.yearLevel', // fallback if enrollment year_level_id is null
+        ])
         ->where('semesters.academic_year', $academicYear)
+        ->when($q !== '', function ($query) use ($q) {
+            $query->where(function ($qq) use ($q) {
+                $qq->where('users.student_id', 'ILIKE', "%{$q}%")
+                   ->orWhere('users.firstname', 'ILIKE', "%{$q}%")
+                   ->orWhere('users.middlename', 'ILIKE', "%{$q}%")
+                   ->orWhere('users.lastname', 'ILIKE', "%{$q}%");
+                   // optional:
+                   // ->orWhere('users.bisu_email', 'ILIKE', "%{$q}%");
+            });
+        })
         ->orderBy('users.lastname')
         ->orderBy('users.firstname')
         ->paginate(15)

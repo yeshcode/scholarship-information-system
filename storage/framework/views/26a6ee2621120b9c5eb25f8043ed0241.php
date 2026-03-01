@@ -1,7 +1,7 @@
-@php $fullWidth = true; @endphp
-@extends('layouts.coordinator')
+<?php $fullWidth = true; ?>
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 <style>
     :root{
         --bisu:#003366;
@@ -251,16 +251,17 @@
     }
 </style>
 
-@if(session('success'))
+<?php if(session('success')): ?>
     <div class="alert alert-success alert-dismissible fade show">
-        {{ session('success') }}
+        <?php echo e(session('success')); ?>
+
         <button class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-@endif
+<?php endif; ?>
 
 <div class="wrap">
 
-    {{-- ✅ Blue header --}}
+    
     <div class="head">
         <div class="d-flex flex-column gap-1">
             <h2 class="page-title">Cheque Claim Notifications</h2>
@@ -269,10 +270,10 @@
 
         <div class="meta-row">
             <span class="chip">
-                Unread: <strong>{{ $unreadCount ?? 0 }}</strong>
+                Unread: <strong><?php echo e($unreadCount ?? 0); ?></strong>
             </span>
 
-            <a href="{{ route('coordinator.manage-stipends') }}" class="btn btn-bisu btn-sm">
+            <a href="<?php echo e(route('coordinator.manage-stipends')); ?>" class="btn btn-bisu btn-sm">
                 Back to Manage Stipends
             </a>
         </div>
@@ -280,54 +281,58 @@
 
     <div class="card card-shell">
         <div class="card-body">
-            @if($notifications->isEmpty())
+            <?php if($notifications->isEmpty()): ?>
                 <div class="empty">No claim notifications yet.</div>
-            @else
+            <?php else: ?>
                 <div class="list-group">
 
-                    @foreach($notifications as $n)
-                        <div class="notif {{ !$n->is_read ? 'unread' : '' }}">
+                    <?php $__currentLoopData = $notifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $n): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <div class="notif <?php echo e(!$n->is_read ? 'unread' : ''); ?>">
                             <div style="min-width:0;">
                                 <div class="d-flex align-items-start gap-2 flex-wrap">
-                                    <p class="notif-title">{{ $n->title }}</p>
+                                    <p class="notif-title"><?php echo e($n->title); ?></p>
 
-                                    @if(!$n->is_read)
+                                    <?php if(!$n->is_read): ?>
                                         <span class="badge-new">NEW</span>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="meta">
-                                    {{ \Carbon\Carbon::parse($n->sent_at ?? $n->created_at)->format('M d, Y h:i A') }}
+                                    <?php echo e(\Carbon\Carbon::parse($n->sent_at ?? $n->created_at)->format('M d, Y h:i A')); ?>
+
                                 </div>
 
                                 <div class="message">
-                                    {{ $n->message }}
+                                    <?php echo e($n->message); ?>
+
                                 </div>
                             </div>
 
                             <div class="right">
-                                @if(!$n->is_read)
-                                    <form method="POST" action="{{ route('coordinator.notifications.read', $n->id) }}">
-                                        @csrf
+                                <?php if(!$n->is_read): ?>
+                                    <form method="POST" action="<?php echo e(route('coordinator.notifications.read', $n->id)); ?>">
+                                        <?php echo csrf_field(); ?>
                                         <button class="btn btn-outline-secondary btn-sm btn-read" type="submit">
                                             Mark as read
                                         </button>
                                     </form>
-                                @else
+                                <?php else: ?>
                                     <span class="read-muted">Read</span>
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </div>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
                 </div>
 
                 <div class="pager">
-                    {{ $notifications->links() }}
+                    <?php echo e($notifications->links()); ?>
+
                 </div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/stipend-claim-notifications.blade.php ENDPATH**/ ?>

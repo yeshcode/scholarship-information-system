@@ -1,7 +1,7 @@
-{{-- resources/views/super-admin/enrollment-records-year.blade.php --}}
-@extends('layouts.app')
 
-@section('content')
+
+
+<?php $__env->startSection('content'); ?>
 
 <style>
     .page-title-blue {
@@ -55,33 +55,34 @@
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
             <h2 class="page-title-blue mb-1">
-                Enrollment Records – AY {{ $academicYear }}
+                Enrollment Records – AY <?php echo e($academicYear); ?>
+
             </h2>
             <p class="text-muted mb-0">
-                Showing all students enrolled in Academic Year {{ $academicYear }}.
+                Showing all students enrolled in Academic Year <?php echo e($academicYear); ?>.
             </p>
         </div>
 
         <div class="d-flex gap-2">
-            <a href="{{ route('admin.enrollments.records') }}" class="btn btn-bisu-outline-primary">
+            <a href="<?php echo e(route('admin.enrollments.records')); ?>" class="btn btn-bisu-outline-primary">
                 ← Back to Academic Years
             </a>
-            <a href="{{ route('admin.enrollments') }}" class="btn btn-outline-secondary">
+            <a href="<?php echo e(route('admin.enrollments')); ?>" class="btn btn-outline-secondary">
                 Back to Manage Enrollments
             </a>
         </div>
     </div>
 
-    {{-- ✅ FILTER (Search) --}}
+    
     <div class="filter-card shadow-sm mb-3">
-        <form method="GET" action="{{ url()->current() }}" class="row g-2 align-items-end">
+        <form method="GET" action="<?php echo e(url()->current()); ?>" class="row g-2 align-items-end">
             <div class="col-12 col-md-6">
                 <label class="form-label mb-1 fw-semibold text-secondary">Search Student</label>
                 <input
                     type="text"
                     name="q"
                     class="form-control"
-                    value="{{ request('q') }}"
+                    value="<?php echo e(request('q')); ?>"
                     placeholder="Student ID / First Name / Middle Name / Last Name"
                 >
             </div>
@@ -90,7 +91,7 @@
                 <button type="submit" class="btn btn-primary">
                     Apply
                 </button>
-                <a href="{{ url()->current() }}" class="btn btn-outline-secondary">
+                <a href="<?php echo e(url()->current()); ?>" class="btn btn-outline-secondary">
                     Reset
                 </a>
             </div>
@@ -106,7 +107,7 @@
                         <th>Last Name</th>
                         <th>First Name</th>
                         <th>Middle Name</th>
-                        <th>Year Level</th> {{-- ✅ NEW --}}
+                        <th>Year Level</th> 
                         <th>Semester</th>
                         <th>College</th>
                         <th>Course</th>
@@ -115,8 +116,8 @@
                 </thead>
 
                 <tbody>
-                    @forelse($enrollments as $enrollment)
-                        @php
+                    <?php $__empty_1 = true; $__currentLoopData = $enrollments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $enrollment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                        <?php
                             $status = strtolower($enrollment->status ?? '');
                             $badgeClass = 'bg-secondary';
 
@@ -130,47 +131,52 @@
                                 $enrollment->yearLevel->year_level_name
                                 ?? $enrollment->user->yearLevel->year_level_name
                                 ?? 'N/A';
-                        @endphp
+                        ?>
 
                         <tr>
-                            <td>{{ $enrollment->user->student_id ?? 'N/A' }}</td>
-                            <td>{{ $enrollment->user->lastname ?? 'N/A' }}</td>
-                            <td>{{ $enrollment->user->firstname ?? 'N/A' }}</td>
-                            <td>{{ $enrollment->user->middlename ?? 'N/A' }}</td>
+                            <td><?php echo e($enrollment->user->student_id ?? 'N/A'); ?></td>
+                            <td><?php echo e($enrollment->user->lastname ?? 'N/A'); ?></td>
+                            <td><?php echo e($enrollment->user->firstname ?? 'N/A'); ?></td>
+                            <td><?php echo e($enrollment->user->middlename ?? 'N/A'); ?></td>
 
-                            <td>{{ $yearLabel }}</td> {{-- ✅ NEW --}}
+                            <td><?php echo e($yearLabel); ?></td> 
 
                             <td>
-                                {{ $enrollment->semester->term ?? 'N/A' }}
-                                {{ $enrollment->semester->academic_year ?? '' }}
+                                <?php echo e($enrollment->semester->term ?? 'N/A'); ?>
+
+                                <?php echo e($enrollment->semester->academic_year ?? ''); ?>
+
                             </td>
 
-                            <td>{{ $enrollment->user->college->college_name ?? 'N/A' }}</td>
-                            <td>{{ $enrollment->course->course_name ?? 'N/A' }}</td>
+                            <td><?php echo e($enrollment->user->college->college_name ?? 'N/A'); ?></td>
+                            <td><?php echo e($enrollment->course->course_name ?? 'N/A'); ?></td>
 
                             <td>
-                                <span class="badge badge-status {{ $badgeClass }}">
-                                    {{ ucfirst(str_replace('_', ' ', $enrollment->status)) }}
+                                <span class="badge badge-status <?php echo e($badgeClass); ?>">
+                                    <?php echo e(ucfirst(str_replace('_', ' ', $enrollment->status))); ?>
+
                                 </span>
                             </td>
                         </tr>
-                    @empty
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
                             <td colspan="9" class="text-muted py-4 text-center">
-                                No enrollment records found for AY {{ $academicYear }}.
+                                No enrollment records found for AY <?php echo e($academicYear); ?>.
                             </td>
                         </tr>
-                    @endforelse
+                    <?php endif; ?>
                 </tbody>
 
             </table>
         </div>
     </div>
 
-    {{-- PAGINATION --}}
+    
     <div class="mt-4 d-flex justify-content-center">
-        {{ $enrollments->links('pagination::bootstrap-4') }}
+        <?php echo e($enrollments->links('pagination::bootstrap-4')); ?>
+
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/enrollment-records-year.blade.php ENDPATH**/ ?>

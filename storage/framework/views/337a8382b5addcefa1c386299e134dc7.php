@@ -249,6 +249,40 @@
     .sem-clear-btn:active{
         transform: scale(.96);
     }
+
+    /* ===== Mobile nav safety (NO design change) ===== */
+
+/* Prevent brand text from causing horizontal overflow */
+.brand-wrap{ min-width: 0; }
+.brand-title{ min-width: 0; }
+
+/* On very small phones, make the brand area not too wide */
+@media (max-width: 575.98px){
+    .brand-wrap{ max-width: 170px; }
+    .brand-title{ max-width: 110px; }
+    .brand-sub{ max-width: 110px; overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* Ensure the sticky nav stays above content but below modal overlays */
+.nav-bg{ z-index: 1030; }
+
+/* If dropdown opens, keep it inside viewport on smaller screens */
+.dropdown-bg{
+    max-width: calc(100vw - 16px);
+    overflow: hidden;
+}
+
+/* Bigger tap comfort for offcanvas links on mobile */
+.off-link{
+    padding: 12px 12px;
+}
+
+/* Avoid iOS zoom issues on inputs (font-size >= 16px) */
+@media (max-width: 575.98px){
+    .offcanvas input, .offcanvas select, .offcanvas textarea{
+        font-size: 16px !important;
+    }
+}
 </style>
 
 <?php

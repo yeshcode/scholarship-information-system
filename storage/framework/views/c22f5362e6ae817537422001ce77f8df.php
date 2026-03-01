@@ -1,7 +1,7 @@
-@php $fullWidth = true; @endphp
-@extends('layouts.app')
+<?php $fullWidth = true; ?>
 
-@section('content')
+
+<?php $__env->startSection('content'); ?>
 
 <style>
     :root{
@@ -206,7 +206,7 @@
 
 <div class="container py-4">
 
-    {{-- TITLE --}}
+    
     <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2 mb-3">
         <div>
             <h2 class="page-title">Manage User Types</h2>
@@ -223,34 +223,36 @@
         </div>
     </div>
 
-    {{-- SUCCESS MESSAGE --}}
-    @if(session('success'))
+    
+    <?php if(session('success')): ?>
         <div class="alert alert-success alert-dismissible fade show">
-            {{ session('success') }}
+            <?php echo e(session('success')); ?>
+
             <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    <?php endif; ?>
 
-    {{-- ERROR MESSAGE --}}
-    @if(session('error'))
+    
+    <?php if(session('error')): ?>
         <div class="alert alert-danger alert-dismissible fade show">
-            {{ session('error') }}
+            <?php echo e(session('error')); ?>
+
             <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    <?php endif; ?>
 
-    {{-- VALIDATION ERRORS --}}
-    @if($errors->any())
+    
+    <?php if($errors->any()): ?>
         <div class="alert alert-danger">
             <ul class="mb-0 ps-3">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <li><?php echo e($error); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </ul>
         </div>
-    @endif
+    <?php endif; ?>
 
-    {{-- TABLE --}}
+    
     <div class="table-card">
         <div class="table-responsive" style="max-height: calc(100vh - 260px);">
             <table class="table modern-table mb-0">
@@ -263,14 +265,16 @@
                 </thead>
 
                 <tbody>
-                @forelse($userTypes as $userType)
+                <?php $__empty_1 = true; $__currentLoopData = $userTypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $userType): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <tr>
                         <td data-label="User Type Name" class="fw-semibold text-dark">
-                            {{ $userType->name }}
+                            <?php echo e($userType->name); ?>
+
                         </td>
 
                         <td data-label="Description" class="text-secondary">
-                            {{ $userType->description ?? 'No description' }}
+                            <?php echo e($userType->description ?? 'No description'); ?>
+
                         </td>
 
                         <td data-label="Actions" class="text-center">
@@ -279,10 +283,10 @@
                                         class="btn btn-sm btn-bisu btn-bisu-outline"
                                         data-bs-toggle="modal"
                                         data-bs-target="#editUserTypeModal"
-                                        data-id="{{ $userType->id }}"
-                                        data-name="{{ $userType->name }}"
-                                        data-description="{{ $userType->description }}"
-                                        data-dashboard_url="{{ $userType->dashboard_url }}">
+                                        data-id="<?php echo e($userType->id); ?>"
+                                        data-name="<?php echo e($userType->name); ?>"
+                                        data-description="<?php echo e($userType->description); ?>"
+                                        data-dashboard_url="<?php echo e($userType->dashboard_url); ?>">
                                     Edit
                                 </button>
 
@@ -290,22 +294,22 @@
                                         class="btn btn-sm btn-bisu btn-bisu-danger"
                                         data-bs-toggle="modal"
                                         data-bs-target="#deleteUserTypeModal"
-                                        data-id="{{ $userType->id }}"
-                                        data-name="{{ $userType->name }}"
-                                        data-description="{{ $userType->description }}"
-                                        data-dashboard_url="{{ $userType->dashboard_url }}">
+                                        data-id="<?php echo e($userType->id); ?>"
+                                        data-name="<?php echo e($userType->name); ?>"
+                                        data-description="<?php echo e($userType->description); ?>"
+                                        data-dashboard_url="<?php echo e($userType->dashboard_url); ?>">
                                     Delete
                                 </button>
                             </div>
                         </td>
                     </tr>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="3" class="text-center py-4 text-muted">
                             No user types found. Click <strong>Add User Type</strong> to create one.
                         </td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
                 </tbody>
 
             </table>
@@ -313,9 +317,7 @@
     </div>
 </div>
 
-{{-- =========================
-    CREATE MODAL
-========================= --}}
+
 <div class="modal fade" id="createUserTypeModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -328,8 +330,8 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <form method="POST" action="{{ route('admin.user-types.store') }}">
-        @csrf
+      <form method="POST" action="<?php echo e(route('admin.user-types.store')); ?>">
+        <?php echo csrf_field(); ?>
 
         <div class="modal-body">
 
@@ -365,9 +367,7 @@
   </div>
 </div>
 
-{{-- =========================
-    EDIT MODAL
-========================= --}}
+
 <div class="modal fade" id="editUserTypeModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -380,10 +380,10 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      {{-- action will be set dynamically --}}
+      
       <form method="POST" id="editUserTypeForm" action="">
-        @csrf
-        @method('PUT')
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('PUT'); ?>
 
         <div class="modal-body">
 
@@ -417,9 +417,7 @@
   </div>
 </div>
 
-{{-- =========================
-    DELETE MODAL
-========================= --}}
+
 <div class="modal fade" id="deleteUserTypeModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -433,8 +431,8 @@
       </div>
 
       <form method="POST" id="deleteUserTypeForm" action="">
-        @csrf
-        @method('DELETE')
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('DELETE'); ?>
 
         <div class="modal-body">
             <div class="danger-box">
@@ -480,7 +478,7 @@ document.addEventListener('DOMContentLoaded', function(){
         const dashboardUrl = btn.getAttribute('data-dashboard_url') || '';
 
         // Set form action (same as your edit page route but update route)
-        editForm.action = `{{ url('/admin/user-types') }}/${id}`;
+        editForm.action = `<?php echo e(url('/admin/user-types')); ?>/${id}`;
 
         document.getElementById('edit_name').value = name;
         document.getElementById('edit_description').value = description;
@@ -500,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function(){
         const description = btn.getAttribute('data-description') || 'No description provided.';
         const dashboardUrl = btn.getAttribute('data-dashboard_url') || 'N/A';
 
-        deleteForm.action = `{{ url('/admin/user-types') }}/${id}`;
+        deleteForm.action = `<?php echo e(url('/admin/user-types')); ?>/${id}`;
 
         document.getElementById('delete_name').textContent = name;
         document.getElementById('delete_description').textContent = description;
@@ -510,4 +508,5 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/user-type.blade.php ENDPATH**/ ?>

@@ -1132,12 +1132,12 @@ public function bulkAssignStipends(Request $request)
 public function bulkAssignStipendsV2(Request $request)
 {
     $request->validate([
-        'scholarship_id'     => 'required|exists:scholarships,id',
-        'batch_id'           => 'required|exists:scholarship_batches,id',
-        'stipend_release_id' => 'required|exists:stipend_releases,id',
-        'release_at'         => 'required|date',
-        'scholar_ids'        => 'required|array|min:1',
-        'scholar_ids.*'      => 'exists:scholars,id',
+        'scholarship_id'      => 'required|integer|exists:scholarships,id',
+        'batch_id'            => 'required|integer|exists:scholarship_batches,id',
+        'stipend_release_id'  => 'required|integer|exists:stipend_releases,id',
+        'release_at'          => 'required|date_format:Y-m-d\TH:i',
+        'scholar_ids'         => 'required|array|min:1',
+        'scholar_ids.*'       => 'integer|exists:scholars,id',
     ]);
 
     $creatorId = Auth::id();
@@ -1147,7 +1147,8 @@ public function bulkAssignStipendsV2(Request $request)
 
     // ✅ Get release + batch + semester
     $release = StipendsRelease::with('scholarshipBatch')->findOrFail($request->stipend_release_id);
-    $targetSemesterId = $release->scholarshipBatch?->semester_id;
+    // $targetSemesterId = $release->scholarshipBatch?->semester_id;
+    $targetSemesterId = (int) $release->semester_id;
 
     if (!$targetSemesterId) {
         return back()->with('error', 'Release has no semester assigned.');
@@ -1155,6 +1156,8 @@ public function bulkAssignStipendsV2(Request $request)
 
     $added = 0;
     $skipped = 0;
+
+    // dd(__METHOD__, $request->all());
 
     DB::transaction(function () use (
         $request, $release, $creatorId, $targetSemesterId, &$added, &$skipped
