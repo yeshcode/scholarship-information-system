@@ -19,8 +19,11 @@ class Question extends Model
         'user_id',
         'cluster_id',
         'question_text',
+        'question_text_norm',   
         'status',
         'answer',
+        'answered_at',
+        'answered_by',
     ];
 
     public function user()

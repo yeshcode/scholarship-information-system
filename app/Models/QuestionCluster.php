@@ -14,6 +14,7 @@ class QuestionCluster extends Model
     protected $fillable = [
         'label',
         'representative_question',
+        'representative_question_norm',
         'cluster_answer',
     ];
 

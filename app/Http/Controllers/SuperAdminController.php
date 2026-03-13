@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\StudentsBulkImport;
 use App\Http\Controllers\Concerns\UsesActiveSemester;
+use Spatie\Permission\Models\Role;
 
 
 
@@ -2139,6 +2140,23 @@ public function storeUser(Request $request)
         // ✅ Generate unique user_id automatically
         $generatedUserId = $this->generateUniqueUserId();
 
+        // $user = \App\Models\User::create([
+        //     'user_id'       => $generatedUserId,
+        //     'bisu_email'    => $request->bisu_email,
+        //     'firstname'     => $request->firstname,
+        //     'lastname'      => $request->lastname,
+        //     'middlename'    => $request->middlename,
+        //     'suffix'        => $request->suffix,
+        //     'contact_no'    => $request->contact_no,
+        //     'student_id'    => $request->student_id,
+        //     'user_type_id'  => $request->user_type_id,
+        //     'college_id'    => $request->college_id,
+        //     'year_level_id' => $request->year_level_id,
+        //     'course_id'     => $request->course_id,
+        //     'password'      => bcrypt($finalPassword),
+        //     'status'        => 'active', // ✅ default active always
+        // ]);
+
         $user = \App\Models\User::create([
             'user_id'       => $generatedUserId,
             'bisu_email'    => $request->bisu_email,
@@ -2147,20 +2165,42 @@ public function storeUser(Request $request)
             'middlename'    => $request->middlename,
             'suffix'        => $request->suffix,
             'contact_no'    => $request->contact_no,
-            'student_id'    => $request->student_id,
+
+            // ✅ ONLY students get these
+            'student_id'    => $isStudent ? $request->student_id : null,
+            'college_id'    => $isStudent ? $request->college_id : null,
+            'year_level_id' => $isStudent ? $request->year_level_id : null,
+            'course_id'     => $isStudent ? $request->course_id : null,
+
             'user_type_id'  => $request->user_type_id,
-            'college_id'    => $request->college_id,
-            'year_level_id' => $request->year_level_id,
-            'course_id'     => $request->course_id,
             'password'      => bcrypt($finalPassword),
-            'status'        => 'active', // ✅ default active always
+            'status'        => 'active',
         ]);
 
         // ✅ Assign role
-        if ($user->userType) {
-            $roleName = $user->userType->name;
-            if (\Spatie\Permission\Models\Role::where('name', $roleName)->exists()) {
-                $user->assignRole($roleName);
+        // if ($user->userType) {
+        //     $roleName = $user->userType->name;
+        //     if (\Spatie\Permission\Models\Role::where('name', $roleName)->exists()) {
+        //         $user->assignRole($roleName);
+        //     }
+        // }
+
+                if ($user->userType) {
+            $userTypeName = $user->userType->name;
+
+            // ✅ IMPORTANT: your admin routes require "Super Admin"
+            $roleMap = [
+                'Admin' => 'Super Admin',
+                'Scholarship Coordinator' => 'Scholarship Coordinator',
+                'Scholarship Staff' => 'Scholarship Staff',
+                'Student' => 'Student',
+            ];
+
+            $roleToAssign = $roleMap[$userTypeName] ?? null;
+
+            if ($roleToAssign && Role::where('name', $roleToAssign)->exists()) {
+                // better than assignRole (prevents multiple conflicting roles)
+                $user->syncRoles([$roleToAssign]);
             }
         }
 
@@ -2226,6 +2266,26 @@ public function updateUser(Request $request, $id)
     }
 
     $user->save();
+
+    if ($user->userType) {
+    $userTypeName = $user->userType->name;
+
+    $roleMap = [
+        'Admin' => 'Super Admin',
+        'Scholarship Coordinator' => 'Scholarship Coordinator',
+        'Scholarship Staff' => 'Scholarship Staff',
+        'Student' => 'Student',
+    ];
+
+    $roleToAssign = $roleMap[$userTypeName] ?? null;
+
+    if ($roleToAssign && Role::where('name', $roleToAssign)->exists()) {
+        $user->syncRoles([$roleToAssign]);
+    } else {
+        // if no matching role, remove roles to avoid ghost access
+        $user->syncRoles([]);
+    }
+}
 
     return redirect()->route('admin.dashboard', ['page' => 'manage-users'])
         ->with('success', 'User updated successfully!');

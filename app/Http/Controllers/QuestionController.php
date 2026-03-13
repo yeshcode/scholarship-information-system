@@ -15,95 +15,139 @@ class QuestionController extends Controller
     }
 
     /**
-     * Simple normalization to improve clustering across English/Cebuano/Tagalog.
-     * Goal: make "what are requirements of TES" and "unsay requirements sa TES"
-     * end up closer by removing fillers + punctuation + casing differences.
+     * Normalize text for better similarity matching.
+     * Makes small wording differences closer:
+     * - lowercase
+     * - remove punctuation
+     * - remove filler words
+     * - unify singular/plural
+     * - sort words for stable comparison
      */
-    private function normalizeQuestion(string $text): string
-    {
-        $text = mb_strtolower(trim($text));
+   private function normalizeQuestion(string $text): string
+{
+    $text = mb_strtolower(trim($text));
 
-        // replace punctuation with spaces
-        $text = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $text);
+    // remove punctuation/special chars
+    $text = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $text);
 
-        // collapse multiple spaces
-        $text = preg_replace('/\s+/', ' ', trim($text));
+    // collapse spaces
+    $text = preg_replace('/\s+/', ' ', trim($text));
 
-        // remove common filler words (keep this list SHORT and safe)
-       $stop = [
-            // English
-            'what','whats','is','are','the','a','an','of','for','to','please', 'when', 'how', 'where', 'who', 'which',
-            // Cebuano / Bisaya
-            'unsa','unsay','sa','para','palihug', 'kanus a', 
-            // Tagalog
-            'ano','ang','mga','para','po', 'ng', 'kailan', 'paano', 'saan', 'sino', 
-        ];
+    $stop = [
+        // English
+        'what', 'whats', 'is', 'are', 'the', 'a', 'an', 'of', 'for', 'to', 'please',
+        'when', 'how', 'where', 'who', 'which', 'there', 'any', 'do', 'does', 'did',
+        'can', 'could', 'would', 'should',
 
-        $words = array_values(array_filter(
-            explode(' ', $text),
-            fn ($w) => $w !== '' && !in_array($w, $stop, true)
-        ));
+        // Cebuano / Bisaya
+        'unsa', 'unsay', 'sa', 'para', 'palihug', 'kanusa', 'naa', 'bay', 'ba',
 
-        // optional: put words in consistent order (helps small variations)
-        sort($words);
+        // Tagalog
+        'ano', 'ang', 'mga', 'para', 'po', 'ng', 'kailan', 'paano', 'saan', 'sino',
+        'meron', 'may', 'ba'
+    ];
 
-        return implode(' ', $words);
-    }
+    $words = array_values(array_filter(explode(' ', $text), function ($w) use ($stop) {
+        return $w !== '' && !in_array($w, $stop, true);
+    }));
+
+    $map = [
+        'announcements' => 'announcement',
+        'scholars' => 'scholar',
+        'requirements' => 'requirement',
+        'applications' => 'application',
+        'deadlines' => 'deadline',
+        'documents' => 'document',
+        'updates' => 'update',
+    ];
+
+    $words = array_map(function ($w) use ($map) {
+        return $map[$w] ?? $w;
+    }, $words);
+
+    $words = array_values(array_unique($words));
+
+    sort($words);
+
+    return implode(' ', $words);
+}
 
     public function store(Request $request)
-    {
-        $request->validate([
-            'question_text' => 'required|string|max:1000',
-        ]);
+{
+    $request->validate([
+        'question_text' => 'required|string|max:1000',
+    ]);
 
-        $text = trim((string) $request->question_text);
+    $text = trim((string) $request->question_text);
 
-        // backend-only threshold (no UI)
-        $threshold = (float) config('smis.question_similarity_threshold', 0.40);
+    // Use a slightly safer threshold
+    $threshold = (float) config('smis.question_similarity_threshold', 0.35);
 
-        // ✅ Compare using normalized text
-        $norm = $this->normalizeQuestion($text);
+    $norm = $this->normalizeQuestion($text);
 
-        // 1) Get multiple candidates (top 15) based on normalized similarity
-        // NOTE: This assumes you have "question_text_norm" column.
-        // If you DON'T have it yet, see the "No column yet" version below.
-        $candidates = Question::query()
-            ->select('id', 'cluster_id', 'question_text')
-            ->selectRaw("similarity(question_text_norm, ?) as sim_score", [$norm])
-            ->whereRaw("similarity(question_text_norm, ?) >= ?", [$norm, $threshold])
-            ->orderByDesc('sim_score')
-            ->limit(15)
-            ->get();
+    $bestClusterId = null;
 
-        // 2) Pick best cluster among candidates
-        $bestClusterId = $candidates
-            ->filter(fn ($q) => !is_null($q->cluster_id))
-            ->sortByDesc('sim_score')
-            ->first()
-            ?->cluster_id;
+    /**
+     * STEP 1: Match existing clusters using NORMALIZED text only
+     * This avoids unrelated questions being forced into old clusters.
+     */
+    $bestCluster = QuestionCluster::query()
+        ->select('id', 'representative_question', 'representative_question_norm')
+        ->selectRaw("similarity(COALESCE(representative_question_norm, ''), ?) as sim_score", [$norm])
+        ->whereRaw("similarity(COALESCE(representative_question_norm, ''), ?) >= ?", [$norm, $threshold])
+        ->orderByDesc('sim_score')
+        ->first();
 
-        // 3) If no good cluster found, create a new cluster
-        if (!$bestClusterId) {
-            $cluster = QuestionCluster::create([
-                'representative_question' => $text,
-                'representative_question_norm' => $norm,
-                'label' => $this->generateClusterLabel($text),
-            ]);
-            $bestClusterId = $cluster->id;
-        }
-
-        // 4) Save new question as UNANSWERED (status is NOT NULL)
-        Question::create([
-            'user_id'            => Auth::id(),
-            'question_text'      => $text,
-            'question_text_norm' => $norm,  // store normalized
-            'cluster_id'         => $bestClusterId,
-            'answer'             => null,
-            'status'             => 'unanswered',
-        ]);
-
-        return redirect()->route('questions.my')->with('success', 'Your question has been submitted.');
+    if ($bestCluster) {
+        $bestClusterId = $bestCluster->id;
     }
+
+    /**
+     * STEP 2: If no cluster matched, try existing questions using NORMALIZED text only
+     */
+    if (!$bestClusterId) {
+        $bestQuestion = Question::query()
+            ->select('id', 'cluster_id', 'question_text', 'question_text_norm')
+            ->selectRaw("similarity(COALESCE(question_text_norm, ''), ?) as sim_score", [$norm])
+            ->whereNotNull('cluster_id')
+            ->whereRaw("similarity(COALESCE(question_text_norm, ''), ?) >= ?", [$norm, $threshold])
+            ->orderByDesc('sim_score')
+            ->first();
+
+        if ($bestQuestion) {
+            $bestClusterId = $bestQuestion->cluster_id;
+        }
+    }
+
+    /**
+     * STEP 3: Create new cluster if still no match
+     */
+    if (!$bestClusterId) {
+        $cluster = QuestionCluster::create([
+            'representative_question' => $text,
+            'representative_question_norm' => $norm,
+            'label' => $this->generateClusterLabel($text),
+        ]);
+
+        $bestClusterId = $cluster->id;
+    }
+
+    /**
+     * STEP 4: Save the question
+     */
+    Question::create([
+        'user_id'            => Auth::id(),
+        'question_text'      => $text,
+        'question_text_norm' => $norm,
+        'cluster_id'         => $bestClusterId,
+        'answer'             => null,
+        'status'             => 'unanswered',
+    ]);
+
+    return redirect()
+        ->route('questions.my')
+        ->with('success', 'Your question has been submitted.');
+}
 
     private function generateClusterLabel(string $text): string
     {
@@ -111,6 +155,10 @@ class QuestionController extends Controller
 
         if (str_contains($text, 'tes') && str_contains($text, 'requirement')) {
             return 'TES Application Requirements';
+        }
+
+        if (str_contains($text, 'tdp') && str_contains($text, 'announcement')) {
+            return 'TDP Scholar Announcements';
         }
 
         if (str_contains($text, 'deadline')) {
@@ -127,8 +175,6 @@ class QuestionController extends Controller
 
         return 'General Inquiry';
     }
-
-    
 
     public function myQuestions()
     {
