@@ -59,12 +59,18 @@
     }
 
     .btn-brand{
-        background: var(--brand);
-        border-color: var(--brand);
+        background: #2c7be5;
+        border-color: #2c7be5;
+        color:#fff;
+        font-weight:600;
+        transition: all .2s ease;
     }
+
     .btn-brand:hover{
-        background: var(--brand-2);
-        border-color: var(--brand-2);
+        background: #1a68d1;
+        border-color: #1a68d1;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(44,123,229,.25);
     }
 
     .chip{
