@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 <style>
     :root{
         --brand:#0b2e5e;
@@ -478,77 +478,82 @@
             <button class="btnx btnx-primary" id="openModalBtn">Create Announcement</button>
         </div>
 
-        @if(session('success'))
+        <?php if(session('success')): ?>
             <div class="card" style="border-color:#bbf7d0;background:#f0fdf4;color:#166534;">
-                {{ session('success') }}
-            </div>
-        @endif
+                <?php echo e(session('success')); ?>
 
-        @if(session('error'))
+            </div>
+        <?php endif; ?>
+
+        <?php if(session('error')): ?>
             <div class="card" style="border-color:#fecaca;background:#fef2f2;color:#991b1b;">
-                {{ session('error') }}
-            </div>
-        @endif
+                <?php echo e(session('error')); ?>
 
-        @forelse($announcements as $post)
+            </div>
+        <?php endif; ?>
+
+        <?php $__empty_1 = true; $__currentLoopData = $announcements; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $post): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
             <div class="card">
                 <div class="space">
                     <div class="rowx">
                         <div class="avatar">
-                            {{ strtoupper(substr($post->creator->firstname ?? 'C', 0, 1)) }}
+                            <?php echo e(strtoupper(substr($post->creator->firstname ?? 'C', 0, 1))); ?>
+
                         </div>
 
                         <div>
-                            <p class="name">{{ $post->creator->firstname ?? 'Coordinator' }} {{ $post->creator->lastname ?? '' }}</p>
+                            <p class="name"><?php echo e($post->creator->firstname ?? 'Coordinator'); ?> <?php echo e($post->creator->lastname ?? ''); ?></p>
                             <p class="sub">
-                                <span>{{ $post->posted_at?->format('M d, Y h:i A') }}</span>
+                                <span><?php echo e($post->posted_at?->format('M d, Y h:i A')); ?></span>
 
                                 <span class="pill pill-blue">
-                                    {{ match($post->audience){
+                                    <?php echo e(match($post->audience){
                                         'all_students' => 'All Students',
                                         'specific_students' => 'Selected Students',
                                         'scholarship_scholars' => 'All Scholars in Scholarship',
                                         'specific_scholars' => 'Selected Scholars',
                                         'all_scholars' => 'All Scholars',
                                         default => 'Audience'
-                                    } }}
+                                    }); ?>
+
                                 </span>
 
-                                @if($post->scholarship)
-                                    <span class="pill">{{ $post->scholarship->scholarship_name }}</span>
-                                @endif
+                                <?php if($post->scholarship): ?>
+                                    <span class="pill"><?php echo e($post->scholarship->scholarship_name); ?></span>
+                                <?php endif; ?>
 
-                                <span class="pill">👁️ {{ $post->views_count ?? 0 }}</span>
+                                <span class="pill">👁️ <?php echo e($post->views_count ?? 0); ?></span>
                             </p>
                         </div>
                     </div>
 
-                    <form action="{{ route('coordinator.announcements.destroy', $post->id) }}"
+                    <form action="<?php echo e(route('coordinator.announcements.destroy', $post->id)); ?>"
                           method="POST"
                           onsubmit="return confirm('Delete this announcement? This cannot be undone.')">
-                        @csrf
-                        @method('DELETE')
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('DELETE'); ?>
                         <button class="btnx btnx-danger btnx-sm" type="submit">
                             Delete
                         </button>
                     </form>
                 </div>
 
-                <div class="post-title">{{ $post->title }}</div>
-                <div class="post-body">{{ $post->description }}</div>
+                <div class="post-title"><?php echo e($post->title); ?></div>
+                <div class="post-body"><?php echo e($post->description); ?></div>
 
-                @if($post->image_path)
-                    <img src="{{ asset('storage/' . $post->image_path) }}" alt="Announcement image" class="post-image">
-                @endif
+                <?php if($post->image_path): ?>
+                    <img src="<?php echo e(asset('storage/' . $post->image_path)); ?>" alt="Announcement image" class="post-image">
+                <?php endif; ?>
             </div>
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <div class="card" style="text-align:center; color:var(--muted);">
                 No announcements yet.
             </div>
-        @endforelse
+        <?php endif; ?>
 
         <div class="pagination-wrap">
-            {{ $announcements->links() }}
+            <?php echo e($announcements->links()); ?>
+
         </div>
     </div>
 </div>
@@ -560,10 +565,10 @@
             <button class="modal-close" id="closeModalBtn" type="button">✕</button>
         </div>
 
-        <form class="modal-body" action="{{ route('coordinator.announcements.store') }}" method="POST" enctype="multipart/form-data" id="announceForm">
-            @csrf
+        <form class="modal-body" action="<?php echo e(route('coordinator.announcements.store')); ?>" method="POST" enctype="multipart/form-data" id="announceForm">
+            <?php echo csrf_field(); ?>
 
-            {{-- COMPACT SETUP --}}
+            
             <div class="section-box setup-muted" style="margin-top:0;">
                 <div class="section-title">Announcement Setup</div>
 
@@ -580,9 +585,9 @@
                         <label class="sub">Scholarship</label>
                         <select name="scholarship_id" id="scholarshipSelect" class="select compact-select">
                             <option value="">Select scholarship</option>
-                            @foreach($scholarships as $scholarship)
-                                <option value="{{ $scholarship->id }}">{{ $scholarship->scholarship_name }}</option>
-                            @endforeach
+                            <?php $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $scholarship): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($scholarship->id); ?>"><?php echo e($scholarship->scholarship_name); ?></option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
 
@@ -615,28 +620,10 @@
                 </div>
             </div>
 
-            {{-- COMPACT RECIPIENT PICKER --}}
-            {{-- <div class="section-box compact-recipient-box">
-                <button type="button" class="recipient-toggle" id="recipientToggle">
-                    <div class="recipient-toggle-left">
-                        <span class="recipient-toggle-title" id="recipientToggleTitle">Select specific students (optional)</span>
-                        <span class="recipient-toggle-sub">Leave this closed if you want to send to the whole selected group.</span>
-                    </div>
-                    <span class="recipient-toggle-icon">⌄</span>
-                </button>
+            
+            
 
-                <div class="recipient-collapse" id="recipientCollapse">
-                    <input class="input" id="searchInput" placeholder="Search by name, student id, or email..." autocomplete="off">
-
-                    <div class="chips" id="chips"></div>
-
-                    <div class="results" id="results">
-                        <div class="helper">Loading recipients...</div>
-                    </div>
-                </div>
-            </div> --}}
-
-            {{-- MAIN ANNOUNCEMENT AREA --}}
+            
             <div class="section-box announcement-focus">
                 <div class="section-title">Announcement Content</div>
 
@@ -872,7 +859,7 @@
         const group = targetGroup.value;
 
         if (group === 'students') {
-            const url = new URL("{{ route('coordinator.announcements.recipients') }}", window.location.origin);
+            const url = new URL("<?php echo e(route('coordinator.announcements.recipients')); ?>", window.location.origin);
             url.searchParams.set('type', 'students');
             url.searchParams.set('q', query);
 
@@ -888,7 +875,7 @@
 
             if (!scholarshipId) return [];
 
-            const url = new URL("{{ route('coordinator.announcements.scholarship-scholars') }}", window.location.origin);
+            const url = new URL("<?php echo e(route('coordinator.announcements.scholarship-scholars')); ?>", window.location.origin);
             url.searchParams.set('scholarship_id', scholarshipId);
             url.searchParams.set('q', query);
 
@@ -963,4 +950,5 @@
     updateTargetUI();
 })();
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/manage-announcements.blade.php ENDPATH**/ ?>

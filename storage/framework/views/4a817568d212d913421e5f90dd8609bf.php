@@ -1,7 +1,7 @@
-@extends('layouts.app')
 
-@section('content')
-@php
+
+<?php $__env->startSection('content'); ?>
+<?php
     use Carbon\Carbon;
     use Illuminate\Support\Str;
 
@@ -32,10 +32,10 @@
 
     // for "see more"
     $previewLimit = 220; // adjust if you want shorter/longer
-@endphp
+?>
 
 <style>
-    body{ background: {{ $bg }}; }
+    body{ background: <?php echo e($bg); ?>; }
 
     .page-wrap{
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
@@ -51,11 +51,11 @@
     }
     .page-title{
         font-weight: 900;
-        color: {{ $theme }};
+        color: <?php echo e($theme); ?>;
         letter-spacing: .2px;
         margin: 0;
     }
-    .subtext{ color: {{ $muted }}; font-size: .92rem; }
+    .subtext{ color: <?php echo e($muted); ?>; font-size: .92rem; }
 
     .timeline-label{
         display:flex;
@@ -63,20 +63,20 @@
         gap:12px;
         margin: 18px 0 12px;
     }
-    .timeline-label .line{ flex: 1; height:1px; background: {{ $line }}; }
+    .timeline-label .line{ flex: 1; height:1px; background: <?php echo e($line); ?>; }
     .timeline-label .tag{
-        color: {{ $muted }};
+        color: <?php echo e($muted); ?>;
         font-weight: 800;
         font-size: .86rem;
         padding: .25rem .7rem;
         border-radius: 999px;
-        border: 1px solid {{ $line }};
+        border: 1px solid <?php echo e($line); ?>;
         background: rgba(255,255,255,.8);
         white-space: nowrap;
     }
 
     .a-card{
-        border: 1px solid {{ $line }};
+        border: 1px solid <?php echo e($line); ?>;
         border-radius: 18px;
         box-shadow: 0 10px 26px rgba(0,0,0,.05);
         overflow: hidden;
@@ -97,7 +97,7 @@
         width: 44px; height: 44px;
         border-radius: 14px;
         display:flex; align-items:center; justify-content:center;
-        background: linear-gradient(135deg, {{ $theme }}, {{ $brand2 }});
+        background: linear-gradient(135deg, <?php echo e($theme); ?>, <?php echo e($brand2); ?>);
         color:#fff;
         font-weight: 900;
         letter-spacing: .03em;
@@ -119,12 +119,12 @@
     }
     .office{
         font-weight: 900;
-        color: {{ $theme }};
+        color: <?php echo e($theme); ?>;
         line-height: 1.15;
         font-size: .95rem;
     }
     .time{
-        color: {{ $muted }};
+        color: <?php echo e($muted); ?>;
         font-size: .82rem;
         white-space: nowrap;
     }
@@ -150,7 +150,7 @@
 
     .a-desc{
         margin-top: 8px;
-        color: {{ $muted }};
+        color: <?php echo e($muted); ?>;
         font-size: .95rem;
         line-height: 1.55;
         white-space: pre-line;
@@ -166,7 +166,7 @@
     }
 
     .btn-brand{
-        background: {{ $theme }};
+        background: <?php echo e($theme); ?>;
         border: none;
         color: #fff;
         font-weight: 800;
@@ -178,12 +178,12 @@
     .btn-soft{
         border: 1px solid rgba(11,46,94,.18);
         background: rgba(11,46,94,.06);
-        color: {{ $theme }};
+        color: <?php echo e($theme); ?>;
         font-weight: 800;
         border-radius: 12px;
         padding: .5rem .9rem;
     }
-    .btn-soft:hover{ background: rgba(11,46,94,.10); color: {{ $theme }}; }
+    .btn-soft:hover{ background: rgba(11,46,94,.10); color: <?php echo e($theme); ?>; }
 
     /* Mobile: make buttons comfortable */
     @media (max-width: 575.98px){
@@ -203,16 +203,16 @@
             </div>
         </div>
 
-        @forelse($grouped as $label => $list)
+        <?php $__empty_1 = true; $__currentLoopData = $grouped; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $label => $list): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
 
             <div class="timeline-label">
                 <div class="line"></div>
-                <div class="tag">{{ $label }}</div>
+                <div class="tag"><?php echo e($label); ?></div>
                 <div class="line"></div>
             </div>
 
-            @foreach($list as $announcement)
-                @php
+            <?php $__currentLoopData = $list; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $announcement): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php
                     $dt = !empty($announcement->posted_at)
                         ? ($announcement->posted_at instanceof Carbon ? $announcement->posted_at : Carbon::parse($announcement->posted_at))
                         : null;
@@ -232,7 +232,7 @@
                     $isLong = Str::length($desc) > $previewLimit;
 
                     $collapseId = 'ann_desc_'.$announcement->id;
-                @endphp
+                ?>
 
                 <div class="a-card mb-3">
                     <div class="a-body">
@@ -244,74 +244,79 @@
                                 <div class="meta-top">
                                     <div>
                                         <div class="office">Scholarship Office</div>
-                                        <div class="time">{{ $timeLabel }}</div>
+                                        <div class="time"><?php echo e($timeLabel); ?></div>
                                     </div>
 
-                                    @if($showNew)
+                                    <?php if($showNew): ?>
                                         <span class="badge-new">NEW</span>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="a-title">
-                                    {{ $announcement->title ?? 'Announcement' }}
+                                    <?php echo e($announcement->title ?? 'Announcement'); ?>
+
                                 </div>
 
                                 <div class="d-flex flex-wrap gap-2 mt-2">
-                                    @if($announcement->scholarship)
+                                    <?php if($announcement->scholarship): ?>
                                         <span class="badge rounded-pill text-bg-light border">
-                                            {{ $announcement->scholarship->scholarship_name }}
-                                        </span>
-                                    @endif
+                                            <?php echo e($announcement->scholarship->scholarship_name); ?>
 
-                                    @if(in_array($announcement->audience, ['specific_students', 'specific_scholars']))
+                                        </span>
+                                    <?php endif; ?>
+
+                                    <?php if(in_array($announcement->audience, ['specific_students', 'specific_scholars'])): ?>
                                         <span class="badge rounded-pill text-bg-light border">
                                             Personal
                                         </span>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
 
-                                {{-- Description with See more --}}
+                                
                                 <div class="a-desc">
-                                    @if($isLong)
-                                        {{-- Preview --}}
-                                        <div id="preview_{{ $collapseId }}">
-                                            {{ Str::limit($desc, $previewLimit) }}
+                                    <?php if($isLong): ?>
+                                        
+                                        <div id="preview_<?php echo e($collapseId); ?>">
+                                            <?php echo e(Str::limit($desc, $previewLimit)); ?>
+
                                         </div>
 
-                                        {{-- Full text (Bootstrap collapse) --}}
-                                        <div class="collapse" id="{{ $collapseId }}">
-                                            {{ $desc }}
+                                        
+                                        <div class="collapse" id="<?php echo e($collapseId); ?>">
+                                            <?php echo e($desc); ?>
+
                                         </div>
-                                    @else
-                                        {{ $desc }}
-                                    @endif
+                                    <?php else: ?>
+                                        <?php echo e($desc); ?>
+
+                                    <?php endif; ?>
                                 </div>
 
-                                @if(!empty($announcement->image_path))
+                                <?php if(!empty($announcement->image_path)): ?>
                                     <div class="mt-3">
-                                        <img src="{{ asset('storage/' . $announcement->image_path) }}"
+                                        <img src="<?php echo e(asset('storage/' . $announcement->image_path)); ?>"
                                             alt="Announcement image"
                                             class="img-fluid rounded-4 border">
                                     </div>
-                                @endif
+                                <?php endif; ?>
 
                                 <div class="actions">
-                                    {{-- Open (marks as viewed because announcementShow() writes AnnouncementView) --}}
-                                    <a href="{{ route('student.announcements.show', $announcement->id) }}"
+                                    
+                                    <a href="<?php echo e(route('student.announcements.show', $announcement->id)); ?>"
                                        class="btn btn-brand btn-sm">
                                         Open
                                     </a>
 
-                                    @if($isLong)
+                                    <?php if($isLong): ?>
                                         <button class="btn btn-soft btn-sm"
                                                 type="button"
                                                 data-bs-toggle="collapse"
-                                                data-bs-target="#{{ $collapseId }}"
+                                                data-bs-target="#<?php echo e($collapseId); ?>"
                                                 aria-expanded="false"
-                                                aria-controls="{{ $collapseId }}"
+                                                aria-controls="<?php echo e($collapseId); ?>"
                                                 onclick="
-                                                    const c = document.getElementById('{{ $collapseId }}');
-                                                    const p = document.getElementById('preview_{{ $collapseId }}');
+                                                    const c = document.getElementById('<?php echo e($collapseId); ?>');
+                                                    const p = document.getElementById('preview_<?php echo e($collapseId); ?>');
                                                     const btn = this;
 
                                                     setTimeout(() => {
@@ -327,7 +332,7 @@
                                                 ">
                                             See more
                                         </button>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
 
                             </div>
@@ -335,23 +340,25 @@
 
                     </div>
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <div class="text-center py-5">
                 <div class="mb-2" style="font-size: 2rem;">📢</div>
-                <h5 class="fw-semibold mb-1" style="color:{{ $theme }};">No announcements yet</h5>
+                <h5 class="fw-semibold mb-1" style="color:<?php echo e($theme); ?>;">No announcements yet</h5>
                 <p class="text-muted mb-0">Please check again later.</p>
             </div>
-        @endforelse
+        <?php endif; ?>
 
-        {{-- Pagination --}}
-        @if(method_exists($announcements, 'links'))
+        
+        <?php if(method_exists($announcements, 'links')): ?>
             <div class="d-flex justify-content-center mt-4">
-                {{ $announcements->links() }}
+                <?php echo e($announcements->links()); ?>
+
             </div>
-        @endif
+        <?php endif; ?>
 
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/student/announcements.blade.php ENDPATH**/ ?>

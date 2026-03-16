@@ -1786,165 +1786,225 @@ public function downloadReleaseFormFile(StipendReleaseForm $form)
 }
 
     // Manage Announcements
-       public function manageAnnouncements(Request $request)
-{
-    $tab = $request->get('tab', 'posted'); // posted | scheduled
+    public function manageAnnouncements(Request $request)
+    {
+        $announcements = Announcement::with(['creator', 'scholarship'])
+            ->withCount('views')
+            ->orderByDesc('posted_at')
+            ->orderByDesc('id')
+            ->paginate(10)
+            ->withQueryString();
 
-    $base = Announcement::with('creator')
-        ->withCount('views')
-        ->orderByDesc('posted_at')
-        ->orderByDesc('id');
+        $scholarships = Scholarship::query()
+            ->orderBy('scholarship_name')
+            ->get(['id', 'scholarship_name']);
 
-    // ✅ POSTED = posted_at is now or past
-    $postedAnnouncements = (clone $base)
-        ->whereNotNull('posted_at')
-        ->where('posted_at', '<=', now())
-        ->paginate(10, ['*'], 'posted_page')
-        ->withQueryString();
-
-    // ✅ SCHEDULED = posted_at is future
-    $scheduledAnnouncements = (clone $base)
-        ->whereNotNull('posted_at')
-        ->where('posted_at', '>', now())
-        ->paginate(10, ['*'], 'scheduled_page')
-        ->withQueryString();
-
-    return view('coordinator.manage-announcements', compact(
-        'tab',
-        'postedAnnouncements',
-        'scheduledAnnouncements'
-    ));
-}
+        return view('coordinator.manage-announcements', compact(
+            'announcements',
+            'scholarships'
+        ));
+    }
 
 
-
-
- 
      // Store announcement and send notifications (UPDATED: Add audience, scholar selection, emails, and notifications)
 public function storeAnnouncement(Request $request)
 {
     $request->validate([
         'title'               => 'required|string|max:255',
         'description'         => 'required|string',
-        'audience'            => 'required|in:all_students,all_scholars,specific_students,specific_scholars',
-        'posted_at'           => 'required|date',
+        'target_group'        => 'required|in:students,scholarship',
+        'scholarship_id'      => 'nullable|exists:scholarships,id',
         'selected_users'      => 'nullable|array',
         'selected_users.*'    => 'integer|exists:users,id',
         'selected_scholars'   => 'nullable|array',
         'selected_scholars.*' => 'integer|exists:scholars,id',
+        'image'               => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
     ]);
 
-    // If specific audience, require at least 1 recipient
-    if (in_array($request->audience, ['specific_students', 'specific_scholars'])) {
-        $count = $request->audience === 'specific_students'
-            ? count($request->selected_users ?? [])
-            : count($request->selected_scholars ?? []);
+    // Scholars flow requires scholarship selection
+    if ($request->target_group === 'scholarship' && !$request->scholarship_id) {
+        return back()->withInput()->with('error', 'Please select a scholarship first.');
+    }
 
-        if ($count < 1) {
-            return back()->withInput()->with('error', 'Please select at least 1 recipient.');
+    DB::beginTransaction();
+
+    try {
+        $imagePath = null;
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('announcements', 'public');
         }
-    }
 
-    $postedAt = \Carbon\Carbon::parse($request->posted_at);
+        $recipientUserIds = [];
+        $audience = 'all_students';
+        $scholarshipId = null;
 
-    $announcement = Announcement::create([
-        'created_by'  => Auth::id(),
-        'title'       => $request->title,
-        'description' => $request->description,
-        'audience'    => $request->audience,
-        'posted_at'   => $postedAt,     // scheduled/posted time
-        'notified_at' => null,          // not yet sent
-    ]);
+        // =========================
+        // STUDENTS FLOW
+        // =========================
+        if ($request->target_group === 'students') {
+            $selectedUsers = collect($request->selected_users ?? [])->map(fn($id) => (int) $id)->unique()->values();
 
-    if ($request->audience === 'specific_students') {
-         $announcement->recipients()->sync($request->selected_users ?? []);
-    }
+            if ($selectedUsers->isNotEmpty()) {
+                $audience = 'specific_students';
+                $recipientUserIds = User::query()
+                    ->whereHas('userType', fn($q) => $q->where('name', 'Student'))
+                    ->whereIn('id', $selectedUsers)
+                    ->pluck('id')
+                    ->toArray();
+            } else {
+                $audience = 'all_students';
+                $recipientUserIds = User::query()
+                    ->whereHas('userType', fn($q) => $q->where('name', 'Student'))
+                    ->pluck('id')
+                    ->toArray();
+            }
+        }
 
-    if ($request->audience === 'specific_scholars') {
-        $userIds = \App\Models\Scholar::whereIn('id', $request->selected_scholars ?? [])
-            ->pluck('student_id')
+        // =========================
+        // SCHOLARS FLOW
+        // =========================
+        if ($request->target_group === 'scholarship') {
+            $scholarshipId = (int) $request->scholarship_id;
+            $selectedScholars = collect($request->selected_scholars ?? [])->map(fn($id) => (int) $id)->unique()->values();
+
+            if ($selectedScholars->isNotEmpty()) {
+                $audience = 'specific_scholars';
+
+                $recipientUserIds = Scholar::query()
+                    ->where('scholarship_id', $scholarshipId)
+                    ->whereIn('id', $selectedScholars)
+                    ->pluck('student_id')
+                    ->toArray();
+            } else {
+                $audience = 'scholarship_scholars';
+
+                $recipientUserIds = Scholar::query()
+                    ->where('scholarship_id', $scholarshipId)
+                    ->pluck('student_id')
+                    ->toArray();
+            }
+        }
+
+        $recipientUserIds = collect($recipientUserIds)
+            ->filter()
+            ->unique()
+            ->values()
             ->toArray();
 
-        $announcement->recipients()->sync($userIds);
-    }
+        if (count($recipientUserIds) < 1) {
+            return back()->withInput()->with('error', 'No recipients found for this announcement.');
+        }
 
+        $announcement = Announcement::create([
+            'created_by'    => Auth::id(),
+            'title'         => $request->title,
+            'description'   => $request->description,
+            'image_path'    => $imagePath,
+            'posted_at'     => now(),
+            'audience'      => $audience,
+            'scholarship_id'=> $scholarshipId,
+        ]);
 
-    // ✅ If posted time is NOW or past → send now
-    if ($postedAt->lte(now())) {
-        // Use dispatchSync for testing, switch to dispatch later if you want
-        SendAnnouncementNotifications::dispatchSync(
-            $announcement->id,
-            Auth::id(),
-            $request->audience,
-            $request->selected_users ?? [],
-            $request->selected_scholars ?? []
-        );
+        $announcement->recipients()->sync($recipientUserIds);
 
-        $announcement->update(['notified_at' => now()]);
+        foreach ($recipientUserIds as $userId) {
+            Notification::create([
+                'recipient_user_id' => $userId,
+                'created_by'        => Auth::id(),
+                'type'              => 'announcement',
+                'title'             => $announcement->title,
+                'message'           => $announcement->description,
+                'related_type'      => 'announcement',
+                'related_id'        => $announcement->id,
+                'link'              => route('student.announcements.show', $announcement->id),
+                'is_read'           => false,
+                'sent_at'           => now(),
+            ]);
+        }
+
+        DB::commit();
 
         return redirect()->route('coordinator.manage-announcements')
-            ->with('success', 'Announcement posted and notifications sent.');
-    }
+            ->with('success', 'Announcement posted successfully.');
+    } catch (\Throwable $e) {
+        DB::rollBack();
 
-    // ✅ If future → scheduled only
-    return redirect()->route('coordinator.manage-announcements')
-        ->with('success', 'Announcement scheduled successfully.');
+        return back()->withInput()->with('error', 'Failed to post announcement. ' . $e->getMessage());
+    }
 }
 
 
+public function scholarsByScholarshipForAnnouncement(Request $request)
+{
+    $request->validate([
+        'scholarship_id' => 'required|exists:scholarships,id',
+        'q' => 'nullable|string',
+    ]);
+
+    $q = trim((string) $request->get('q', ''));
+    $scholarshipId = (int) $request->scholarship_id;
+
+    $scholars = Scholar::query()
+        ->with('user:id,firstname,lastname,student_id,bisu_email')
+        ->where('scholarship_id', $scholarshipId)
+        ->when($q !== '', function ($query) use ($q) {
+            $query->whereHas('user', function ($u) use ($q) {
+                $u->where('firstname', 'ILIKE', "%{$q}%")
+                  ->orWhere('lastname', 'ILIKE', "%{$q}%")
+                  ->orWhere('student_id', 'ILIKE', "%{$q}%")
+                  ->orWhere('bisu_email', 'ILIKE', "%{$q}%");
+            });
+        })
+        ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+        ->select('scholars.*')
+        ->orderBy('users.lastname')
+        ->orderBy('users.firstname')
+        ->limit(5)
+        ->get();
+
+    return response()->json(
+        $scholars->map(function ($s) {
+            return [
+                'id'         => $s->id,
+                'user_id'    => $s->user?->id,
+                'firstname'  => $s->user?->firstname,
+                'lastname'   => $s->user?->lastname,
+                'student_id' => $s->user?->student_id,
+                'bisu_email' => $s->user?->bisu_email,
+            ];
+        })
+    );
+}
 
 
 public function searchAnnouncementRecipients(Request $request)
 {
-    $type = $request->get('type'); // students | scholars
-    $q = trim((string)$request->get('q',''));
+    $type = $request->get('type'); // students
+    $q = trim((string) $request->get('q', ''));
 
     if ($type === 'students') {
-        $users = User::whereHas('userType', fn($x) => $x->where('name','Student'))
-            ->when($q !== '', function($x) use ($q){
-                $x->where(function($w) use ($q){
-                    $w->where('firstname','ILIKE',"%{$q}%")
-                      ->orWhere('lastname','ILIKE',"%{$q}%")
-                      ->orWhere('student_id','ILIKE',"%{$q}%")
-                      ->orWhere('bisu_email','ILIKE',"%{$q}%");
+        $users = User::query()
+            ->whereHas('userType', fn($x) => $x->where('name', 'Student'))
+            ->when($q !== '', function ($x) use ($q) {
+                $x->where(function ($w) use ($q) {
+                    $w->where('firstname', 'ILIKE', "%{$q}%")
+                      ->orWhere('lastname', 'ILIKE', "%{$q}%")
+                      ->orWhere('student_id', 'ILIKE', "%{$q}%")
+                      ->orWhere('bisu_email', 'ILIKE', "%{$q}%");
                 });
             })
-            ->orderBy('lastname')->orderBy('firstname')
-            ->limit(25)
-            ->get(['id','firstname','lastname','student_id','bisu_email']);
+            ->orderBy('lastname')
+            ->orderBy('firstname')
+            ->limit(5)
+            ->get(['id', 'firstname', 'lastname', 'student_id', 'bisu_email']);
 
         return response()->json($users);
     }
 
-    if ($type === 'scholars') {
-        $scholars = Scholar::with('user:id,firstname,lastname,student_id,bisu_email')
-            ->when($q !== '', function($x) use ($q){
-                $x->whereHas('user', function($u) use ($q){
-                    $u->where('firstname','ILIKE',"%{$q}%")
-                      ->orWhere('lastname','ILIKE',"%{$q}%")
-                      ->orWhere('student_id','ILIKE',"%{$q}%")
-                      ->orWhere('bisu_email','ILIKE',"%{$q}%");
-                });
-            })
-            ->orderByDesc('id')
-            ->limit(25)
-            ->get(['id','student_id']);
-
-        // return flattened info
-        return response()->json($scholars->map(function($s){
-            return [
-                'id' => $s->id,
-                'user_id' => $s->user?->id,
-                'firstname' => $s->user?->firstname,
-                'lastname' => $s->user?->lastname,
-                'student_id' => $s->user?->student_id,
-                'bisu_email' => $s->user?->bisu_email,
-            ];
-        }));
-    }
-
     return response()->json([]);
 }
+
 
 public function destroyAnnouncement(Announcement $announcement)
 {
