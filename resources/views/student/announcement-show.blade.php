@@ -21,9 +21,31 @@
                 {{ $announcement->title }}
             </h4>
 
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                @if($announcement->scholarship)
+                    <span class="badge rounded-pill text-bg-light border">
+                        {{ $announcement->scholarship->scholarship_name }}
+                    </span>
+                @endif
+
+                @if(in_array($announcement->audience, ['specific_students', 'specific_scholars']))
+                    <span class="badge rounded-pill text-bg-light border">
+                        Personal
+                    </span>
+                @endif
+            </div>
+
             <div class="text-muted" style="white-space: pre-line;">
                 {{ $announcement->description }}
             </div>
+
+            @if(!empty($announcement->image_path))
+                <div class="mt-3">
+                    <img src="{{ asset('storage/' . $announcement->image_path) }}"
+                         alt="Announcement image"
+                         class="img-fluid rounded-4 border">
+                </div>
+            @endif
         </div>
     </div>
 </div>

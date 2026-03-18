@@ -257,17 +257,20 @@ Route::get('/test-mail', function () {
 
         // Announcements
         Route::get('/manage-announcements', [CoordinatorController::class, 'manageAnnouncements'])->name('coordinator.manage-announcements');
-        Route::get('/manage-announcements/create', [CoordinatorController::class, 'createAnnouncement'])->name('coordinator.announcements.create');
+        // Route::get('/manage-announcements/create', [CoordinatorController::class, 'createAnnouncement'])->name('coordinator.announcements.create');
         Route::post('/manage-announcements', [CoordinatorController::class, 'storeAnnouncement'])->name('coordinator.announcements.store');
         Route::delete('/manage-announcements/{announcement}', [CoordinatorController::class, 'destroyAnnouncement'])->name('coordinator.announcements.destroy');
 
-    
+        // AJAX
+        Route::get('/announcements/recipients', [CoordinatorController::class, 'searchAnnouncementRecipients'])->name('coordinator.announcements.recipients');
+        Route::get('/announcements/scholarship-scholars', [CoordinatorController::class, 'scholarsByScholarshipForAnnouncement'])->name('coordinator.announcements.scholarship-scholars');
+            
         // recipients search
         Route::get('/announcements/recipients', [CoordinatorController::class, 'searchAnnouncementRecipients'])->name('coordinator.announcements.recipients');
 
         // Scheduled actions
-        Route::patch('/manage-announcements/{announcement}/reschedule', [CoordinatorController::class, 'rescheduleAnnouncement'])->name('coordinator.announcements.reschedule');
-        Route::patch('/manage-announcements/{announcement}/cancel-schedule', [CoordinatorController::class, 'cancelAnnouncementSchedule'])->name('coordinator.announcements.cancel-schedule');
+        // Route::patch('/manage-announcements/{announcement}/reschedule', [CoordinatorController::class, 'rescheduleAnnouncement'])->name('coordinator.announcements.reschedule');
+        // Route::patch('/manage-announcements/{announcement}/cancel-schedule', [CoordinatorController::class, 'cancelAnnouncementSchedule'])->name('coordinator.announcements.cancel-schedule');
 
 
 

@@ -65,24 +65,16 @@ use UsesActiveSemester;
     $studentYearLevel = $latestEnrollment->yearlevel_display ?? 'N/A';
                 
     // ✅ Announcements visible to student
-    $announcements = Announcement::query()
+        $announcements = Announcement::query()
         ->whereNotNull('posted_at')
         ->where('posted_at', '<=', now())
-        ->where(function ($q) use ($userId, $isScholar) {
-            $q->where('audience', 'all_students');
-
-            if ($isScholar) {
-                $q->orWhere('audience', 'all_scholars');
-            }
-
-            $q->orWhereHas('notifications', function ($n) use ($userId) {
-                $n->where('recipient_user_id', $userId)
-                  ->where('type', 'announcement');
-            });
+        ->whereHas('recipients', function ($q) use ($userId) {
+            $q->where('users.id', $userId);
         })
         ->orderByDesc('posted_at')
         ->take(3)
         ->get();
+
 
     // ✅ Notifications preview + unread count
     $notifications = Notification::where('recipient_user_id', $userId)
@@ -101,20 +93,11 @@ use UsesActiveSemester;
         ->get();
 
     // ✅ Summary counts
-    $announcementsCount = Announcement::query()
+       $announcementsCount = Announcement::query()
         ->whereNotNull('posted_at')
         ->where('posted_at', '<=', now())
-        ->where(function ($q) use ($userId, $isScholar) {
-            $q->where('audience', 'all_students');
-
-            if ($isScholar) {
-                $q->orWhere('audience', 'all_scholars');
-            }
-
-            $q->orWhereHas('notifications', function ($n) use ($userId) {
-                $n->where('recipient_user_id', $userId)
-                  ->where('type', 'announcement');
-            });
+        ->whereHas('recipients', function ($q) use ($userId) {
+            $q->where('users.id', $userId);
         })
         ->count();
 
@@ -141,35 +124,23 @@ use UsesActiveSemester;
 {
     $userId = Auth::id();
 
-    $isScholar = Scholar::where('student_id', $userId)->exists();
-
     $announcements = Announcement::query()
+        ->with(['creator', 'scholarship'])
         ->whereNotNull('posted_at')
         ->where('posted_at', '<=', now())
-        ->where(function ($q) use ($userId, $isScholar) {
-            $q->where('audience', 'all_students');
-
-            if ($isScholar) {
-                $q->orWhere('audience', 'all_scholars');
-            }
-
-            $q->orWhereHas('notifications', function ($n) use ($userId) {
-                $n->where('recipient_user_id', $userId)
-                  ->where('type', 'announcement');
-            });
+        ->whereHas('recipients', function ($q) use ($userId) {
+            $q->where('users.id', $userId);
         })
         ->orderByDesc('posted_at')
         ->paginate(10);
 
-        // ✅ Get IDs that the student already opened/read
-        $announcementIds = $announcements->getCollection()->pluck('id');
+    $announcementIds = $announcements->getCollection()->pluck('id');
 
-        $viewedIds = AnnouncementView::where('user_id', $userId)
-            ->whereIn('announcement_id', $announcementIds)
-            ->pluck('announcement_id')
-            ->map(fn($id) => (int)$id)
-            ->toArray();
-
+    $viewedIds = AnnouncementView::where('user_id', $userId)
+        ->whereIn('announcement_id', $announcementIds)
+        ->pluck('announcement_id')
+        ->map(fn($id) => (int) $id)
+        ->toArray();
 
     return view('student.announcements', compact('announcements', 'viewedIds'));
 }
@@ -231,20 +202,29 @@ public function markAsRead($id)
     }
 
    public function announcementShow(Announcement $announcement)
-    {
-        AnnouncementView::firstOrCreate(
-            [
-                'announcement_id' => $announcement->id,
-                'user_id' => Auth::id(),
-            ],
-            [
-                'seen_at' => now(),
-            ]
-        );
+{
+    $userId = Auth::id();
 
-        return view('student.announcement-show', compact('announcement'));
+    $allowed = $announcement->recipients()
+        ->where('users.id', $userId)
+        ->exists();
+
+    if (!$allowed) {
+        abort(403, 'You are not allowed to view this announcement.');
     }
 
+    AnnouncementView::firstOrCreate(
+        [
+            'announcement_id' => $announcement->id,
+            'user_id' => $userId,
+        ],
+        [
+            'seen_at' => now(),
+        ]
+    );
+
+    return view('student.announcement-show', compact('announcement'));
+}
 
 public function open($id)
 {

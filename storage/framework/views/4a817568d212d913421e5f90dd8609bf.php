@@ -257,6 +257,21 @@
 
                                 </div>
 
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    <?php if($announcement->scholarship): ?>
+                                        <span class="badge rounded-pill text-bg-light border">
+                                            <?php echo e($announcement->scholarship->scholarship_name); ?>
+
+                                        </span>
+                                    <?php endif; ?>
+
+                                    <?php if(in_array($announcement->audience, ['specific_students', 'specific_scholars'])): ?>
+                                        <span class="badge rounded-pill text-bg-light border">
+                                            Personal
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+
                                 
                                 <div class="a-desc">
                                     <?php if($isLong): ?>
@@ -276,6 +291,14 @@
 
                                     <?php endif; ?>
                                 </div>
+
+                                <?php if(!empty($announcement->image_path)): ?>
+                                    <div class="mt-3">
+                                        <img src="<?php echo e(asset('storage/' . $announcement->image_path)); ?>"
+                                            alt="Announcement image"
+                                            class="img-fluid rounded-4 border">
+                                    </div>
+                                <?php endif; ?>
 
                                 <div class="actions">
                                     

@@ -1,6 +1,6 @@
-@extends('layouts.app')
 
-@section('content')
+
+<?php $__env->startSection('content'); ?>
 <style>
     :root{
         --brand:#003366;
@@ -110,7 +110,7 @@
 <div class="container py-4">
     <div class="page-wrap">
 
-        {{-- HEADER --}}
+        
         <div class="card card-soft mb-3">
             <div class="card-body d-flex flex-wrap align-items-start justify-content-between gap-3">
                 <div>
@@ -129,32 +129,32 @@
 
                     <div class="mt-2 d-flex flex-wrap gap-2">
                         <span class="chip">
-                            Total: <span class="fw-bold">{{ $totalCount }}</span>
+                            Total: <span class="fw-bold"><?php echo e($totalCount); ?></span>
                         </span>
-                        <span class="chip {{ ($issuesCount ?? 0) > 0 ? 'text-warning border-warning-subtle' : 'text-success border-success-subtle' }}">
-                            Issues: <span class="fw-bold">{{ $issuesCount }}</span>
+                        <span class="chip <?php echo e(($issuesCount ?? 0) > 0 ? 'text-warning border-warning-subtle' : 'text-success border-success-subtle'); ?>">
+                            Issues: <span class="fw-bold"><?php echo e($issuesCount); ?></span>
                         </span>
                     </div>
                 </div>
 
                 <div class="d-flex gap-2 ms-auto">
-                    <a href="{{ route('admin.users.bulk-upload-form') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <a href="<?php echo e(route('admin.users.bulk-upload-form')); ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3">
                         Upload another file
                     </a>
-                    <a href="{{ route('admin.dashboard', ['page' => 'manage-users']) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                    <a href="<?php echo e(route('admin.dashboard', ['page' => 'manage-users'])); ?>" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                         Back to Users
                     </a>
                 </div>
             </div>
         </div>
 
-        @if(session('error'))
+        <?php if(session('error')): ?>
             <div class="alert alert-danger border-0 shadow-sm py-2 mb-3" style="border-radius:14px;">
-                <div class="small">{{ session('error') }}</div>
+                <div class="small"><?php echo e(session('error')); ?></div>
             </div>
-        @endif
+        <?php endif; ?>
 
-        {{-- TABLE --}}
+        
         <div class="card card-soft">
             <div class="card-body p-0">
                 <div class="table-responsive" style="max-height: 560px; overflow:auto;">
@@ -173,14 +173,14 @@
                         </thead>
 
                         <tbody class="text-nowrap">
-                            @foreach($preview as $r)
-                                <tr class="{{ !empty($r['issues']) ? 'row-issue' : '' }}">
+                            <?php $__currentLoopData = $preview; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <tr class="<?php echo e(!empty($r['issues']) ? 'row-issue' : ''); ?>">
 
-                                    <td><div class="text-truncate" title="{{ $r['line'] }}">{{ $r['line'] }}</div></td>
-                                    <td><div class="text-truncate fw-semibold" title="{{ $r['student_id'] }}">{{ $r['student_id'] }}</div></td>
+                                    <td><div class="text-truncate" title="<?php echo e($r['line']); ?>"><?php echo e($r['line']); ?></div></td>
+                                    <td><div class="text-truncate fw-semibold" title="<?php echo e($r['student_id']); ?>"><?php echo e($r['student_id']); ?></div></td>
 
                                     <td>
-                                        @php
+                                        <?php
                                             $mi = '';
                                             if(!empty($r['middlename'])){
                                                 $parts = preg_split('/\s+/', trim($r['middlename']));
@@ -189,34 +189,36 @@
                                             }
                                             $suffix = !empty($r['suffix']) ? ' ' . $r['suffix'] : '';
                                             $full = trim($r['lastname'] . ', ' . $r['firstname'] . $mi . $suffix);
-                                        @endphp
-                                        <div class="text-truncate" title="{{ $full }}">{{ $full }}</div>
+                                        ?>
+                                        <div class="text-truncate" title="<?php echo e($full); ?>"><?php echo e($full); ?></div>
                                     </td>
 
-                                    <td><div class="text-truncate" title="{{ $r['bisu_email'] }}">{{ $r['bisu_email'] }}</div></td>
+                                    <td><div class="text-truncate" title="<?php echo e($r['bisu_email']); ?>"><?php echo e($r['bisu_email']); ?></div></td>
 
-                                    <td class="wrap-cell">{{ $r['college'] }}</td>
-                                    <td class="wrap-cell">{{ $r['course'] }}</td>
+                                    <td class="wrap-cell"><?php echo e($r['college']); ?></td>
+                                    <td class="wrap-cell"><?php echo e($r['course']); ?></td>
 
                                     <td>
                                         <span class="badge rounded-pill bg-light text-dark border">
-                                            {{ $r['year_level'] }}
+                                            <?php echo e($r['year_level']); ?>
+
                                         </span>
                                     </td>
 
                                     <td style="min-width: 260px;">
-                                        @if(empty($r['issues']))
+                                        <?php if(empty($r['issues'])): ?>
                                             <span class="badge rounded-pill badge-soft-success">✓ OK</span>
-                                        @else
+                                        <?php else: ?>
                                             <span class="badge rounded-pill badge-soft-danger">Already Registered</span>
                                             <div class="text-muted mt-1 text-truncate" style="font-size:.82rem;"
-                                                 title="{{ implode('; ', $r['issues']) }}">
-                                                {{ implode('; ', $r['issues']) }}
+                                                 title="<?php echo e(implode('; ', $r['issues'])); ?>">
+                                                <?php echo e(implode('; ', $r['issues'])); ?>
+
                                             </div>
-                                        @endif
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
 
                     </table>
@@ -230,23 +232,23 @@
                     Only valid rows can be confirmed.
                 </div>
 
-                @if($issuesCount > 0)
+                <?php if($issuesCount > 0): ?>
                     <button class="btn btn-brand btn-sm rounded-pill px-4" disabled title="Fix issues first">
                         Confirm Upload
                     </button>
-                @else
+                <?php else: ?>
                     <button type="button" class="btn btn-brand btn-sm rounded-pill px-4" id="openConfirmCard">
                         Confirm Upload
                     </button>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
 
     </div>
 </div>
 
-{{-- Confirm Overlay --}}
-@if($issuesCount === 0)
+
+<?php if($issuesCount === 0): ?>
 <div id="confirmOverlay" class="d-none position-fixed top-0 start-0 w-100 h-100 overlay" style="z-index:1055;">
     <div class="d-flex align-items-center justify-content-center h-100 p-3">
         <div class="card confirm-card" style="width: 560px; max-width: 100%;">
@@ -260,7 +262,7 @@
 
             <div class="card-body px-4" style="max-height: 50vh; overflow:auto;">
                 <div class="p-3 rounded-4 border" style="background: rgba(0,51,102,.04); border-color: rgba(0,51,102,.12) !important;">
-                    <div class="mb-2 small">This will register <b>{{ $totalCount }}</b> students.</div>
+                    <div class="mb-2 small">This will register <b><?php echo e($totalCount); ?></b> students.</div>
                     <div class="mb-2 small">Default password will be their <b>student_id</b>.</div>
                     <div class="text-muted small mb-0">Make sure the list is correct before confirming.</div>
                 </div>
@@ -275,8 +277,8 @@
                     Back
                 </button>
 
-                <form method="POST" action="{{ route('admin.users.bulk-upload.confirm') }}">
-                    @csrf
+                <form method="POST" action="<?php echo e(route('admin.users.bulk-upload.confirm')); ?>">
+                    <?php echo csrf_field(); ?>
                     <button type="submit" class="btn btn-brand btn-sm rounded-pill px-4">
                         Yes, Confirm
                     </button>
@@ -310,5 +312,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-@endif
-@endsection
+<?php endif; ?>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/super-admin/users-bulk-upload-preview.blade.php ENDPATH**/ ?>

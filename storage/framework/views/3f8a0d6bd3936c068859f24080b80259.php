@@ -94,44 +94,44 @@
 </div>
 
 <div class="header-wrap">
-    @if($isTes)
+    <?php if($isTes): ?>
         <table class="logo-row">
             <tr>
                 <td class="logo-left">
-                    <img src="{{ asset('images/unifast.png') }}" alt="UniFAST Logo">
+                    <img src="<?php echo e(asset('images/unifast.png')); ?>" alt="UniFAST Logo">
                 </td>
                 <td class="text-center">
                     <div class="main-title">GENERAL PAYROLL</div>
                     <div class="sub-title">TES FORM</div>
                     <div class="sub-title">TERTIARY EDUCATION SUBSIDY (TES) GRANTEES</div>
-                    <div class="sub-title">Academic Year {{ $academicYear }}</div>
+                    <div class="sub-title">Academic Year <?php echo e($academicYear); ?></div>
                 </td>
                 <td class="logo-right">
-                    <img src="{{ asset('images/CHED.png') }}" alt="CHED Logo">
+                    <img src="<?php echo e(asset('images/CHED.png')); ?>" alt="CHED Logo">
                 </td>
             </tr>
         </table>
-    @elseif($isTdp)
+    <?php elseif($isTdp): ?>
         <table class="logo-row">
             <tr>
                 <td class="logo-left">
-                    <img src="{{ asset('images/CHED.png') }}" alt="CHED Logo">
+                    <img src="<?php echo e(asset('images/CHED.png')); ?>" alt="CHED Logo">
                 </td>
                 <td class="text-center">
                     <div class="main-title">REPUBLIC OF THE PHILIPPINES</div>
                     <div class="sub-title">BOHOL ISLAND STATE UNIVERSITY - CANDIJAY CAMPUS</div>
                     <div class="sub-title">Cogtong, Candijay, Bohol</div>
-                    <div class="sub-title">Academic Year {{ $academicYear }}</div>
+                    <div class="sub-title">Academic Year <?php echo e($academicYear); ?></div>
                     <div class="payroll-title">TULONG DUNONG PROGRAM - TERTIARY EDUCATION SUBSIDY (TDP-TES) PAYROLL</div>
                 </td>
                 <td class="logo-right">
-                    <img src="{{ asset('images/unifast.png') }}" alt="UniFAST Logo">
+                    <img src="<?php echo e(asset('images/unifast.png')); ?>" alt="UniFAST Logo">
                 </td>
             </tr>
         </table>
-    @else
+    <?php else: ?>
         <div class="text-center fw-bold">PAYROLL FORM</div>
-    @endif
+    <?php endif; ?>
 </div>
 
 <table>
@@ -143,7 +143,7 @@
             <th colspan="3">Second Semester</th>
         </tr>
         <tr>
-            <th>{{ $isTes ? 'TES Award No.' : 'TDP Award No.' }}</th>
+            <th><?php echo e($isTes ? 'TES Award No.' : 'TDP Award No.'); ?></th>
             <th>Student ID No.</th>
             <th>Last Name</th>
             <th>First Name</th>
@@ -161,38 +161,42 @@
         </tr>
     </thead>
     <tbody>
-        @forelse($rows as $row)
+        <?php $__empty_1 = true; $__currentLoopData = $rows; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
             <tr>
-                <td class="text-center">{{ $row->seq_no }}</td>
-                <td>{{ $row->award_no }}</td>
-                <td>{{ $row->student_id }}</td>
-                <td>{{ $row->lastname }}</td>
-                <td>{{ $row->firstname }}</td>
-                <td>{{ $row->middlename }}</td>
-                <td>{{ $row->course }}</td>
-                <td class="text-center">{{ $row->year_level }}</td>
+                <td class="text-center"><?php echo e($row->seq_no); ?></td>
+                <td><?php echo e($row->award_no); ?></td>
+                <td><?php echo e($row->student_id); ?></td>
+                <td><?php echo e($row->lastname); ?></td>
+                <td><?php echo e($row->firstname); ?></td>
+                <td><?php echo e($row->middlename); ?></td>
+                <td><?php echo e($row->course); ?></td>
+                <td class="text-center"><?php echo e($row->year_level); ?></td>
 
                 <td class="text-right">
-                    {{ $row->first_amount !== null ? number_format((float)$row->first_amount, 2) : '' }}
+                    <?php echo e($row->first_amount !== null ? number_format((float)$row->first_amount, 2) : ''); ?>
+
                 </td>
                 <td class="text-center">
-                    {{ $row->first_date_received ? \Carbon\Carbon::parse($row->first_date_received)->format('m/d/y') : '' }}
+                    <?php echo e($row->first_date_received ? \Carbon\Carbon::parse($row->first_date_received)->format('m/d/y') : ''); ?>
+
                 </td>
                 <td></td>
 
                 <td class="text-right">
-                    {{ $row->second_amount !== null ? number_format((float)$row->second_amount, 2) : '' }}
+                    <?php echo e($row->second_amount !== null ? number_format((float)$row->second_amount, 2) : ''); ?>
+
                 </td>
                 <td class="text-center">
-                    {{ $row->second_date_received ? \Carbon\Carbon::parse($row->second_date_received)->format('m/d/y') : '' }}
+                    <?php echo e($row->second_date_received ? \Carbon\Carbon::parse($row->second_date_received)->format('m/d/y') : ''); ?>
+
                 </td>
                 <td></td>
             </tr>
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <tr>
                 <td colspan="14" class="text-center">No scholars found.</td>
             </tr>
-        @endforelse
+        <?php endif; ?>
     </tbody>
 </table>
 
@@ -217,4 +221,4 @@
 </table>
 
 </body>
-</html>
+</html><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/stipend-release-form-print.blade.php ENDPATH**/ ?>

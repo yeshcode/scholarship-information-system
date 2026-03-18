@@ -1,7 +1,7 @@
-@php $fullWidth = true; @endphp
-@extends('layouts.coordinator')
+<?php $fullWidth = true; ?>
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 <style>
     :root{ --bisu:#003366; --line:#e5e7eb; }
     .card-bisu{ border:1px solid var(--line); border-radius:14px; overflow:hidden; }
@@ -28,16 +28,19 @@
     <div>
         <h4 class="fw-bold mb-1">Payroll / Liquidation Preview</h4>
         <div class="text-muted small">
-            {{ $scholarship?->scholarship_name ?? 'N/A' }}
-            • Batch {{ $batch?->batch_number ?? 'N/A' }}
-            • Academic Year {{ $academicYear ?? 'N/A' }}
+            <?php echo e($scholarship?->scholarship_name ?? 'N/A'); ?>
+
+            • Batch <?php echo e($batch?->batch_number ?? 'N/A'); ?>
+
+            • Academic Year <?php echo e($academicYear ?? 'N/A'); ?>
+
         </div>
     </div>
 
     <div class="d-flex gap-2 flex-wrap">
-        <a href="{{ route('coordinator.manage-stipend-releases') }}" class="btn btn-outline-secondary btn-sm">Back</a>
-        <a href="{{ route('coordinator.stipend-releases.form.print', $release->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Print</a>
-        <a href="{{ route('coordinator.stipend-releases.form.excel', $release->id) }}" class="btn btn-primary btn-sm">Download Excel</a>
+        <a href="<?php echo e(route('coordinator.manage-stipend-releases')); ?>" class="btn btn-outline-secondary btn-sm">Back</a>
+        <a href="<?php echo e(route('coordinator.stipend-releases.form.print', $release->id)); ?>" target="_blank" class="btn btn-outline-primary btn-sm">Print</a>
+        <a href="<?php echo e(route('coordinator.stipend-releases.form.excel', $release->id)); ?>" class="btn btn-primary btn-sm">Download Excel</a>
     </div>
 </div>
 
@@ -56,7 +59,7 @@
                     <th colspan="3">Second Semester</th>
                 </tr>
                 <tr class="subhead">
-                    <th>{{ $isTes ? 'TES Award No.' : 'TDP Award No.' }}</th>
+                    <th><?php echo e($isTes ? 'TES Award No.' : 'TDP Award No.'); ?></th>
                     <th>Student ID No.</th>
                     <th>Last Name</th>
                     <th>First Name</th>
@@ -74,40 +77,45 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($rows as $row)
+                <?php $__empty_1 = true; $__currentLoopData = $rows; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <tr>
-                        <td class="text-center">{{ $row->seq_no }}</td>
-                        <td>{{ $row->award_no }}</td>
-                        <td>{{ $row->student_id }}</td>
-                        <td>{{ $row->lastname }}</td>
-                        <td>{{ $row->firstname }}</td>
-                        <td>{{ $row->middlename }}</td>
-                        <td>{{ $row->course }}</td>
-                        <td class="text-center">{{ $row->year_level }}</td>
+                        <td class="text-center"><?php echo e($row->seq_no); ?></td>
+                        <td><?php echo e($row->award_no); ?></td>
+                        <td><?php echo e($row->student_id); ?></td>
+                        <td><?php echo e($row->lastname); ?></td>
+                        <td><?php echo e($row->firstname); ?></td>
+                        <td><?php echo e($row->middlename); ?></td>
+                        <td><?php echo e($row->course); ?></td>
+                        <td class="text-center"><?php echo e($row->year_level); ?></td>
 
                         <td class="text-end">
-                            {{ $row->first_amount !== null ? number_format((float)$row->first_amount, 2) : '' }}
+                            <?php echo e($row->first_amount !== null ? number_format((float)$row->first_amount, 2) : ''); ?>
+
                         </td>
                         <td class="text-center">
-                            {{ $row->first_date_received ? \Carbon\Carbon::parse($row->first_date_received)->format('m/d/y') : '' }}
+                            <?php echo e($row->first_date_received ? \Carbon\Carbon::parse($row->first_date_received)->format('m/d/y') : ''); ?>
+
                         </td>
                         <td></td>
 
                         <td class="text-end">
-                            {{ $row->second_amount !== null ? number_format((float)$row->second_amount, 2) : '' }}
+                            <?php echo e($row->second_amount !== null ? number_format((float)$row->second_amount, 2) : ''); ?>
+
                         </td>
                         <td class="text-center">
-                            {{ $row->second_date_received ? \Carbon\Carbon::parse($row->second_date_received)->format('m/d/y') : '' }}
+                            <?php echo e($row->second_date_received ? \Carbon\Carbon::parse($row->second_date_received)->format('m/d/y') : ''); ?>
+
                         </td>
                         <td></td>
                     </tr>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="14" class="text-center text-muted py-4">No scholars found.</td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/stipend-release-form.blade.php ENDPATH**/ ?>

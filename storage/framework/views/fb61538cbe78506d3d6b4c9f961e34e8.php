@@ -82,14 +82,9 @@
           </select>
         </div>
 
-        <div class="col-12 col-md-6">
-          <label class="label">Received At</label>
-          <input type="datetime-local"
-                 name="received_at"
-                 class="form-control form-control-sm"
-                 value="<?php echo e($stipend->received_at ? \Carbon\Carbon::parse($stipend->received_at)->format('Y-m-d\TH:i') : ''); ?>">
+        
           
-        </div>
+        
 
       </div>
 

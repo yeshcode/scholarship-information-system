@@ -869,26 +869,31 @@ public function confirmDeleteScholarshipBatch($id)
 
     // ✅ Batches list (optional filter by active semester)
     $batchesQuery = ScholarshipBatch::with(['semester', 'scholarship'])
-        ->when($activeSemesterId, fn($x) => $x->where('semester_id', $activeSemesterId))
         ->when($scholarshipId, fn($x) => $x->where('scholarship_id', $scholarshipId))
-        ->whereHas('stipendReleases', function ($r) {
+        ->whereHas('stipendReleases', function ($r) use ($activeSemesterId) {
             $r->where('status', 'for_release');
+
+            if ($activeSemesterId) {
+                $r->where('semester_id', $activeSemesterId); // ✅ release semester
+            }
         })
         ->orderByDesc('batch_number');
+
 
     $batches = $batchesQuery->get();
 
     // ✅ Releases list
-    $releasesQuery = StipendsRelease::with(['scholarshipBatch.semester'])
+    $releasesQuery = StipendsRelease::with(['scholarshipBatch.semester', 'semester'])
         ->where('status', 'for_release')
         ->when($activeSemesterId, function ($x) use ($activeSemesterId) {
-            $x->whereHas('scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
+            $x->where('semester_id', $activeSemesterId); // ✅ correct
         })
         ->orderByDesc('id');
 
     if ($batchId) {
         $releasesQuery->where('batch_id', $batchId);
     }
+
 
     $releases = $releasesQuery->get();
 
@@ -906,61 +911,41 @@ public function confirmDeleteScholarshipBatch($id)
     // and let JS hide them when a batch is selected inside the modal.
 
     $modalScholarsQuery = Scholar::query()
-        ->with(['user', 'scholarship', 'scholarshipBatch'])
+    ->activeRoster()
+    ->with(['user', 'scholarship', 'scholarshipBatch'])
+    ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
 
-        // optional scope: only show scholars whose batch belongs to active semester
-        ->when($activeSemesterId, function ($x) use ($activeSemesterId) {
-            $x->whereHas('scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
-        })
+    // Do NOT force batch semester = active semester here
+    // Scholars should still appear and will be filtered by chosen batch/release in JS
 
-        ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+    ->select([
+        'scholars.*',
 
-        ->leftJoin('enrollments', function ($join) use ($activeSemesterId) {
-            $join->on('enrollments.user_id', '=', 'users.id')
-                ->where('enrollments.semester_id', '=', $activeSemesterId);
-        })
+        // default placeholders only; actual eligibility is determined later by stipendPickMeta()
+        DB::raw("'not_existing' as enrollment_status_db"),
+        DB::raw("0 as is_selectable_db"),
 
-        ->select([
-            'scholars.*',
+        DB::raw("CASE WHEN EXISTS (
+            SELECT 1
+            FROM stipends
+            JOIN stipend_releases ON stipend_releases.id = stipends.stipend_release_id
+            WHERE stipends.scholar_id = scholars.id
+              AND stipend_releases.batch_id = scholars.batch_id
+        ) THEN 1 ELSE 0 END as has_stipend_in_batch_db"),
 
-            // enrollment status
-            DB::raw("COALESCE(enrollments.status::text, 'not_existing') as enrollment_status_db"),
+        DB::raw("4 as sort_bucket")
+    ])
 
-            // selectable = enrolled or graduated
-            DB::raw("CASE WHEN enrollments.status::text IN ('enrolled','graduated') THEN 1 ELSE 0 END as is_selectable_db"),
+    ->when($q !== '', function ($x) use ($q) {
+        $x->where(function ($w) use ($q) {
+            $w->where('users.firstname', 'ILIKE', "%{$q}%")
+              ->orWhere('users.lastname', 'ILIKE', "%{$q}%")
+              ->orWhere('users.student_id', 'ILIKE', "%{$q}%");
+        });
+    })
 
-            // ✅ NEW: already has stipend scheduled in scholar's OWN batch?
-            // (any stipend row under any release schedule of that same batch)
-            DB::raw("CASE WHEN EXISTS (
-                SELECT 1
-                FROM stipends
-                JOIN stipend_releases ON stipend_releases.id = stipends.stipend_release_id
-                WHERE stipends.scholar_id = scholars.id
-                  AND stipend_releases.batch_id = scholars.batch_id
-            ) THEN 1 ELSE 0 END as has_stipend_in_batch_db"),
-
-            // sorting buckets: eligible first
-            DB::raw("CASE
-                WHEN enrollments.status::text IN ('enrolled','graduated') THEN 1
-                WHEN enrollments.status::text = 'dropped' THEN 2
-                WHEN enrollments.status IS NULL THEN 3
-                ELSE 4
-            END as sort_bucket")
-        ])
-
-        // page search q affects modal too
-        ->when($q !== '', function ($x) use ($q) {
-            $x->where(function ($w) use ($q) {
-                $w->where('users.firstname', 'ILIKE', "%{$q}%")
-                    ->orWhere('users.lastname', 'ILIKE', "%{$q}%")
-                    ->orWhere('users.student_id', 'ILIKE', "%{$q}%");
-            });
-        })
-
-        ->orderBy('sort_bucket')
-        ->orderByDesc('is_selectable_db')
-        ->orderBy('users.lastname')
-        ->orderBy('users.firstname');
+    ->orderBy('users.lastname')
+    ->orderBy('users.firstname');
 
     $eligibleScholars = $modalScholarsQuery
         ->limit(300)
@@ -998,7 +983,9 @@ public function confirmDeleteScholarshipBatch($id)
             'stipendRelease.scholarshipBatch.semester'
         ])
         ->when($activeSemesterId, function ($x) use ($activeSemesterId) {
-            $x->whereHas('stipendRelease.scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
+            $x->whereHas('stipendRelease', function ($r) use ($activeSemesterId) {
+                $r->where('semester_id', $activeSemesterId);
+            });
         })
         ->when($scholarshipId, fn($x) => $x->whereHas('scholar', fn($s) => $s->where('scholarship_id', $scholarshipId)))
         ->when($batchId, fn($x) => $x->whereHas('scholar', fn($s) => $s->where('batch_id', $batchId)))
@@ -1688,50 +1675,55 @@ public function confirmDeleteStipendRelease($id)
 }
 
 
-
-//stipend release forms
-public function releaseForm(StipendsRelease $release)
+private function buildPayrollFormData(StipendsRelease $release): array
 {
-    $release->load(['scholarshipBatch.scholarship', 'semester', 'forms.uploader']);
+    $release->load([
+        'scholarshipBatch.scholarship',
+        'semester',
+    ]);
 
-    // dynamic active columns
-    $columns = StipendReleaseFormColumn::query()
-        ->where('is_active', true)
-        ->orderBy('sort_order')
+    $batch = $release->scholarshipBatch;
+    $scholarship = $batch?->scholarship;
+    $scholarshipName = strtoupper(trim($scholarship?->scholarship_name ?? ''));
+    $academicYear = $release->semester?->academic_year;
+
+    // Get all semesters of the same academic year
+    $aySemesters = Semester::query()
+        ->where('academic_year', $academicYear)
+        ->orderBy('start_date')
         ->get();
 
-    // Scholars under this release batch
+    $firstSemester = $aySemesters->get(0);
+    $secondSemester = $aySemesters->get(1);
+
+    // Releases for same batch + same AY semesters
+    $firstRelease = $firstSemester
+        ? StipendsRelease::query()
+            ->where('batch_id', $release->batch_id)
+            ->where('semester_id', $firstSemester->id)
+            ->first()
+        : null;
+
+    $secondRelease = $secondSemester
+        ? StipendsRelease::query()
+            ->where('batch_id', $release->batch_id)
+            ->where('semester_id', $secondSemester->id)
+            ->first()
+        : null;
+
+    // Scholars in this batch
     $scholars = Scholar::query()
-    ->with([
-        'user.college',
-        'user.course',
-        'user.yearLevel', // fallback only
-        'enrollments' => function ($q) use ($release) {
-            $q->where('semester_id', $release->semester_id)
-              ->with('yearLevel'); // ✅ use semester-based year level
-        }
-    ])
-    ->where('batch_id', $release->batch_id)
-    ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
-    ->select('scholars.*')
-    ->orderBy('users.lastname')
-    ->orderBy('users.firstname')
-    ->get();
-
-    return view('coordinator.stipend-release-form', compact('release','columns','scholars'));
-}
-
-public function releaseFormPrint(StipendsRelease $release)
-{
-    $release->load(['scholarshipBatch.scholarship', 'semester']);
-
-    $columns = StipendReleaseFormColumn::query()
-        ->where('is_active', true)
-        ->orderBy('sort_order')
-        ->get();
-
-    $scholars = Scholar::query()
-        ->with(['user.college','user.course','user.yearLevel'])
+        ->with([
+            'user.college',
+            'user.course',
+            'user.yearLevel',
+            'enrollments' => function ($q) use ($academicYear) {
+                $q->whereHas('semester', function ($s) use ($academicYear) {
+                    $s->where('academic_year', $academicYear);
+                })->with(['semester', 'yearLevel']);
+            },
+            'stipends.stipendRelease',
+        ])
         ->where('batch_id', $release->batch_id)
         ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
         ->select('scholars.*')
@@ -1739,7 +1731,90 @@ public function releaseFormPrint(StipendsRelease $release)
         ->orderBy('users.firstname')
         ->get();
 
-    return view('coordinator.stipend-release-form-print', compact('release','columns','scholars'));
+    $rows = $scholars->values()->map(function ($s, $index) use ($firstSemester, $secondSemester, $firstRelease, $secondRelease) {
+        $u = $s->user;
+
+        // enrollment for first sem
+        $firstEnrollment = $s->enrollments
+            ->first(fn($e) => (int) $e->semester_id === (int) ($firstSemester?->id));
+
+        // enrollment for second sem
+        $secondEnrollment = $s->enrollments
+            ->first(fn($e) => (int) $e->semester_id === (int) ($secondSemester?->id));
+
+             
+
+        // year level: prefer second sem if available, else first sem, else fallback user
+        $yearLevel =
+            $secondEnrollment?->yearLevel?->year_level_name
+            ?? $firstEnrollment?->yearLevel?->year_level_name
+            ?? $u?->yearLevel?->year_level_name
+            ?? $u?->year_level
+            ?? '';
+
+        // stipend rows
+        $firstStipend = $s->stipends
+            ->first(fn($st) => (int) $st->stipend_release_id === (int) ($firstRelease?->id));
+
+        $secondStipend = $s->stipends
+            ->first(fn($st) => (int) $st->stipend_release_id === (int) ($secondRelease?->id));
+
+
+            
+        return (object) [
+            'seq_no' => $index + 1,
+            'award_no' => '', // blank for manual editing
+            'student_id' => $u?->student_id ?? '',
+            'lastname' => $u?->lastname ?? '',
+            'firstname' => $u?->firstname ?? '',
+            'middlename' => $u?->middlename ?? '',
+            'course' => $u?->course?->course_name ?? '',
+            'year_level' => $yearLevel,
+
+            'first_amount' => $firstStipend?->amount_received,
+            'first_date_received' => $firstStipend?->received_at,
+            'first_signature' => '',
+
+            'second_amount' => $secondStipend?->amount_received,
+            'second_date_received' => $secondStipend?->received_at,
+            'second_signature' => '',
+        ];
+    });
+
+    $isTes = str_contains($scholarshipName, 'TES');
+    $isTdp = str_contains($scholarshipName, 'TDP');
+
+    return [
+        'release' => $release,
+        'batch' => $batch,
+        'scholarship' => $scholarship,
+        'scholarshipName' => $scholarshipName,
+        'academicYear' => $academicYear,
+        'firstSemester' => $firstSemester,
+        'secondSemester' => $secondSemester,
+        'firstRelease' => $firstRelease,
+        'secondRelease' => $secondRelease,
+        'rows' => $rows,
+        'isTes' => $isTes,
+        'isTdp' => $isTdp,
+    ];
+}
+
+
+
+//stipend release forms
+public function releaseForm(StipendsRelease $release)
+{
+    $data = $this->buildPayrollFormData($release);
+
+    return view('coordinator.stipend-release-form', $data);
+}
+
+public function releaseFormPrint(StipendsRelease $release)
+{
+    $data = $this->buildPayrollFormData($release);
+
+    return view('coordinator.stipend-release-form-print', $data);
 }
 
 public function releaseFormExcel(StipendsRelease $release)
@@ -1786,165 +1861,225 @@ public function downloadReleaseFormFile(StipendReleaseForm $form)
 }
 
     // Manage Announcements
-       public function manageAnnouncements(Request $request)
-{
-    $tab = $request->get('tab', 'posted'); // posted | scheduled
+    public function manageAnnouncements(Request $request)
+    {
+        $announcements = Announcement::with(['creator', 'scholarship'])
+            ->withCount('views')
+            ->orderByDesc('posted_at')
+            ->orderByDesc('id')
+            ->paginate(10)
+            ->withQueryString();
 
-    $base = Announcement::with('creator')
-        ->withCount('views')
-        ->orderByDesc('posted_at')
-        ->orderByDesc('id');
+        $scholarships = Scholarship::query()
+            ->orderBy('scholarship_name')
+            ->get(['id', 'scholarship_name']);
 
-    // ✅ POSTED = posted_at is now or past
-    $postedAnnouncements = (clone $base)
-        ->whereNotNull('posted_at')
-        ->where('posted_at', '<=', now())
-        ->paginate(10, ['*'], 'posted_page')
-        ->withQueryString();
-
-    // ✅ SCHEDULED = posted_at is future
-    $scheduledAnnouncements = (clone $base)
-        ->whereNotNull('posted_at')
-        ->where('posted_at', '>', now())
-        ->paginate(10, ['*'], 'scheduled_page')
-        ->withQueryString();
-
-    return view('coordinator.manage-announcements', compact(
-        'tab',
-        'postedAnnouncements',
-        'scheduledAnnouncements'
-    ));
-}
+        return view('coordinator.manage-announcements', compact(
+            'announcements',
+            'scholarships'
+        ));
+    }
 
 
-
-
- 
      // Store announcement and send notifications (UPDATED: Add audience, scholar selection, emails, and notifications)
 public function storeAnnouncement(Request $request)
 {
     $request->validate([
         'title'               => 'required|string|max:255',
         'description'         => 'required|string',
-        'audience'            => 'required|in:all_students,all_scholars,specific_students,specific_scholars',
-        'posted_at'           => 'required|date',
+        'target_group'        => 'required|in:students,scholarship',
+        'scholarship_id'      => 'nullable|exists:scholarships,id',
         'selected_users'      => 'nullable|array',
         'selected_users.*'    => 'integer|exists:users,id',
         'selected_scholars'   => 'nullable|array',
         'selected_scholars.*' => 'integer|exists:scholars,id',
+        'image'               => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
     ]);
 
-    // If specific audience, require at least 1 recipient
-    if (in_array($request->audience, ['specific_students', 'specific_scholars'])) {
-        $count = $request->audience === 'specific_students'
-            ? count($request->selected_users ?? [])
-            : count($request->selected_scholars ?? []);
+    // Scholars flow requires scholarship selection
+    if ($request->target_group === 'scholarship' && !$request->scholarship_id) {
+        return back()->withInput()->with('error', 'Please select a scholarship first.');
+    }
 
-        if ($count < 1) {
-            return back()->withInput()->with('error', 'Please select at least 1 recipient.');
+    DB::beginTransaction();
+
+    try {
+        $imagePath = null;
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('announcements', 'public');
         }
-    }
 
-    $postedAt = \Carbon\Carbon::parse($request->posted_at);
+        $recipientUserIds = [];
+        $audience = 'all_students';
+        $scholarshipId = null;
 
-    $announcement = Announcement::create([
-        'created_by'  => Auth::id(),
-        'title'       => $request->title,
-        'description' => $request->description,
-        'audience'    => $request->audience,
-        'posted_at'   => $postedAt,     // scheduled/posted time
-        'notified_at' => null,          // not yet sent
-    ]);
+        // =========================
+        // STUDENTS FLOW
+        // =========================
+        if ($request->target_group === 'students') {
+            $selectedUsers = collect($request->selected_users ?? [])->map(fn($id) => (int) $id)->unique()->values();
 
-    if ($request->audience === 'specific_students') {
-         $announcement->recipients()->sync($request->selected_users ?? []);
-    }
+            if ($selectedUsers->isNotEmpty()) {
+                $audience = 'specific_students';
+                $recipientUserIds = User::query()
+                    ->whereHas('userType', fn($q) => $q->where('name', 'Student'))
+                    ->whereIn('id', $selectedUsers)
+                    ->pluck('id')
+                    ->toArray();
+            } else {
+                $audience = 'all_students';
+                $recipientUserIds = User::query()
+                    ->whereHas('userType', fn($q) => $q->where('name', 'Student'))
+                    ->pluck('id')
+                    ->toArray();
+            }
+        }
 
-    if ($request->audience === 'specific_scholars') {
-        $userIds = \App\Models\Scholar::whereIn('id', $request->selected_scholars ?? [])
-            ->pluck('student_id')
+        // =========================
+        // SCHOLARS FLOW
+        // =========================
+        if ($request->target_group === 'scholarship') {
+            $scholarshipId = (int) $request->scholarship_id;
+            $selectedScholars = collect($request->selected_scholars ?? [])->map(fn($id) => (int) $id)->unique()->values();
+
+            if ($selectedScholars->isNotEmpty()) {
+                $audience = 'specific_scholars';
+
+                $recipientUserIds = Scholar::query()
+                    ->where('scholarship_id', $scholarshipId)
+                    ->whereIn('id', $selectedScholars)
+                    ->pluck('student_id')
+                    ->toArray();
+            } else {
+                $audience = 'scholarship_scholars';
+
+                $recipientUserIds = Scholar::query()
+                    ->where('scholarship_id', $scholarshipId)
+                    ->pluck('student_id')
+                    ->toArray();
+            }
+        }
+
+        $recipientUserIds = collect($recipientUserIds)
+            ->filter()
+            ->unique()
+            ->values()
             ->toArray();
 
-        $announcement->recipients()->sync($userIds);
-    }
+        if (count($recipientUserIds) < 1) {
+            return back()->withInput()->with('error', 'No recipients found for this announcement.');
+        }
 
+        $announcement = Announcement::create([
+            'created_by'    => Auth::id(),
+            'title'         => $request->title,
+            'description'   => $request->description,
+            'image_path'    => $imagePath,
+            'posted_at'     => now(),
+            'audience'      => $audience,
+            'scholarship_id'=> $scholarshipId,
+        ]);
 
-    // ✅ If posted time is NOW or past → send now
-    if ($postedAt->lte(now())) {
-        // Use dispatchSync for testing, switch to dispatch later if you want
-        SendAnnouncementNotifications::dispatchSync(
-            $announcement->id,
-            Auth::id(),
-            $request->audience,
-            $request->selected_users ?? [],
-            $request->selected_scholars ?? []
-        );
+        $announcement->recipients()->sync($recipientUserIds);
 
-        $announcement->update(['notified_at' => now()]);
+        foreach ($recipientUserIds as $userId) {
+            Notification::create([
+                'recipient_user_id' => $userId,
+                'created_by'        => Auth::id(),
+                'type'              => 'announcement',
+                'title'             => $announcement->title,
+                'message'           => $announcement->description,
+                'related_type'      => 'announcement',
+                'related_id'        => $announcement->id,
+                'link'              => route('student.announcements.show', $announcement->id),
+                'is_read'           => false,
+                'sent_at'           => now(),
+            ]);
+        }
+
+        DB::commit();
 
         return redirect()->route('coordinator.manage-announcements')
-            ->with('success', 'Announcement posted and notifications sent.');
-    }
+            ->with('success', 'Announcement posted successfully.');
+    } catch (\Throwable $e) {
+        DB::rollBack();
 
-    // ✅ If future → scheduled only
-    return redirect()->route('coordinator.manage-announcements')
-        ->with('success', 'Announcement scheduled successfully.');
+        return back()->withInput()->with('error', 'Failed to post announcement. ' . $e->getMessage());
+    }
 }
 
 
+public function scholarsByScholarshipForAnnouncement(Request $request)
+{
+    $request->validate([
+        'scholarship_id' => 'required|exists:scholarships,id',
+        'q' => 'nullable|string',
+    ]);
+
+    $q = trim((string) $request->get('q', ''));
+    $scholarshipId = (int) $request->scholarship_id;
+
+    $scholars = Scholar::query()
+        ->with('user:id,firstname,lastname,student_id,bisu_email')
+        ->where('scholarship_id', $scholarshipId)
+        ->when($q !== '', function ($query) use ($q) {
+            $query->whereHas('user', function ($u) use ($q) {
+                $u->where('firstname', 'ILIKE', "%{$q}%")
+                  ->orWhere('lastname', 'ILIKE', "%{$q}%")
+                  ->orWhere('student_id', 'ILIKE', "%{$q}%")
+                  ->orWhere('bisu_email', 'ILIKE', "%{$q}%");
+            });
+        })
+        ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+        ->select('scholars.*')
+        ->orderBy('users.lastname')
+        ->orderBy('users.firstname')
+        ->limit(5)
+        ->get();
+
+    return response()->json(
+        $scholars->map(function ($s) {
+            return [
+                'id'         => $s->id,
+                'user_id'    => $s->user?->id,
+                'firstname'  => $s->user?->firstname,
+                'lastname'   => $s->user?->lastname,
+                'student_id' => $s->user?->student_id,
+                'bisu_email' => $s->user?->bisu_email,
+            ];
+        })
+    );
+}
 
 
 public function searchAnnouncementRecipients(Request $request)
 {
-    $type = $request->get('type'); // students | scholars
-    $q = trim((string)$request->get('q',''));
+    $type = $request->get('type'); // students
+    $q = trim((string) $request->get('q', ''));
 
     if ($type === 'students') {
-        $users = User::whereHas('userType', fn($x) => $x->where('name','Student'))
-            ->when($q !== '', function($x) use ($q){
-                $x->where(function($w) use ($q){
-                    $w->where('firstname','ILIKE',"%{$q}%")
-                      ->orWhere('lastname','ILIKE',"%{$q}%")
-                      ->orWhere('student_id','ILIKE',"%{$q}%")
-                      ->orWhere('bisu_email','ILIKE',"%{$q}%");
+        $users = User::query()
+            ->whereHas('userType', fn($x) => $x->where('name', 'Student'))
+            ->when($q !== '', function ($x) use ($q) {
+                $x->where(function ($w) use ($q) {
+                    $w->where('firstname', 'ILIKE', "%{$q}%")
+                      ->orWhere('lastname', 'ILIKE', "%{$q}%")
+                      ->orWhere('student_id', 'ILIKE', "%{$q}%")
+                      ->orWhere('bisu_email', 'ILIKE', "%{$q}%");
                 });
             })
-            ->orderBy('lastname')->orderBy('firstname')
-            ->limit(25)
-            ->get(['id','firstname','lastname','student_id','bisu_email']);
+            ->orderBy('lastname')
+            ->orderBy('firstname')
+            ->limit(5)
+            ->get(['id', 'firstname', 'lastname', 'student_id', 'bisu_email']);
 
         return response()->json($users);
     }
 
-    if ($type === 'scholars') {
-        $scholars = Scholar::with('user:id,firstname,lastname,student_id,bisu_email')
-            ->when($q !== '', function($x) use ($q){
-                $x->whereHas('user', function($u) use ($q){
-                    $u->where('firstname','ILIKE',"%{$q}%")
-                      ->orWhere('lastname','ILIKE',"%{$q}%")
-                      ->orWhere('student_id','ILIKE',"%{$q}%")
-                      ->orWhere('bisu_email','ILIKE',"%{$q}%");
-                });
-            })
-            ->orderByDesc('id')
-            ->limit(25)
-            ->get(['id','student_id']);
-
-        // return flattened info
-        return response()->json($scholars->map(function($s){
-            return [
-                'id' => $s->id,
-                'user_id' => $s->user?->id,
-                'firstname' => $s->user?->firstname,
-                'lastname' => $s->user?->lastname,
-                'student_id' => $s->user?->student_id,
-                'bisu_email' => $s->user?->bisu_email,
-            ];
-        }));
-    }
-
     return response()->json([]);
 }
+
 
 public function destroyAnnouncement(Announcement $announcement)
 {

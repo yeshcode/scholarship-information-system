@@ -256,6 +256,20 @@
                                     {{ $announcement->title ?? 'Announcement' }}
                                 </div>
 
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    @if($announcement->scholarship)
+                                        <span class="badge rounded-pill text-bg-light border">
+                                            {{ $announcement->scholarship->scholarship_name }}
+                                        </span>
+                                    @endif
+
+                                    @if(in_array($announcement->audience, ['specific_students', 'specific_scholars']))
+                                        <span class="badge rounded-pill text-bg-light border">
+                                            Personal
+                                        </span>
+                                    @endif
+                                </div>
+
                                 {{-- Description with See more --}}
                                 <div class="a-desc">
                                     @if($isLong)
@@ -272,6 +286,14 @@
                                         {{ $desc }}
                                     @endif
                                 </div>
+
+                                @if(!empty($announcement->image_path))
+                                    <div class="mt-3">
+                                        <img src="{{ asset('storage/' . $announcement->image_path) }}"
+                                            alt="Announcement image"
+                                            class="img-fluid rounded-4 border">
+                                    </div>
+                                @endif
 
                                 <div class="actions">
                                     {{-- Open (marks as viewed because announcementShow() writes AnnouncementView) --}}
