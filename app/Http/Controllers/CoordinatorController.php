@@ -869,26 +869,31 @@ public function confirmDeleteScholarshipBatch($id)
 
     // ✅ Batches list (optional filter by active semester)
     $batchesQuery = ScholarshipBatch::with(['semester', 'scholarship'])
-        ->when($activeSemesterId, fn($x) => $x->where('semester_id', $activeSemesterId))
         ->when($scholarshipId, fn($x) => $x->where('scholarship_id', $scholarshipId))
-        ->whereHas('stipendReleases', function ($r) {
+        ->whereHas('stipendReleases', function ($r) use ($activeSemesterId) {
             $r->where('status', 'for_release');
+
+            if ($activeSemesterId) {
+                $r->where('semester_id', $activeSemesterId); // ✅ release semester
+            }
         })
         ->orderByDesc('batch_number');
+
 
     $batches = $batchesQuery->get();
 
     // ✅ Releases list
-    $releasesQuery = StipendsRelease::with(['scholarshipBatch.semester'])
+    $releasesQuery = StipendsRelease::with(['scholarshipBatch.semester', 'semester'])
         ->where('status', 'for_release')
         ->when($activeSemesterId, function ($x) use ($activeSemesterId) {
-            $x->whereHas('scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
+            $x->where('semester_id', $activeSemesterId); // ✅ correct
         })
         ->orderByDesc('id');
 
     if ($batchId) {
         $releasesQuery->where('batch_id', $batchId);
     }
+
 
     $releases = $releasesQuery->get();
 
@@ -906,61 +911,41 @@ public function confirmDeleteScholarshipBatch($id)
     // and let JS hide them when a batch is selected inside the modal.
 
     $modalScholarsQuery = Scholar::query()
-        ->with(['user', 'scholarship', 'scholarshipBatch'])
+    ->activeRoster()
+    ->with(['user', 'scholarship', 'scholarshipBatch'])
+    ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
 
-        // optional scope: only show scholars whose batch belongs to active semester
-        ->when($activeSemesterId, function ($x) use ($activeSemesterId) {
-            $x->whereHas('scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
-        })
+    // Do NOT force batch semester = active semester here
+    // Scholars should still appear and will be filtered by chosen batch/release in JS
 
-        ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+    ->select([
+        'scholars.*',
 
-        ->leftJoin('enrollments', function ($join) use ($activeSemesterId) {
-            $join->on('enrollments.user_id', '=', 'users.id')
-                ->where('enrollments.semester_id', '=', $activeSemesterId);
-        })
+        // default placeholders only; actual eligibility is determined later by stipendPickMeta()
+        DB::raw("'not_existing' as enrollment_status_db"),
+        DB::raw("0 as is_selectable_db"),
 
-        ->select([
-            'scholars.*',
+        DB::raw("CASE WHEN EXISTS (
+            SELECT 1
+            FROM stipends
+            JOIN stipend_releases ON stipend_releases.id = stipends.stipend_release_id
+            WHERE stipends.scholar_id = scholars.id
+              AND stipend_releases.batch_id = scholars.batch_id
+        ) THEN 1 ELSE 0 END as has_stipend_in_batch_db"),
 
-            // enrollment status
-            DB::raw("COALESCE(enrollments.status::text, 'not_existing') as enrollment_status_db"),
+        DB::raw("4 as sort_bucket")
+    ])
 
-            // selectable = enrolled or graduated
-            DB::raw("CASE WHEN enrollments.status::text IN ('enrolled','graduated') THEN 1 ELSE 0 END as is_selectable_db"),
+    ->when($q !== '', function ($x) use ($q) {
+        $x->where(function ($w) use ($q) {
+            $w->where('users.firstname', 'ILIKE', "%{$q}%")
+              ->orWhere('users.lastname', 'ILIKE', "%{$q}%")
+              ->orWhere('users.student_id', 'ILIKE', "%{$q}%");
+        });
+    })
 
-            // ✅ NEW: already has stipend scheduled in scholar's OWN batch?
-            // (any stipend row under any release schedule of that same batch)
-            DB::raw("CASE WHEN EXISTS (
-                SELECT 1
-                FROM stipends
-                JOIN stipend_releases ON stipend_releases.id = stipends.stipend_release_id
-                WHERE stipends.scholar_id = scholars.id
-                  AND stipend_releases.batch_id = scholars.batch_id
-            ) THEN 1 ELSE 0 END as has_stipend_in_batch_db"),
-
-            // sorting buckets: eligible first
-            DB::raw("CASE
-                WHEN enrollments.status::text IN ('enrolled','graduated') THEN 1
-                WHEN enrollments.status::text = 'dropped' THEN 2
-                WHEN enrollments.status IS NULL THEN 3
-                ELSE 4
-            END as sort_bucket")
-        ])
-
-        // page search q affects modal too
-        ->when($q !== '', function ($x) use ($q) {
-            $x->where(function ($w) use ($q) {
-                $w->where('users.firstname', 'ILIKE', "%{$q}%")
-                    ->orWhere('users.lastname', 'ILIKE', "%{$q}%")
-                    ->orWhere('users.student_id', 'ILIKE', "%{$q}%");
-            });
-        })
-
-        ->orderBy('sort_bucket')
-        ->orderByDesc('is_selectable_db')
-        ->orderBy('users.lastname')
-        ->orderBy('users.firstname');
+    ->orderBy('users.lastname')
+    ->orderBy('users.firstname');
 
     $eligibleScholars = $modalScholarsQuery
         ->limit(300)
@@ -998,7 +983,9 @@ public function confirmDeleteScholarshipBatch($id)
             'stipendRelease.scholarshipBatch.semester'
         ])
         ->when($activeSemesterId, function ($x) use ($activeSemesterId) {
-            $x->whereHas('stipendRelease.scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
+            $x->whereHas('stipendRelease', function ($r) use ($activeSemesterId) {
+                $r->where('semester_id', $activeSemesterId);
+            });
         })
         ->when($scholarshipId, fn($x) => $x->whereHas('scholar', fn($s) => $s->where('scholarship_id', $scholarshipId)))
         ->when($batchId, fn($x) => $x->whereHas('scholar', fn($s) => $s->where('batch_id', $batchId)))

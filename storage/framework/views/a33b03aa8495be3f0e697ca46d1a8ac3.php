@@ -299,7 +299,7 @@
                                 Release
                             </button>
 
-                            <a href="<?php echo e(route('coordinator.stipends.edit', $stipend->id)); ?>" class="text-primary me-2">Edit</a>
+                            
                             <button
                                   type="button"
                                   class="btn btn-bisu p-1 text-danger openDeleteModal"

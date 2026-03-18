@@ -292,7 +292,7 @@
                                 Release
                             </button>
 
-                            <a href="{{ route('coordinator.stipends.edit', $stipend->id) }}" class="text-primary me-2">Edit</a>
+                            {{-- <a href="{{ route('coordinator.stipends.edit', $stipend->id) }}" class="text-primary me-2">Edit</a> --}}
                             <button
                                   type="button"
                                   class="btn btn-bisu p-1 text-danger openDeleteModal"
