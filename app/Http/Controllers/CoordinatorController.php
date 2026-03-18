@@ -1688,50 +1688,55 @@ public function confirmDeleteStipendRelease($id)
 }
 
 
-
-//stipend release forms
-public function releaseForm(StipendsRelease $release)
+private function buildPayrollFormData(StipendsRelease $release): array
 {
-    $release->load(['scholarshipBatch.scholarship', 'semester', 'forms.uploader']);
+    $release->load([
+        'scholarshipBatch.scholarship',
+        'semester',
+    ]);
 
-    // dynamic active columns
-    $columns = StipendReleaseFormColumn::query()
-        ->where('is_active', true)
-        ->orderBy('sort_order')
+    $batch = $release->scholarshipBatch;
+    $scholarship = $batch?->scholarship;
+    $scholarshipName = strtoupper(trim($scholarship?->scholarship_name ?? ''));
+    $academicYear = $release->semester?->academic_year;
+
+    // Get all semesters of the same academic year
+    $aySemesters = Semester::query()
+        ->where('academic_year', $academicYear)
+        ->orderBy('start_date')
         ->get();
 
-    // Scholars under this release batch
+    $firstSemester = $aySemesters->get(0);
+    $secondSemester = $aySemesters->get(1);
+
+    // Releases for same batch + same AY semesters
+    $firstRelease = $firstSemester
+        ? StipendsRelease::query()
+            ->where('batch_id', $release->batch_id)
+            ->where('semester_id', $firstSemester->id)
+            ->first()
+        : null;
+
+    $secondRelease = $secondSemester
+        ? StipendsRelease::query()
+            ->where('batch_id', $release->batch_id)
+            ->where('semester_id', $secondSemester->id)
+            ->first()
+        : null;
+
+    // Scholars in this batch
     $scholars = Scholar::query()
-    ->with([
-        'user.college',
-        'user.course',
-        'user.yearLevel', // fallback only
-        'enrollments' => function ($q) use ($release) {
-            $q->where('semester_id', $release->semester_id)
-              ->with('yearLevel'); // ✅ use semester-based year level
-        }
-    ])
-    ->where('batch_id', $release->batch_id)
-    ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
-    ->select('scholars.*')
-    ->orderBy('users.lastname')
-    ->orderBy('users.firstname')
-    ->get();
-
-    return view('coordinator.stipend-release-form', compact('release','columns','scholars'));
-}
-
-public function releaseFormPrint(StipendsRelease $release)
-{
-    $release->load(['scholarshipBatch.scholarship', 'semester']);
-
-    $columns = StipendReleaseFormColumn::query()
-        ->where('is_active', true)
-        ->orderBy('sort_order')
-        ->get();
-
-    $scholars = Scholar::query()
-        ->with(['user.college','user.course','user.yearLevel'])
+        ->with([
+            'user.college',
+            'user.course',
+            'user.yearLevel',
+            'enrollments' => function ($q) use ($academicYear) {
+                $q->whereHas('semester', function ($s) use ($academicYear) {
+                    $s->where('academic_year', $academicYear);
+                })->with(['semester', 'yearLevel']);
+            },
+            'stipends.stipendRelease',
+        ])
         ->where('batch_id', $release->batch_id)
         ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
         ->select('scholars.*')
@@ -1739,7 +1744,90 @@ public function releaseFormPrint(StipendsRelease $release)
         ->orderBy('users.firstname')
         ->get();
 
-    return view('coordinator.stipend-release-form-print', compact('release','columns','scholars'));
+    $rows = $scholars->values()->map(function ($s, $index) use ($firstSemester, $secondSemester, $firstRelease, $secondRelease) {
+        $u = $s->user;
+
+        // enrollment for first sem
+        $firstEnrollment = $s->enrollments
+            ->first(fn($e) => (int) $e->semester_id === (int) ($firstSemester?->id));
+
+        // enrollment for second sem
+        $secondEnrollment = $s->enrollments
+            ->first(fn($e) => (int) $e->semester_id === (int) ($secondSemester?->id));
+
+             
+
+        // year level: prefer second sem if available, else first sem, else fallback user
+        $yearLevel =
+            $secondEnrollment?->yearLevel?->year_level_name
+            ?? $firstEnrollment?->yearLevel?->year_level_name
+            ?? $u?->yearLevel?->year_level_name
+            ?? $u?->year_level
+            ?? '';
+
+        // stipend rows
+        $firstStipend = $s->stipends
+            ->first(fn($st) => (int) $st->stipend_release_id === (int) ($firstRelease?->id));
+
+        $secondStipend = $s->stipends
+            ->first(fn($st) => (int) $st->stipend_release_id === (int) ($secondRelease?->id));
+
+
+            
+        return (object) [
+            'seq_no' => $index + 1,
+            'award_no' => '', // blank for manual editing
+            'student_id' => $u?->student_id ?? '',
+            'lastname' => $u?->lastname ?? '',
+            'firstname' => $u?->firstname ?? '',
+            'middlename' => $u?->middlename ?? '',
+            'course' => $u?->course?->course_name ?? '',
+            'year_level' => $yearLevel,
+
+            'first_amount' => $firstStipend?->amount_received,
+            'first_date_received' => $firstStipend?->received_at,
+            'first_signature' => '',
+
+            'second_amount' => $secondStipend?->amount_received,
+            'second_date_received' => $secondStipend?->received_at,
+            'second_signature' => '',
+        ];
+    });
+
+    $isTes = str_contains($scholarshipName, 'TES');
+    $isTdp = str_contains($scholarshipName, 'TDP');
+
+    return [
+        'release' => $release,
+        'batch' => $batch,
+        'scholarship' => $scholarship,
+        'scholarshipName' => $scholarshipName,
+        'academicYear' => $academicYear,
+        'firstSemester' => $firstSemester,
+        'secondSemester' => $secondSemester,
+        'firstRelease' => $firstRelease,
+        'secondRelease' => $secondRelease,
+        'rows' => $rows,
+        'isTes' => $isTes,
+        'isTdp' => $isTdp,
+    ];
+}
+
+
+
+//stipend release forms
+public function releaseForm(StipendsRelease $release)
+{
+    $data = $this->buildPayrollFormData($release);
+
+    return view('coordinator.stipend-release-form', $data);
+}
+
+public function releaseFormPrint(StipendsRelease $release)
+{
+    $data = $this->buildPayrollFormData($release);
+
+    return view('coordinator.stipend-release-form-print', $data);
 }
 
 public function releaseFormExcel(StipendsRelease $release)

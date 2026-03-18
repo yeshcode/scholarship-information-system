@@ -96,7 +96,7 @@
             Add Scholar
         </a>
         <a href="{{ route('coordinator.scholars.upload') }}" class="btn btn-bisu btn-sm">
-            Upload File Scholars
+            Upload Scholar Info
         </a>
 
     </div>
