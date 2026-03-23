@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
+use App\Models\AnnouncementComment;
 
 
 
@@ -2007,6 +2008,64 @@ public function storeAnnouncement(Request $request)
 
         return back()->withInput()->with('error', 'Failed to post announcement. ' . $e->getMessage());
     }
+}
+
+public function showAnnouncement(Announcement $announcement)
+{
+    $announcement->load([
+        'creator',
+        'scholarship',
+        'comments.user',
+        'comments.replies.user',
+    ]);
+
+    return view('coordinator.announcement-show', compact('announcement'));
+}
+
+public function storeAnnouncementReply(Request $request, Announcement $announcement, AnnouncementComment $comment)
+{
+    $request->validate([
+        'comment' => 'required|string|max:2000',
+    ]);
+
+    // Make sure the selected comment really belongs to this announcement
+    if ((int) $comment->announcement_id !== (int) $announcement->id) {
+        abort(404);
+    }
+
+    // Prevent replying to a reply
+    if (!is_null($comment->parent_id)) {
+        return back()->with('error', 'You can only reply to a main student comment.');
+    }
+
+    DB::transaction(function () use ($request, $announcement, $comment) {
+        $reply = AnnouncementComment::create([
+            'announcement_id' => $announcement->id,
+            'user_id' => Auth::id(),
+            'parent_id' => $comment->id,
+            'comment' => $request->comment,
+        ]);
+
+        // Notify the original student commenter
+        if ((int) $comment->user_id !== (int) Auth::id()) {
+            Notification::create([
+                'recipient_user_id' => $comment->user_id,
+                'created_by'        => Auth::id(),
+                'type'              => 'announcement',
+                'title'             => 'Reply to your announcement comment',
+                'message'           => 'The coordinator replied to your comment on: ' . $announcement->title,
+                'related_type'      => 'announcement',
+                'related_id'        => $announcement->id,
+                'link'              => route('student.announcements.show', $announcement->id),
+                'is_read'           => false,
+                'sent_at'           => now(),
+            ]);
+        }
+    });
+
+    return redirect()
+        ->route('coordinator.announcements.show', $announcement->id)
+        ->with('success', 'Reply posted successfully.');
 }
 
 

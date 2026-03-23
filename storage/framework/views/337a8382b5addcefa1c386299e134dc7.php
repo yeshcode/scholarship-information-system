@@ -138,6 +138,84 @@
     }
     .user-btn:hover{ background: #e9ecef; }
 
+        .nav-icon-btn{
+        position: relative;
+        height: 48px;
+        width: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 0;
+        color: var(--text);
+        text-decoration: none;
+        transition: background .15s ease;
+        border-radius: 0;
+    }
+    .nav-icon-btn:hover{
+        background: #e9ecef;
+        color: var(--text);
+    }
+    .nav-icon-btn svg{
+        width: 22px;
+        height: 22px;
+    }
+    .notif-badge{
+        position: absolute;
+        top: 8px;
+        right: 7px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: #dc3545;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 18px;
+        text-align: center;
+        border: 2px solid #f8f9fa;
+        box-shadow: 0 2px 6px rgba(0,0,0,.12);
+    }
+
+    .mobile-icon-btn{
+        position: relative;
+        height: 40px;
+        width: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        border: 1px solid var(--stroke);
+        background: #fff;
+        color: var(--text);
+        text-decoration: none;
+    }
+    .mobile-icon-btn:hover{
+        background:#f1f3f5;
+        color: var(--text);
+    }
+    .mobile-icon-btn svg{
+        width: 20px;
+        height: 20px;
+    }
+    .mobile-notif-badge{
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: #dc3545;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 18px;
+        text-align: center;
+        border: 2px solid #fff;
+    }
+
     .divider-line{
         border: 0;
         border-top: 1px solid var(--stroke);
@@ -327,7 +405,21 @@
     $coordReportsActive =
         request()->routeIs('coordinator.reports')
         || request()->routeIs('coordinator.reports.*');
+
+
+
+    $studentUnreadCount = 0;
+
+    if (auth()->check() && auth()->user()->hasRole('Student')) {
+        try {
+            $studentUnreadCount = auth()->user()->unreadNotifications()->count();
+        } catch (\Throwable $e) {
+            $studentUnreadCount = 0;
+        }
+    }
 ?>
+
+
 
 <nav class="nav-bg">
     <div class="container-fluid px-3 px-md-4">
@@ -359,6 +451,24 @@
                             data-bs-target="#mainNavOffcanvas">
                         Menu
                     </button>
+
+                    <?php if(auth()->user()->hasRole('Student')): ?>
+                        <a href="<?php echo e(route('student.notifications')); ?>"
+                        class="mobile-icon-btn"
+                        title="Notifications"
+                        aria-label="Notifications">
+                            <svg fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Zm-2 .17.59.58H6.41l.59-.58V11a5 5 0 1 1 10 0v5.17Z"/>
+                            </svg>
+
+                            <?php if($studentUnreadCount > 0): ?>
+                                <span class="mobile-notif-badge">
+                                    <?php echo e($studentUnreadCount > 99 ? '99+' : $studentUnreadCount); ?>
+
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                    <?php endif; ?>
 
                     <button type="button"
                             class="btn-nav-ghost"
@@ -585,15 +695,9 @@
                                 </a>
                             <?php endif; ?>
 
-                            <a href="<?php echo e(route('student.notifications')); ?>"
-                               class="top-link <?php echo e(request()->routeIs('student.notifications') ? 'top-link-active' : ''); ?>">
-                                Notifications
-                            </a>
+                            
 
-                            <a href="<?php echo e(route('questions.create')); ?>"
-                               class="top-link <?php echo e(request()->routeIs('questions.create') ? 'top-link-active' : ''); ?>">
-                                Ask
-                            </a>
+                            
 
                         <?php endif; ?>
                     <?php endif; ?>
@@ -603,6 +707,26 @@
             
             <div class="d-flex justify-content-end center-zone" style="min-width:190px;">
                 <?php if(auth()->guard()->check()): ?>
+
+                <?php if(auth()->user()->hasRole('Student')): ?>
+                        <a href="<?php echo e(route('student.notifications')); ?>"
+                        class="nav-icon-btn <?php echo e(request()->routeIs('student.notifications') ? 'top-link-active' : ''); ?>"
+                        title="Notifications"
+                        aria-label="Notifications">
+                            <svg fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Zm-2 .17.59.58H6.41l.59-.58V11a5 5 0 1 1 10 0v5.17Z"/>
+                            </svg>
+
+                            <?php if($studentUnreadCount > 0): ?>
+                                <span class="notif-badge">
+                                    <?php echo e($studentUnreadCount > 99 ? '99+' : $studentUnreadCount); ?>
+
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                    <?php endif; ?>
+
+
                     <div class="position-relative">
                         <button class="user-btn" id="user-menu-button" type="button">
                             <?php echo e(auth()->user()->firstname); ?>
@@ -730,8 +854,7 @@
 
             <a class="off-link <?php echo e(request()->routeIs('student.notifications') ? 'active' : ''); ?>"
                href="<?php echo e(route('student.notifications')); ?>">Notifications</a>
-            <a class="off-link <?php echo e(request()->routeIs('questions.create') ? 'active' : ''); ?>"
-               href="<?php echo e(route('questions.create')); ?>">Ask</a>
+            
         <?php endif; ?>
 
     </div>

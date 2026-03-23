@@ -523,15 +523,22 @@
                         </div>
                     </div>
 
-                    <form action="{{ route('coordinator.announcements.destroy', $post->id) }}"
-                          method="POST"
-                          onsubmit="return confirm('Delete this announcement? This cannot be undone.')">
-                        @csrf
-                        @method('DELETE')
-                        <button class="btnx btnx-danger btnx-sm" type="submit">
-                            Delete
-                        </button>
-                    </form>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <a href="{{ route('coordinator.announcements.show', $post->id) }}"
+                        class="btnx btnx-secondary btnx-sm">
+                            Open
+                        </a>
+
+                        <form action="{{ route('coordinator.announcements.destroy', $post->id) }}"
+                            method="POST"
+                            onsubmit="return confirm('Delete this announcement? This cannot be undone.')">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btnx btnx-danger btnx-sm" type="submit">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
                 <div class="post-title">{{ $post->title }}</div>

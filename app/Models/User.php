@@ -148,4 +148,9 @@ class User extends Authenticatable
     {
         return $this->bisu_email;
     }
+
+    public function announcementComments()
+    {
+        return $this->hasMany(AnnouncementComment::class, 'user_id', 'id');
+    }
 }

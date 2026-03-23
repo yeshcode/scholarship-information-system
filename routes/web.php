@@ -259,18 +259,18 @@ Route::get('/test-mail', function () {
         Route::get('/manage-announcements', [CoordinatorController::class, 'manageAnnouncements'])->name('coordinator.manage-announcements');
         // Route::get('/manage-announcements/create', [CoordinatorController::class, 'createAnnouncement'])->name('coordinator.announcements.create');
         Route::post('/manage-announcements', [CoordinatorController::class, 'storeAnnouncement'])->name('coordinator.announcements.store');
+        //announcement comments and replies
+        Route::get('/manage-announcements/{announcement}', [CoordinatorController::class, 'showAnnouncement'])->name('coordinator.announcements.show');
+        Route::post('/manage-announcements/{announcement}/comments/{comment}/reply', [CoordinatorController::class, 'storeAnnouncementReply'])->name('coordinator.announcements.reply.store');
         Route::delete('/manage-announcements/{announcement}', [CoordinatorController::class, 'destroyAnnouncement'])->name('coordinator.announcements.destroy');
 
         // AJAX
         Route::get('/announcements/recipients', [CoordinatorController::class, 'searchAnnouncementRecipients'])->name('coordinator.announcements.recipients');
         Route::get('/announcements/scholarship-scholars', [CoordinatorController::class, 'scholarsByScholarshipForAnnouncement'])->name('coordinator.announcements.scholarship-scholars');
-            
-        // recipients search
-        Route::get('/announcements/recipients', [CoordinatorController::class, 'searchAnnouncementRecipients'])->name('coordinator.announcements.recipients');
-
         // Scheduled actions
         // Route::patch('/manage-announcements/{announcement}/reschedule', [CoordinatorController::class, 'rescheduleAnnouncement'])->name('coordinator.announcements.reschedule');
         // Route::patch('/manage-announcements/{announcement}/cancel-schedule', [CoordinatorController::class, 'cancelAnnouncementSchedule'])->name('coordinator.announcements.cancel-schedule');
+
 
 
 
@@ -313,6 +313,7 @@ Route::get('/test-mail', function () {
             Route::get('/dashboard', [StudentController::class, 'dashboard'])->name('student.dashboard');
             Route::get('/announcements', [StudentController::class, 'announcements'])->name('student.announcements');
             Route::get('/announcements/{announcement}', [StudentController::class, 'announcementShow'])->name('student.announcements.show');
+            Route::post('/announcements/{announcement}/comments', [StudentController::class, 'storeAnnouncementComment'])->name('student.announcements.comments.store');
 
             Route::get('/scholarships', [StudentController::class, 'index'])->name('student.scholarships.index');
             Route::get('/student/scholarships', [StudentController::class, 'index'])->name('student.scholarships'); // (optional old alias)

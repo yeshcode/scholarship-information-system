@@ -16,7 +16,7 @@ use App\Models\Question;     // <-- add this (if not yet)
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\AnnouncementComment;
 
 
 class StudentController extends Controller
@@ -223,8 +223,43 @@ public function markAsRead($id)
         ]
     );
 
+    $announcement->load([
+        'scholarship',
+        'comments.user',
+        'comments.replies.user',
+    ]);
+
     return view('student.announcement-show', compact('announcement'));
 }
+
+public function storeAnnouncementComment(Request $request, Announcement $announcement)
+{
+    $userId = Auth::id();
+
+    $allowed = $announcement->recipients()
+        ->where('users.id', $userId)
+        ->exists();
+
+    if (!$allowed) {
+        abort(403, 'You are not allowed to comment on this announcement.');
+    }
+
+    $request->validate([
+        'comment' => 'required|string|max:2000',
+    ]);
+
+    AnnouncementComment::create([
+        'announcement_id' => $announcement->id,
+        'user_id' => $userId,
+        'parent_id' => null, // student top-level comment
+        'comment' => $request->comment,
+    ]);
+
+    return redirect()
+        ->route('student.announcements.show', $announcement->id)
+        ->with('success', 'Comment posted successfully.');
+}
+
 
 public function open($id)
 {
@@ -236,9 +271,14 @@ public function open($id)
         $notification->update(['is_read' => true]);
     }
 
-    // ✅ Use 'type' because that's what exists in your DB
     if ($notification->type === 'announcement') {
-        // You can redirect to announcements list (safe)
+        if (
+            $notification->related_type === 'announcement' &&
+            !empty($notification->related_id)
+        ) {
+            return redirect()->route('student.announcements.show', $notification->related_id);
+        }
+
         return redirect()->route('student.announcements');
     }
 
@@ -248,7 +288,6 @@ public function open($id)
 
     return redirect()->route('student.notifications');
 }
-
 
 public function claimStipend(Request $request, Stipend $stipend)
 {

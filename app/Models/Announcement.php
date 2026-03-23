@@ -50,4 +50,19 @@ class Announcement extends Model
         return $this->belongsTo(Scholarship::class, 'scholarship_id', 'id');
     }
 
+    // NEW: top-level comments only
+    public function comments()
+    {
+        return $this->hasMany(AnnouncementComment::class, 'announcement_id')
+            ->whereNull('parent_id')
+            ->orderBy('created_at', 'desc');
+    }
+
+    // optional: all comments
+    public function allComments()
+    {
+        return $this->hasMany(AnnouncementComment::class, 'announcement_id')
+            ->orderBy('created_at', 'asc');
+    }
+
 }
