@@ -4,7 +4,6 @@
 
 <style>
     :root{
-        /* BISU / system navy theme */
         --brand:#003366;
         --brand-2:#00284f;
         --soft: rgba(0,51,102,.10);
@@ -63,8 +62,8 @@
     .help-text{ color: var(--muted); font-size: .86rem; }
     .req-textarea{ min-height: 220px; }
     .desc-textarea{ min-height: 140px; }
+    .guide-textarea{ min-height: 140px; }
 </style>
-
 
 <div class="page-head mb-3">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
@@ -80,7 +79,6 @@
         </a>
     </div>
 </div>
-
 
 <?php if($errors->any()): ?>
     <div class="alert alert-danger">
@@ -99,7 +97,6 @@
 
     <div class="card-body p-4">
 
-        
         <div class="mb-3">
             <label class="form-label fw-semibold brand-text mb-1">Scholarship Name <span class="text-danger">*</span></label>
             <input type="text"
@@ -108,10 +105,8 @@
                    value="<?php echo e(old('scholarship_name')); ?>"
                    placeholder="e.g., DOST, TES, TDP"
                    required>
-            
         </div>
 
-        
         <div class="row g-3">
             <div class="col-12 col-md-8">
                 <label class="form-label fw-semibold brand-text mb-1">Benefactor <span class="text-danger">*</span></label>
@@ -129,11 +124,9 @@
                     <option value="open" <?php echo e(old('status','open') === 'open' ? 'selected' : ''); ?>>Open</option>
                     <option value="closed" <?php echo e(old('status') === 'closed' ? 'selected' : ''); ?>>Closed</option>
                 </select>
-                
             </div>
         </div>
 
-        
         <div class="row g-3 mt-1">
             <div class="col-12 col-md-6">
                 <div class="section-box">
@@ -142,7 +135,6 @@
                            name="application_date"
                            class="form-control"
                            value="<?php echo e(old('application_date')); ?>">
-                    
                 </div>
             </div>
 
@@ -153,12 +145,10 @@
                            name="deadline"
                            class="form-control"
                            value="<?php echo e(old('deadline')); ?>">
-                    
                 </div>
             </div>
         </div>
 
-        
         <div class="mt-3">
             <div class="section-box">
                 <div class="fw-bold brand-text mb-2">Description <span class="text-danger">*</span></div>
@@ -167,20 +157,46 @@
                           rows="5"
                           placeholder="Brief overview of the scholarship..."
                           required><?php echo e(old('description')); ?></textarea>
-                
             </div>
         </div>
 
-        
+        <div class="mt-3">
+            <div class="section-box">
+                <div class="fw-bold brand-text mb-2">Application Guide</div>
+                <textarea name="application_guide"
+                          class="form-control guide-textarea"
+                          rows="5"
+                          placeholder="Example:
+1. Prepare your requirements.
+2. Submit them to the scholarship office."><?php echo e(old('application_guide')); ?></textarea>
+                <div class="help-text mt-2">
+                    Add a short guide so students know how to apply and what to prepare.
+                </div>
+            </div>
+        </div>
+
         <div class="mt-3">
             <div class="section-box">
                 <div class="fw-bold brand-text mb-2">Requirements <span class="text-danger">*</span></div>
                 <textarea name="requirements"
                           class="form-control req-textarea"
                           rows="8"
-                          placeholder="Enter the requirement..."
+                          placeholder="Enter the requirements..."
                           required><?php echo e(old('requirements')); ?></textarea>
-                
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <div class="section-box">
+                <div class="fw-bold brand-text mb-2">Source / Verification Link</div>
+                <input type="text"
+                       name="source"
+                       class="form-control"
+                       value="<?php echo e(old('source')); ?>"
+                       placeholder="e.g., Facebook page, DOST website, https://facebook.com/...">
+                <div class="help-text mt-2">
+                    You may enter plain text like “Facebook Page” or paste a direct link.
+                </div>
             </div>
         </div>
 

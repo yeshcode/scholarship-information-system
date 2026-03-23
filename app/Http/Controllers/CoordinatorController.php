@@ -458,7 +458,6 @@ class CoordinatorController extends Controller
         'student_id'     => 'required|exists:users,id',
         'scholarship_id' => 'required|exists:scholarships,id',   // ✅ NEW
         'batch_id'       => 'nullable|exists:scholarship_batches,id', // ✅ optional now
-        'date_added'     => 'required|date',
     ]);
 
     $currentSemester = Semester::where('is_current', true)->first();
@@ -514,7 +513,7 @@ class CoordinatorController extends Controller
         'scholarship_id' => $scholarship->id, // ✅ from scholarship dropdown
         'batch_id'       => $isBatchBased ? $batchId : null, // ✅ only for TES/TDP
         'updated_by'     => Auth::id(),
-        'date_added'     => $request->date_added,
+        'date_added'     => now(),
         'status'         => 'active', // ✅ auto
     ]);
 
@@ -2209,22 +2208,26 @@ public function storeScholarship(Request $request)
     $request->validate([
         'scholarship_name' => 'required|string',
         'description' => 'required|string',
+        'application_guide'  => 'nullable|string', // ✅ NEW
         'requirements' => 'required|string',
         'benefactor' => 'required|string',
         'status' => 'required|in:open,closed',
         'application_date' => 'nullable|date',
         'deadline' => 'nullable|date|after_or_equal:application_date', // optional but nice
+        'source'             => 'nullable|string|max:1000', // ✅ NEW
     ]);
 
 
     \App\Models\Scholarship::create([
         'scholarship_name' => $request->scholarship_name,
         'description' => $request->description,
+        'application_guide' => $request->application_guide, // ✅ NEW
         'requirements' => $request->requirements,
         'benefactor' => $request->benefactor,
         'status' => $request->status,
         'application_date' => $request->application_date,
         'deadline' => $request->deadline,
+        'source'            => $request->source, // ✅ NEW
         'created_by' => Auth::id(),
         'updated_by' => Auth::id(),
     ]);
@@ -2243,22 +2246,27 @@ public function updateScholarship(Request $request, $id)
     $request->validate([
         'scholarship_name' => 'required|string',
         'description' => 'required|string',
+        'application_guide'  => 'nullable|string', // ✅ NEW
         'requirements' => 'required|string',
         'benefactor' => 'required|string',
         'status' => 'required|in:open,closed',
         'application_date' => 'nullable|date',
         'deadline' => 'nullable|date|after_or_equal:application_date',
+        'source'             => 'nullable|string|max:1000', // ✅ NEW
     ]);
 
     $scholarship = \App\Models\Scholarship::findOrFail($id);
+
     $scholarship->update([
         'scholarship_name' => $request->scholarship_name,
         'description' => $request->description,
+        'application_guide' => $request->application_guide, // ✅ NEW
         'requirements' => $request->requirements,
         'benefactor' => $request->benefactor,
         'status' => $request->status,
         'application_date' => $request->application_date,
         'deadline' => $request->deadline,
+        'source'            => $request->source, // ✅ NEW
         'updated_by' => Auth::id(),
     ]);
 

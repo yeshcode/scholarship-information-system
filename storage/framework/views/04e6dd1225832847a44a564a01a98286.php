@@ -234,6 +234,11 @@
                     </div>
 
                     <div class="modal-body">
+                        <?php
+                            $sourceValue = trim((string)($scholarship->source ?? ''));
+                            $isSourceUrl = \Illuminate\Support\Str::startsWith(strtolower($sourceValue), ['http://', 'https://']);
+                        ?>
+
                         <div class="row g-3 mb-3">
                             <div class="col-12 col-md-6">
                                 <div class="sch-meta h-100">
@@ -251,12 +256,40 @@
 
                         <div class="info-box mb-3">
                             <div class="info-title">Description</div>
-                            <div class="text-muted"><?php echo e($scholarship->description); ?></div>
+                            <div class="text-muted" style="white-space: pre-wrap;"><?php echo e($scholarship->description); ?></div>
+                        </div>
+
+                        <div class="info-box mb-3">
+                            <div class="info-title">Application Guide</div>
+                            <div class="text-muted" style="white-space: pre-wrap;">
+                                <?php echo e($scholarship->application_guide ?: 'No application guide provided.'); ?>
+
+                            </div>
+                        </div>
+
+                        <div class="info-box mb-3">
+                            <div class="info-title">Requirements</div>
+                            <div class="text-muted" style="white-space: pre-wrap;"><?php echo e($scholarship->requirements); ?></div>
                         </div>
 
                         <div class="info-box">
-                            <div class="info-title">Requirements</div>
-                            <div class="text-muted" style="white-space: pre-wrap;"><?php echo e($scholarship->requirements); ?></div>
+                            <div class="info-title">Source / Verification</div>
+
+                            <?php if(!empty($sourceValue)): ?>
+                                <?php if($isSourceUrl): ?>
+                                    <a href="<?php echo e($sourceValue); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary mb-2">
+                                        Open Source Link
+                                    </a>
+                                    <div class="text-muted small" style="word-break: break-word;">
+                                        <?php echo e($sourceValue); ?>
+
+                                    </div>
+                                <?php else: ?>
+                                    <div class="text-muted"><?php echo e($sourceValue); ?></div>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <div class="text-muted">No source provided.</div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -336,130 +369,155 @@
         </div>
 
         <!-- ✅ EDIT MODAL -->
-<div class="modal fade modal-edit-scholarship" id="editScholarshipModal<?php echo e($scholarship->id); ?>" tabindex="-1"
-     aria-labelledby="editScholarshipLabel<?php echo e($scholarship->id); ?>" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-xl modal-dialog-scrollable">
-        <div class="modal-content" style="border-radius:16px; overflow:hidden;">
-            <div class="sch-topbar"></div>
+        <div class="modal fade modal-edit-scholarship" id="editScholarshipModal<?php echo e($scholarship->id); ?>" tabindex="-1"
+            aria-labelledby="editScholarshipLabel<?php echo e($scholarship->id); ?>" aria-hidden="true">
+            <div class="modal-dialog modal-fullscreen-lg-down modal-xl modal-dialog-scrollable">
+                <div class="modal-content" style="border-radius:16px; overflow:hidden;">
+                    <div class="sch-topbar"></div>
 
-            <form action="<?php echo e(route('coordinator.scholarships.update', $scholarship->id)); ?>" method="POST">
-                <?php echo csrf_field(); ?>
-                <?php echo method_field('PUT'); ?>
+                    <form action="<?php echo e(route('coordinator.scholarships.update', $scholarship->id)); ?>" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('PUT'); ?>
 
-                <div class="modal-header" style="background: var(--brand); color:#fff;">
-                    <div>
-                        <h5 class="modal-title fw-bold mb-0" id="editScholarshipLabel<?php echo e($scholarship->id); ?>">
-                            Edit Scholarship
-                        </h5>
-                        <div class="small opacity-75 mt-1">
-                            Update scholarship details, dates, and status.
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-
-                <div class="modal-body">
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold brand-text mb-1">Scholarship Name</label>
-                        <input type="text"
-                               name="scholarship_name"
-                               value="<?php echo e($scholarship->scholarship_name); ?>"
-                               class="form-control"
-                               required>
-                    </div>
-
-                    
-                    <div class="row g-3">
-                        <div class="col-12 col-md-8">
-                            <label class="form-label fw-semibold brand-text mb-1">Benefactor</label>
-                            <input type="text"
-                                   name="benefactor"
-                                   value="<?php echo e($scholarship->benefactor); ?>"
-                                   class="form-control"
-                                   required>
-                        </div>
-
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-semibold brand-text mb-1">Status</label>
-                            <select name="status" class="form-select" required>
-                                <option value="open" <?php echo e(($scholarship->status === 'open') ? 'selected' : ''); ?>>Open</option>
-                                <option value="closed" <?php echo e(($scholarship->status === 'closed') ? 'selected' : ''); ?>>Closed</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    
-                    <div class="row g-3 mt-1">
-                        <div class="col-12 col-md-6">
-                            <div class="sch-meta">
-                                <label class="form-label fw-semibold brand-text mb-1">Application Date</label>
-                                <input type="date"
-                                       name="application_date"
-                                       value="<?php echo e($scholarship->application_date ? \Carbon\Carbon::parse($scholarship->application_date)->format('Y-m-d') : ''); ?>"
-                                       class="form-control">
-                                
+                        <div class="modal-header" style="background: var(--brand); color:#fff;">
+                            <div>
+                                <h5 class="modal-title fw-bold mb-0" id="editScholarshipLabel<?php echo e($scholarship->id); ?>">
+                                    Edit Scholarship
+                                </h5>
+                                <div class="small opacity-75 mt-1">
+                                    Update scholarship details, guide, dates, source, and status.
+                                </div>
                             </div>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
-                        <div class="col-12 col-md-6">
-                            <div class="sch-meta">
-                                <label class="form-label fw-semibold brand-text mb-1">Deadline</label>
-                                <input type="date"
-                                       name="deadline"
-                                       value="<?php echo e($scholarship->deadline ? \Carbon\Carbon::parse($scholarship->deadline)->format('Y-m-d') : ''); ?>"
-                                       class="form-control">
-                                
+                        <div class="modal-body">
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold brand-text mb-1">Scholarship Name</label>
+                                <input type="text"
+                                    name="scholarship_name"
+                                    value="<?php echo e($scholarship->scholarship_name); ?>"
+                                    class="form-control"
+                                    required>
                             </div>
+
+                            
+                            <div class="row g-3">
+                                <div class="col-12 col-md-8">
+                                    <label class="form-label fw-semibold brand-text mb-1">Benefactor</label>
+                                    <input type="text"
+                                        name="benefactor"
+                                        value="<?php echo e($scholarship->benefactor); ?>"
+                                        class="form-control"
+                                        required>
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label fw-semibold brand-text mb-1">Status</label>
+                                    <select name="status" class="form-select" required>
+                                        <option value="open" <?php echo e(($scholarship->status === 'open') ? 'selected' : ''); ?>>Open</option>
+                                        <option value="closed" <?php echo e(($scholarship->status === 'closed') ? 'selected' : ''); ?>>Closed</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            
+                            <div class="row g-3 mt-1">
+                                <div class="col-12 col-md-6">
+                                    <div class="sch-meta">
+                                        <label class="form-label fw-semibold brand-text mb-1">Application Date</label>
+                                        <input type="date"
+                                            name="application_date"
+                                            value="<?php echo e($scholarship->application_date ? \Carbon\Carbon::parse($scholarship->application_date)->format('Y-m-d') : ''); ?>"
+                                            class="form-control">
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <div class="sch-meta">
+                                        <label class="form-label fw-semibold brand-text mb-1">Deadline</label>
+                                        <input type="date"
+                                            name="deadline"
+                                            value="<?php echo e($scholarship->deadline ? \Carbon\Carbon::parse($scholarship->deadline)->format('Y-m-d') : ''); ?>"
+                                            class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+
+                            
+                            <div class="info-box mt-3">
+                                <div class="info-title">Description</div>
+                                <textarea name="description"
+                                        class="form-control"
+                                        rows="6"
+                                        style="min-height:150px;"
+                                        required><?php echo e($scholarship->description); ?></textarea>
+                            </div>
+
+                            
+                            <div class="info-box mt-3">
+                                <div class="info-title">Application Guide</div>
+                                <textarea name="application_guide"
+                                        class="form-control"
+                                        rows="6"
+                                        style="min-height:150px;"
+                                        placeholder="Example:
+        1. Prepare all required documents.
+        2. Submit to the scholarship office."><?php echo e($scholarship->application_guide); ?></textarea>
+                                <div class="form-text">
+                                    Add a short guide so students know how to apply and what to prepare.
+                                </div>
+                            </div>
+
+                            
+                            <div class="info-box mt-3">
+                                <div class="info-title">Requirements</div>
+                                <textarea name="requirements"
+                                        class="form-control"
+                                        rows="8"
+                                        style="min-height:220px;"
+                                        required><?php echo e($scholarship->requirements); ?></textarea>
+                            </div>
+
+                            
+                            <div class="info-box mt-3">
+                                <div class="info-title">Source / Verification</div>
+                                <input type="text"
+                                    name="source"
+                                    value="<?php echo e($scholarship->source); ?>"
+                                    class="form-control"
+                                    placeholder="Example: Facebook page, DOST page, or https://example.com/post">
+                                <div class="form-text">
+                                    You can type plain text or paste a direct link.
+                                </div>
+                            </div>
+
+                            
+                            <?php if($errors->any()): ?>
+                                <div class="alert alert-danger mt-3 mb-0">
+                                    <div class="fw-semibold">Please fix the errors:</div>
+                                    <ul class="mb-0">
+                                        <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $e): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <li><?php echo e($e); ?></li>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
                         </div>
-                    </div>
 
-                    
-                    <div class="info-box mt-3">
-                        <div class="info-title">Description</div>
-                        <textarea name="description"
-                            class="form-control"
-                            rows="6"
-                            style="min-height:150px;"
-                            required><?php echo e($scholarship->description); ?></textarea>
-                    </div>
-
-                    
-                    <div class="info-box mt-3">
-                        <div class="info-title">Requirements</div>
-                        <textarea name="requirements"
-                            class="form-control"
-                            rows="8"
-                            style="min-height:220px;"
-                            required><?php echo e($scholarship->requirements); ?></textarea>
-                        
-                    </div>
-
-                    
-                    <?php if($errors->any()): ?>
-                        <div class="alert alert-danger mt-3 mb-0">
-                            <div class="fw-semibold">Please fix the errors:</div>
-                            <ul class="mb-0">
-                                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $e): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <li><?php echo e($e); ?></li>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </ul>
+                        <div class="modal-footer bg-white">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-brand">
+                                Save Changes
+                            </button>
                         </div>
-                    <?php endif; ?>
+                    </form>
                 </div>
-
-                <div class="modal-footer bg-white">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-brand">
-                        Save Changes
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
-</div>
 
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <div class="col-12">

@@ -9,11 +9,13 @@ class Scholarship extends Model
     protected $fillable = [
         'scholarship_name',          // e.g., 'Merit Scholarship'
         'description',   // e.g., 'For high-achieving students'
+        'application_guide',
         'requirements',
         'benefactor',
         'status',  // e.g., 'GPA 3.5+'
         'application_date',   // ✅ add
         'deadline',           // ✅ add
+        'source', 
         'created_by',     
         'updated_by'  // FK to users table (creator)
     ];

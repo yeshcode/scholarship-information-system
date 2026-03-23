@@ -1,6 +1,21 @@
 
 
 <?php $__env->startSection('content'); ?>
+<?php
+    use Illuminate\Support\Str;
+
+    $sourceValue = trim((string) ($scholarship->source ?? ''));
+    $isSourceUrl = Str::startsWith(strtolower($sourceValue), ['http://', 'https://']);
+
+    $applicationDate = !empty($scholarship->application_date)
+        ? \Carbon\Carbon::parse($scholarship->application_date)->format('F d, Y')
+        : null;
+
+    $deadlineDate = !empty($scholarship->deadline)
+        ? \Carbon\Carbon::parse($scholarship->deadline)->format('F d, Y')
+        : null;
+?>
+
 <div class="container-fluid container-xl py-4">
 
     
@@ -13,7 +28,7 @@
 
                 </h2>
                 <div class="text-white-50">
-                    Full details, requirements, and information.
+                    Full details, requirements, application guide, and source information.
                 </div>
             </div>
 
@@ -45,7 +60,7 @@
 
     
     <div class="row g-3 mb-3">
-        <div class="col-12 col-lg-4">
+        <div class="col-12 col-md-6 col-lg-3">
             <div class="card border-0 rounded-4 shadow-sm h-100">
                 <div class="card-body p-3 p-md-4">
                     <div class="d-flex align-items-center gap-3">
@@ -64,18 +79,17 @@
             </div>
         </div>
 
-        
-        <div class="col-12 col-lg-4">
+        <div class="col-12 col-md-6 col-lg-3">
             <div class="card border-0 rounded-4 shadow-sm h-100">
                 <div class="card-body p-3 p-md-4">
                     <div class="d-flex align-items-center gap-3">
                         <div class="icon-bubble bisu-soft">
-                            <i class="bi bi-clipboard-check"></i>
+                            <i class="bi bi-calendar-event"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <div class="text-muted small">Requirements</div>
-                            <div class="fw-semibold">
-                                <?php echo e(!empty($scholarship->requirements) ? 'Available' : 'Not specified'); ?>
+                            <div class="text-muted small">Application Date</div>
+                            <div class="fw-semibold wrap-anywhere">
+                                <?php echo e($applicationDate ?? 'Not specified'); ?>
 
                             </div>
                         </div>
@@ -84,18 +98,47 @@
             </div>
         </div>
 
-        <div class="col-12 col-lg-4">
+        <div class="col-12 col-md-6 col-lg-3">
             <div class="card border-0 rounded-4 shadow-sm h-100">
                 <div class="card-body p-3 p-md-4">
                     <div class="d-flex align-items-center gap-3">
                         <div class="icon-bubble bisu-soft">
-                            <i class="bi bi-file-text"></i>
+                            <i class="bi bi-calendar-check"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <div class="text-muted small">Description</div>
-                            <div class="fw-semibold">
-                                <?php echo e(!empty($scholarship->description) ? 'Available' : 'Not specified'); ?>
+                            <div class="text-muted small">Deadline</div>
+                            <div class="fw-semibold wrap-anywhere">
+                                <?php echo e($deadlineDate ?? 'Not specified'); ?>
 
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card border-0 rounded-4 shadow-sm h-100">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-bubble bisu-soft">
+                            <i class="bi bi-link-45deg"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="text-muted small">Source</div>
+                            <div class="fw-semibold wrap-anywhere">
+                                <?php if($sourceValue): ?>
+                                    <?php if($isSourceUrl): ?>
+                                        <a href="<?php echo e($sourceValue); ?>" target="_blank" rel="noopener noreferrer">
+                                            Open Source
+                                        </a>
+                                    <?php else: ?>
+                                        <?php echo e($sourceValue); ?>
+
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    Not specified
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -132,6 +175,29 @@
         <div class="col-12 col-lg-6">
             <div class="card border-0 rounded-4 shadow-sm h-100">
                 <div class="card-header bg-white border-0 rounded-top-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-journal-check text-info"></i>
+                    <div class="fw-bold text-bisu">How to Apply</div>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <?php if(!empty($scholarship->application_guide)): ?>
+                        <div class="text-muted" style="white-space: pre-line;">
+                            <?php echo e($scholarship->application_guide); ?>
+
+                        </div>
+                    <?php else: ?>
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="bi bi-journal-text"></i></div>
+                            <div class="fw-semibold">No application guide provided</div>
+                            <div class="text-muted small">Please check the scholarship office or coordinator for guidance.</div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 rounded-4 shadow-sm h-100">
+                <div class="card-header bg-white border-0 rounded-top-4 d-flex align-items-center gap-2">
                     <i class="bi bi-list-check text-success"></i>
                     <div class="fw-bold text-bisu">Requirements</div>
                 </div>
@@ -146,6 +212,46 @@
                             <div class="empty-icon"><i class="bi bi-clipboard-check"></i></div>
                             <div class="fw-semibold">No requirements listed</div>
                             <div class="text-muted small">Please check again later.</div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 rounded-4 shadow-sm h-100">
+                <div class="card-header bg-white border-0 rounded-top-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-shield-check text-warning"></i>
+                    <div class="fw-bold text-bisu">Source / Verification</div>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <?php if($sourceValue): ?>
+                        <?php if($isSourceUrl): ?>
+                            <div class="mb-2 text-muted">
+                                This scholarship has a source link for verification.
+                            </div>
+                            <a href="<?php echo e($sourceValue); ?>"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="btn btn-outline-primary rounded-pill px-3">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Visit Source
+                            </a>
+
+                            <div class="small text-muted mt-3 wrap-anywhere">
+                                <?php echo e($sourceValue); ?>
+
+                            </div>
+                        <?php else: ?>
+                            <div class="text-muted" style="white-space: pre-line;">
+                                <?php echo e($sourceValue); ?>
+
+                            </div>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="bi bi-link-45deg"></i></div>
+                            <div class="fw-semibold">No source provided</div>
+                            <div class="text-muted small">The coordinator may add a source or verification link soon.</div>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -217,25 +323,20 @@
         margin-bottom: .6rem;
     }
 
-    /* ===== Mobile responsiveness patch (keep same design) ===== */
 @media (max-width: 575.98px){
-
-    /* container spacing */
     .container-fluid.container-xl{
         padding-left: 12px !important;
         padding-right: 12px !important;
     }
 
-    /* hero spacing + readable title */
     .bisu-hero{
-        padding: 16px !important; /* keeps same style, just smaller padding */
+        padding: 16px !important;
     }
     .bisu-hero h2{
         font-size: 1.25rem !important;
         line-height: 1.2;
     }
 
-    /* make hero buttons stack nicely */
     .bisu-hero .d-flex.gap-2{
         flex-direction: column;
         width: 100%;
@@ -247,7 +348,6 @@
         justify-content: center;
     }
 
-    /* badges should not overflow */
     .badge{
         max-width: 100%;
         white-space: nowrap;
@@ -255,18 +355,15 @@
         text-overflow: ellipsis;
     }
 
-    /* reduce card header spacing slightly */
     .card-header{
         padding: .85rem 1rem !important;
     }
 
-    /* prevent long details from overflowing */
     .wrap-anywhere{
         overflow-wrap: anywhere;
         word-break: break-word;
     }
 
-    /* empty state: not too tall on phones */
     .empty-state{
         min-height: 160px;
     }

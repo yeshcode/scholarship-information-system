@@ -293,7 +293,6 @@
                                 </option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
-                        
                     </div>
 
                     
@@ -302,14 +301,10 @@
                             Batch <span class="text-danger">*</span>
                         </label>
 
-                        
                         <select name="batch_id" id="modal_batch_id" class="form-select form-select-sm" required disabled>
                             <option value="">Select scholarship first...</option>
                         </select>
 
-                        
-
-                        
                         <select id="__all_batches" class="d-none">
                             <?php $__currentLoopData = $batches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <option
@@ -324,16 +319,7 @@
                     </div>
 
                     
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary mb-1">
-                            Date Added <span class="text-danger">*</span>
-                        </label>
-                        <input type="date" name="date_added" class="form-control form-control-sm" required>
-                        
-                    </div>
-
-                    
-                    
+                </div>
 
                 
                 <?php if($errors->any()): ?>
@@ -359,7 +345,6 @@
         </form>
     </div>
 </div>
-
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
