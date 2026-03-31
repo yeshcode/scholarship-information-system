@@ -109,6 +109,22 @@ class User extends Authenticatable
         return $this->hasMany(Scholar::class, 'student_id', 'id');  // Custom match
     }
 
+    public function activeScholarRecord()
+    {
+        return $this->hasOne(Scholar::class, 'student_id', 'id')
+            ->where(function ($q) {
+                $q->whereNull('status')
+                ->orWhere('status', 'active');
+            })
+            ->whereNull('date_removed')
+            ->latestOfMany();
+    }
+
+    public function latestScholarRecord()
+    {
+        return $this->hasOne(Scholar::class, 'student_id', 'id')->latestOfMany();
+    }
+
     public function updatedScholars()
     {
         return $this->hasMany(Scholar::class, 'updated_by', 'id');
@@ -139,10 +155,21 @@ class User extends Authenticatable
     }
 
      // Helper: Check if user is a scholar (unchanged)
-     public function isScholar()
-     {
-         return $this->scholarsAsStudent()->exists();
-     }
+    //  public function isScholar()
+    //  {
+    //      return $this->scholarsAsStudent()->exists();
+    //  }
+
+    public function isScholar()
+    {
+        return $this->scholarsAsStudent()
+            ->where(function ($q) {
+                $q->whereNull('status')
+                ->orWhere('status', 'active');
+            })
+            ->whereNull('date_removed')
+            ->exists();
+    }
 
      public function getEmailForPasswordReset()
     {

@@ -429,9 +429,7 @@
 
                     </div>
 
-                    <div class="mt-3 text-muted small">
-                        Tip: Use the Semester filter in the navbar to change dashboard scope.
-                    </div>
+                    
                 </div>
             </div>
         </div>

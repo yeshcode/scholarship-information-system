@@ -200,6 +200,7 @@
                     <th>Date Added</th>
                     <th>Course</th>
                     <th>Year Level</th>
+                    <th>Status</th> 
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -246,6 +247,16 @@
                         <td><?php echo e($scholar->user->yearLevel->year_level_name ?? 'N/A'); ?></td>
 
                         <td>
+                            <?php if($scholar->status === 'active' || is_null($scholar->status)): ?>
+                                <span class="badge bg-success">Scholar</span>
+                            <?php elseif($scholar->status === 'inactive'): ?>
+                                <span class="badge bg-secondary">Non-Scholar</span>
+                            <?php elseif($scholar->status === 'graduated'): ?>
+                                <span class="badge bg-info text-dark">Graduated</span>
+                            <?php endif; ?>
+                        </td>
+
+                        <td>
                             <div class="d-flex gap-1">
                                 <!-- Update -->
                                 <button
@@ -267,7 +278,7 @@
                     </tr>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
-                        <td colspan="10" class="text-center text-muted py-4">
+                        <td colspan="11" class="text-center text-muted py-4">
                             No scholars found.
                         </td>
                     </tr>

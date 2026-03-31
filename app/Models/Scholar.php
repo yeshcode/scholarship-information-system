@@ -97,4 +97,9 @@ class Scholar extends Model
     {
         return $this->hasMany(\App\Models\Enrollment::class, 'user_id', 'student_id');
     }
+
+    public function scopeWithInactive($q)
+    {
+        return $q;
+    }
 }

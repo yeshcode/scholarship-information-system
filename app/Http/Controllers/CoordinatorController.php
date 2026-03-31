@@ -182,6 +182,7 @@ class CoordinatorController extends Controller
     $batchId      = $request->get('batch_id');
     $searchType   = $request->get('search_type', 'name'); // name | student_id
     $q            = trim((string) $request->get('q', ''));
+    $statusFilter = $request->get('status');
 
     // Semesters for dropdown (and default to current semester)
     $semesters = Semester::orderByDesc('start_date')->get();
@@ -221,7 +222,6 @@ class CoordinatorController extends Controller
      * Join enrollment (for selected semester) to show enrolled_status + semester label
      */
     $scholarsQuery = Scholar::query()
-        ->activeRoster()
         ->with([
             'user.course',
             'user.yearLevel',
@@ -263,6 +263,10 @@ class CoordinatorController extends Controller
             ->orWhere('users.lastname', 'ILIKE', "%{$q}%")
             ->orWhere('users.firstname', 'ILIKE', "%{$q}%");
         });
+    }
+
+    if (!empty($statusFilter)) {
+        $scholarsQuery->where('scholars.status', $statusFilter);
     }
 
     // Alphabetical sorting (your request)
@@ -458,10 +462,10 @@ class CoordinatorController extends Controller
     }
 
     // Must NOT already be a scholar
-    $alreadyScholar = Scholar::where('student_id', $request->student_id)->exists();
-    if ($alreadyScholar) {
-        return back()->with('error', 'This student is already a scholar.');
-    }
+    // $alreadyScholar = Scholar::where('student_id', $request->student_id)->exists();
+    // if ($alreadyScholar) {
+    //     return back()->with('error', 'This student is already a scholar.');
+    // }   
 
     // Scholarship picked by user
     $scholarship = Scholarship::findOrFail($request->scholarship_id);
@@ -490,6 +494,37 @@ class CoordinatorController extends Controller
         $batchId = $batch->id;
     }
 
+    // Check for existing ACTIVE scholar record
+    $activeScholar = Scholar::where('student_id', $request->student_id)
+        ->where(function ($q) {
+            $q->whereNull('status')
+              ->orWhere('status', 'active');
+        })
+        ->whereNull('date_removed')
+        ->first();
+
+    if ($activeScholar) {
+        return back()->with('error', 'This student is already an active scholar.');
+    }
+
+    // Check for old/inactive scholar record and restore it
+    $existingScholar = Scholar::where('student_id', $request->student_id)
+        ->latest('id')
+        ->first();
+
+    if ($existingScholar) {
+        $existingScholar->update([
+            'scholarship_id' => $scholarship->id,
+            'batch_id'       => $isBatchBased ? $batchId : null,
+            'updated_by'     => Auth::id(),
+            'status'         => 'active',
+            'date_removed'   => null,
+        ]);
+
+        return redirect()->route('coordinator.scholars.create')
+            ->with('success', 'Scholar restored successfully.');
+    }
+
     Scholar::create([
         'student_id'     => $request->student_id,
         'scholarship_id' => $scholarship->id, // ✅ from scholarship dropdown
@@ -497,6 +532,7 @@ class CoordinatorController extends Controller
         'updated_by'     => Auth::id(),
         'date_added'     => now(),
         'status'         => 'active', // ✅ auto
+        'date_removed'   => null,
     ]);
 
     return redirect()->route('coordinator.scholars.create')
@@ -2960,7 +2996,17 @@ public function addSelectedUploadedScholars(Request $request)
             if (($item['enrollment_status'] ?? 'not_enrolled') !== 'enrolled') { $skipped++; continue; }
 
             // Must NOT already be scholar
-            if (Scholar::where('student_id', $userId)->exists()) { $skipped++; continue; }
+            // if (Scholar::where('student_id', $userId)->exists()) { $skipped++; continue; }
+
+            $activeScholarExists = Scholar::where('student_id', $userId)
+                ->where(function ($q) {
+                    $q->whereNull('status')
+                    ->orWhere('status', 'active');
+                })
+                ->whereNull('date_removed')
+                ->exists();
+
+            if ($activeScholarExists) { $skipped++; continue; }
 
             Scholar::create([
                 'student_id'     => $userId,

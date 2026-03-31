@@ -1,7 +1,7 @@
-@extends('layouts.app')
 
-@section('content')
-@php
+
+<?php $__env->startSection('content'); ?>
+<?php
     // Theme (same as your system)
     $theme = '#003366';
     $soft  = '#eaf2ff';
@@ -29,17 +29,17 @@
     }
 
     $isScholar = ($isStudent && !$isAdminLike && !is_null($scholarRecord));
-@endphp
+?>
 
 <style>
-    body{ background: {{ $bg }}; }
+    body{ background: <?php echo e($bg); ?>; }
 
     .profile-wrap{
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
     }
 
     .card-soft{
-        border: 1px solid {{ $line }};
+        border: 1px solid <?php echo e($line); ?>;
         border-radius: 18px;
         box-shadow: 0 10px 26px rgba(0,0,0,.06);
         overflow: hidden;
@@ -47,7 +47,7 @@
     }
 
     .profile-hero{
-        background: linear-gradient(135deg, {{ $theme }} 0%, #0b3d8f 55%, #1b5fbf 100%);
+        background: linear-gradient(135deg, <?php echo e($theme); ?> 0%, #0b3d8f 55%, #1b5fbf 100%);
         color: #fff;
     }
 
@@ -80,7 +80,7 @@
     .pill-light{
         border: 1px solid rgba(11,46,94,.18);
         background: rgba(11,46,94,.06);
-        color: {{ $theme }};
+        color: <?php echo e($theme); ?>;
         white-space: nowrap;
     }
 
@@ -93,7 +93,7 @@
 
     .value-box{
         background: #f9fbff;
-        border: 1px solid {{ $line }};
+        border: 1px solid <?php echo e($line); ?>;
         border-radius: 12px;
         padding: .65rem .8rem;
         min-height: 44px;
@@ -110,17 +110,17 @@
     /* Tabs */
     .nav-pills .nav-link{
         font-weight: 800;
-        color: {{ $theme }};
+        color: <?php echo e($theme); ?>;
         border-radius: 12px;
     }
     .nav-pills .nav-link.active{
-        background: {{ $theme }};
+        background: <?php echo e($theme); ?>;
         color:#fff;
     }
 
     /* Brand button */
     .btn-brand{
-        background: {{ $theme }};
+        background: <?php echo e($theme); ?>;
         color:#fff;
         font-weight: 800;
         border-radius: 12px;
@@ -134,7 +134,7 @@
         text-transform: uppercase;
         letter-spacing: .04em;
         color: #6b7280;
-        border-bottom: 1px solid {{ $line }};
+        border-bottom: 1px solid <?php echo e($line); ?>;
     }
 
     /* ===================== RESPONSIVE UPGRADES ===================== */
@@ -226,63 +226,68 @@
 <div class="container py-4 profile-wrap">
     <div class="mx-auto" style="max-width: 1050px;">
 
-        {{-- Alerts --}}
-        @if(session('success'))
+        
+        <?php if(session('success')): ?>
             <div class="alert alert-success alert-dismissible fade show mb-3">
-                {{ session('success') }}
+                <?php echo e(session('success')); ?>
+
                 <button class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        @endif
+        <?php endif; ?>
 
-        @if($errors->any())
+        <?php if($errors->any()): ?>
             <div class="alert alert-danger alert-dismissible fade show mb-3">
                 <strong>There were some issues:</strong>
                 <ul class="mb-0 mt-1">
-                    @foreach($errors->all() as $error)
-                        <li class="small">{{ $error }}</li>
-                    @endforeach
+                    <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <li class="small"><?php echo e($error); ?></li>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </ul>
                 <button class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        @endif
+        <?php endif; ?>
 
-        {{-- HERO HEADER --}}
+        
         <div class="card-soft profile-hero mb-4">
             <div class="p-4 p-md-5">
                 <div class="hero-top">
                     <div class="hero-left">
-                        <div class="avatar">{{ $initials }}</div>
+                        <div class="avatar"><?php echo e($initials); ?></div>
 
                         <div class="hero-meta">
                             <div class="fw-bold hero-name" style="font-size:1.25rem; line-height:1.2;">
-                                {{ $fullName ?: 'N/A' }}
+                                <?php echo e($fullName ?: 'N/A'); ?>
+
                             </div>
                             <div class="hero-email">
-                                {{ $user->bisu_email ?? $user->email ?? 'N/A' }}
+                                <?php echo e($user->bisu_email ?? $user->email ?? 'N/A'); ?>
+
                             </div>
 
                             <div class="d-flex flex-wrap gap-2 mt-3">
                                 <span class="pill">
-                                    {{ $user->userType->name ?? 'User' }}
+                                    <?php echo e($user->userType->name ?? 'User'); ?>
+
                                 </span>
 
-                                @if($isStudent && !$isAdminLike)
+                                <?php if($isStudent && !$isAdminLike): ?>
                                     <span class="pill">
-                                        Semester: {{ $semesterLabel ?? 'N/A' }}
-                                    </span>
-                                @endif
+                                        Semester: <?php echo e($semesterLabel ?? 'N/A'); ?>
 
-                                @if($isScholar)
+                                    </span>
+                                <?php endif; ?>
+
+                                <?php if($isScholar): ?>
                                     <span class="pill" style="background: rgba(34,197,94,.20); border-color: rgba(34,197,94,.25);">
                                         Scholar
                                     </span>
-                                @else
-                                    @if($isStudent && !$isAdminLike)
+                                <?php else: ?>
+                                    <?php if($isStudent && !$isAdminLike): ?>
                                         <span class="pill" style="background: rgba(255,255,255,.10);">
                                             Non-Scholar
                                         </span>
-                                    @endif
-                                @endif
+                                    <?php endif; ?>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -290,22 +295,22 @@
                     <div class="hero-right text-start text-md-end">
                         <div class="fw-bold" style="font-size:1rem;">My Profile</div>
                         <div style="opacity:.9; font-size:.9rem;">
-                            @if($isStudent && !$isAdminLike)
+                            <?php if($isStudent && !$isAdminLike): ?>
                                 Your academic information is updated from your enrollment record.
-                            @else
+                            <?php else: ?>
                                 Account overview and security settings.
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- MAIN CONTENT --}}
+        
         <div class="card-soft">
             <div class="p-3 p-md-4">
 
-                {{-- Tabs (scrollable on mobile) --}}
+                
                 <div class="tabs-scroll mb-4">
                     <ul class="nav nav-pills gap-2" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -314,21 +319,21 @@
                             </button>
                         </li>
 
-                        @if($isStudent && !$isAdminLike)
+                        <?php if($isStudent && !$isAdminLike): ?>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabAcademic" type="button">
                                     Academic
                                 </button>
                             </li>
-                        @endif
+                        <?php endif; ?>
 
-                        @if($isStudent && !$isAdminLike)
+                        <?php if($isStudent && !$isAdminLike): ?>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabContact" type="button">
                                     Contact
                                 </button>
                             </li>
-                        @endif
+                        <?php endif; ?>
 
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabSecurity" type="button">
@@ -340,87 +345,88 @@
 
                 <div class="tab-content">
 
-                    {{-- ================= OVERVIEW ================= --}}
+                    
                     <div class="tab-pane fade show active" id="tabOverview">
                         <div class="row g-4">
                             <div class="col-lg-6">
                                 <div class="card border-0 section-card">
                                     <div class="card-body p-0">
                                         <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                                            <div class="fw-bold" style="color:{{ $theme }};">Account Information</div>
+                                            <div class="fw-bold" style="color:<?php echo e($theme); ?>;">Account Information</div>
                                             <span class="pill-light">Read-only</span>
                                         </div>
 
                                         <div class="row g-3">
                                             <div class="col-12">
                                                 <div class="label">Complete Name</div>
-                                                <div class="value-box">{{ $fullName ?: 'N/A' }}</div>
+                                                <div class="value-box"><?php echo e($fullName ?: 'N/A'); ?></div>
                                             </div>
 
-                                            @if($isStudent && !$isAdminLike)
+                                            <?php if($isStudent && !$isAdminLike): ?>
                                                 <div class="col-md-6">
                                                     <div class="label">Student ID</div>
-                                                    <div class="value-box">{{ $user->student_id ?? 'N/A' }}</div>
+                                                    <div class="value-box"><?php echo e($user->student_id ?? 'N/A'); ?></div>
                                                 </div>
-                                            @endif
+                                            <?php endif; ?>
 
                                             <div class="col-md-6">
                                                 <div class="label">Role</div>
-                                                <div class="value-box">{{ $user->userType->name ?? 'N/A' }}</div>
+                                                <div class="value-box"><?php echo e($user->userType->name ?? 'N/A'); ?></div>
                                             </div>
 
                                             <div class="col-12">
                                                 <div class="label">Email</div>
-                                                <div class="value-box">{{ $user->bisu_email ?? $user->email ?? 'N/A' }}</div>
+                                                <div class="value-box"><?php echo e($user->bisu_email ?? $user->email ?? 'N/A'); ?></div>
                                             </div>
 
-                                            @if($isStudent && !$isAdminLike)
+                                            <?php if($isStudent && !$isAdminLike): ?>
                                                 <div class="col-12">
                                                     <div class="label">Year Level</div>
-                                                    <div class="value-box">{{ $yearLevel }}</div>
+                                                    <div class="value-box"><?php echo e($yearLevel); ?></div>
                                                 </div>
-                                            @endif
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Quick summary card --}}
+                            
                             <div class="col-lg-6">
                                 <div class="card border-0 section-card">
                                     <div class="card-body p-0">
-                                        <div class="fw-bold mb-3" style="color:{{ $theme }};">Quick Summary</div>
+                                        <div class="fw-bold mb-3" style="color:<?php echo e($theme); ?>;">Quick Summary</div>
 
                                         <div class="row g-3">
-                                            @if($isStudent && !$isAdminLike)
+                                            <?php if($isStudent && !$isAdminLike): ?>
                                                 <div class="col-12">
                                                     <div class="label">Current Semester</div>
-                                                    <div class="value-box">{{ $semesterLabel ?? 'N/A' }}</div>
+                                                    <div class="value-box"><?php echo e($semesterLabel ?? 'N/A'); ?></div>
                                                 </div>
 
                                                 <div class="col-12">
                                                     <div class="label">College</div>
-                                                    <div class="value-box">{{ $collegeName }}</div>
+                                                    <div class="value-box"><?php echo e($collegeName); ?></div>
                                                 </div>
 
                                                 <div class="col-12">
                                                     <div class="label">Course</div>
-                                                    <div class="value-box">{{ $courseName }}</div>
+                                                    <div class="value-box"><?php echo e($courseName); ?></div>
                                                 </div>
 
                                                 <div class="col-12">
                                                     <div class="label">Scholar Status</div>
-                                                    <div class="value-box {{ $isScholar ? '' : 'muted' }}">
-                                                        {{ $isScholar ? 'Scholar' : 'Non-Scholar' }}
+                                                    <div class="value-box <?php echo e($isScholar ? '' : 'muted'); ?>">
+                                                        <?php echo e($isScholar ? 'Scholar' : 'Non-Scholar'); ?>
+
                                                     </div>
                                                 </div>
-                                            @else
+                                            <?php else: ?>
                                                 <div class="col-12">
                                                     <div class="value-box muted">
                                                         No academic profile is shown for this role.
                                                     </div>
                                                 </div>
-                                            @endif
+                                            <?php endif; ?>
                                         </div>
 
                                     </div>
@@ -429,75 +435,78 @@
                         </div>
                     </div>
 
-                    {{-- ================= ACADEMIC ================= --}}
-                    @if($isStudent && !$isAdminLike)
+                    
+                    <?php if($isStudent && !$isAdminLike): ?>
                     <div class="tab-pane fade" id="tabAcademic">
                         <div class="row g-4">
                             <div class="col-lg-6">
-                                <div class="fw-bold mb-3" style="color:{{ $theme }};">Current Academic Details</div>
+                                <div class="fw-bold mb-3" style="color:<?php echo e($theme); ?>;">Current Academic Details</div>
 
                                 <div class="row g-3">
                                     <div class="col-12">
                                         <div class="label">Current Semester</div>
-                                        <div class="value-box">{{ $semesterLabel ?? 'N/A' }}</div>
+                                        <div class="value-box"><?php echo e($semesterLabel ?? 'N/A'); ?></div>
                                     </div>
 
                                     <div class="col-12">
                                         <div class="label">College</div>
-                                        <div class="value-box">{{ $collegeName }}</div>
+                                        <div class="value-box"><?php echo e($collegeName); ?></div>
                                     </div>
 
                                     <div class="col-12">
                                         <div class="label">Course</div>
-                                        <div class="value-box">{{ $courseName }}</div>
+                                        <div class="value-box"><?php echo e($courseName); ?></div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="label">Year Level</div>
-                                        <div class="value-box">{{ $yearLevel }}</div>
+                                        <div class="value-box"><?php echo e($yearLevel); ?></div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="label">Status</div>
-                                        <div class="value-box {{ $isScholar ? '' : 'muted' }}">
-                                            {{ $isScholar ? 'Scholar' : 'Non-Scholar' }}
+                                        <div class="value-box <?php echo e($isScholar ? '' : 'muted'); ?>">
+                                            <?php echo e($isScholar ? 'Scholar' : 'Non-Scholar'); ?>
+
                                         </div>
                                     </div>
 
                                     <div class="col-12">
                                         <div class="label">Scholarship</div>
-                                        @if($isScholar)
+                                        <?php if($isScholar): ?>
                                             <div class="value-box" style="background:#ecfdf5; border:1px solid #bbf7d0;">
                                                 <div>
                                                     <div class="fw-bold text-success">
-                                                        {{ $scholarshipName }}
+                                                        <?php echo e($scholarshipName); ?>
+
                                                     </div>
-                                                    @if(!empty($batchNumber))
+                                                    <?php if(!empty($batchNumber)): ?>
                                                         <div class="small text-muted">
-                                                            Batch: {{ $batchNumber }}
+                                                            Batch: <?php echo e($batchNumber); ?>
+
                                                         </div>
-                                                    @endif
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
-                                        @else
+                                        <?php else: ?>
                                             <div class="value-box muted">
                                                 No active scholarship
                                             </div>
-                                        @endif
+                                        <?php endif; ?>
                                     </div>
 
-                                    @if(!empty($batchNumber))
+                                    <?php if(!empty($batchNumber)): ?>
                                         <div class="col-12">
                                             <div class="label">Batch Number</div>
-                                            <div class="value-box">{{ $batchNumber }}</div>
+                                            <div class="value-box"><?php echo e($batchNumber); ?></div>
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
                             <div class="col-lg-6">
                                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                                    <div class="fw-bold" style="color:{{ $theme }};">Enrollment History</div>
+                                    <div class="fw-bold" style="color:<?php echo e($theme); ?>;">Enrollment History</div>
                                 </div>
 
                                 <div class="table-responsive">
@@ -510,53 +519,54 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                        @forelse($enrollmentHistory as $enr)
-                                            @php
+                                        <?php $__empty_1 = true; $__currentLoopData = $enrollmentHistory; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $enr): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                            <?php
                                                 $sem = $enr->semester
                                                     ? ($enr->semester->term . ' ' . $enr->semester->academic_year)
                                                     : 'N/A';
                                                 $crs = $enr->course?->course_name ?? 'N/A';
                                                 $st  = $enr->status ?? 'N/A';
                                                 $isActive = $activeEnrollment && $enr->id === $activeEnrollment->id;
-                                            @endphp
+                                            ?>
                                             <tr>
                                                 <td>
-                                                    <div class="fw-semibold">{{ $sem }}</div>
-                                                    @if($isActive)
+                                                    <div class="fw-semibold"><?php echo e($sem); ?></div>
+                                                    <?php if($isActive): ?>
                                                         <div class="small text-success">Current</div>
-                                                    @endif
+                                                    <?php endif; ?>
                                                 </td>
-                                                <td style="white-space:normal;">{{ $crs }}</td>
+                                                <td style="white-space:normal;"><?php echo e($crs); ?></td>
                                                 <td>
-                                                    <span class="badge {{ strtolower($st) === 'enrolled' ? 'bg-success' : 'bg-secondary' }}">
-                                                        {{ strtoupper($st) }}
+                                                    <span class="badge <?php echo e(strtolower($st) === 'enrolled' ? 'bg-success' : 'bg-secondary'); ?>">
+                                                        <?php echo e(strtoupper($st)); ?>
+
                                                     </span>
                                                 </td>
                                             </tr>
-                                        @empty
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                             <tr>
                                                 <td colspan="3" class="text-muted small py-3">
                                                     No enrollment history available.
                                                 </td>
                                             </tr>
-                                        @endforelse
+                                        <?php endif; ?>
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    @endif
+                    <?php endif; ?>
 
-                    {{-- ================= CONTACT ================= --}}
-                    @if($isStudent && !$isAdminLike)
+                    
+                    <?php if($isStudent && !$isAdminLike): ?>
                     <div class="tab-pane fade" id="tabContact">
                         <div class="row g-4">
                             <div class="col-lg-7">
-                                <div class="fw-bold mb-3" style="color:{{ $theme }};">Contact Information</div>
+                                <div class="fw-bold mb-3" style="color:<?php echo e($theme); ?>;">Contact Information</div>
 
-                                <form action="{{ route('profile.update-contact') }}" method="POST" class="card border-0 section-card">
-                                    @csrf
+                                <form action="<?php echo e(route('profile.update-contact')); ?>" method="POST" class="card border-0 section-card">
+                                    <?php echo csrf_field(); ?>
                                     <div class="card-body p-0">
 
                                         <div class="mb-3">
@@ -564,12 +574,19 @@
                                             <input type="text"
                                                 name="contact_no"
                                                 class="form-control"
-                                                value="{{ old('contact_no', $user->contact_no ?? '') }}"
+                                                value="<?php echo e(old('contact_no', $user->contact_no ?? '')); ?>"
                                                 placeholder="Enter contact number">
 
-                                            @error('contact_no')
-                                                <div class="text-danger small mt-1">{{ $message }}</div>
-                                            @enderror
+                                            <?php $__errorArgs = ['contact_no'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                                <div class="text-danger small mt-1"><?php echo e($message); ?></div>
+                                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                         </div>
 
                                         <button class="btn btn-brand">
@@ -584,40 +601,55 @@
                             </div>
 
                             <div class="col-lg-5">
-                                <div class="fw-bold mb-3" style="color:{{ $theme }};">Current Contact</div>
-                                <div class="value-box {{ $user->contact_no ? '' : 'muted' }}">
-                                    {{ $user->contact_no ?: 'N/A' }}
+                                <div class="fw-bold mb-3" style="color:<?php echo e($theme); ?>;">Current Contact</div>
+                                <div class="value-box <?php echo e($user->contact_no ? '' : 'muted'); ?>">
+                                    <?php echo e($user->contact_no ?: 'N/A'); ?>
+
                                 </div>
                             </div>
                         </div>
                     </div>
-                    @endif
+                    <?php endif; ?>
 
-                    {{-- ================= SECURITY ================= --}}
+                    
                     <div class="tab-pane fade" id="tabSecurity">
                         <div class="row g-4">
                             <div class="col-lg-7">
-                                <div class="fw-bold mb-3" style="color:{{ $theme }};">Change Password</div>
+                                <div class="fw-bold mb-3" style="color:<?php echo e($theme); ?>;">Change Password</div>
 
-                                <form action="{{ route('profile.update-password') }}" method="POST" class="card border-0 section-card">
-                                    @csrf
+                                <form action="<?php echo e(route('profile.update-password')); ?>" method="POST" class="card border-0 section-card">
+                                    <?php echo csrf_field(); ?>
                                     <div class="card-body p-0">
 
                                         <div class="mb-3">
                                             <div class="label">Current Password</div>
                                             <input type="password" name="current_password" class="form-control" required>
-                                            @error('current_password')
-                                                <div class="text-danger small mt-1">{{ $message }}</div>
-                                            @enderror
+                                            <?php $__errorArgs = ['current_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                                <div class="text-danger small mt-1"><?php echo e($message); ?></div>
+                                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                         </div>
 
                                         <div class="mb-3">
                                             <div class="label">New Password</div>
                                             <input type="password" name="password" class="form-control" required>
                                             <div class="text-muted small mt-1">Minimum 8 characters, with letters & numbers.</div>
-                                            @error('password')
-                                                <div class="text-danger small mt-1">{{ $message }}</div>
-                                            @enderror
+                                            <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                                <div class="text-danger small mt-1"><?php echo e($message); ?></div>
+                                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                         </div>
 
                                         <div class="mb-3">
@@ -633,7 +665,7 @@
                             </div>
 
                             <div class="col-lg-5">
-                                <div class="fw-bold mb-3" style="color:{{ $theme }};">Security Tips</div>
+                                <div class="fw-bold mb-3" style="color:<?php echo e($theme); ?>;">Security Tips</div>
                                 <div class="value-box muted" style="white-space:normal; align-items:flex-start;">
                                     Use a password you don’t reuse elsewhere, and avoid sharing it with anyone.
                                 </div>
@@ -641,11 +673,12 @@
                         </div>
                     </div>
 
-                </div>{{-- tab-content --}}
+                </div>
 
             </div>
         </div>
 
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/profile.blade.php ENDPATH**/ ?>
