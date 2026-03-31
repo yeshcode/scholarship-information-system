@@ -174,9 +174,7 @@
                     <span class="badge rounded-pill mini-badge"><?php echo e($activeSemesterName); ?></span>
                 <?php endif; ?>
             </div>
-            <div class="dash-sub mt-1">
-                Overview of students and enrollment status (auto-refresh every 10s)
-            </div>
+            
         </div>
 
         
