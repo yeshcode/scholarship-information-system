@@ -4,7 +4,6 @@
 
 <style>
     :root{
-        /* BISU / system navy theme */
         --brand:#003366;
         --brand-2:#00284f;
         --soft: rgba(0,51,102,.10);
@@ -63,9 +62,9 @@
     .help-text{ color: var(--muted); font-size: .86rem; }
     .req-textarea{ min-height: 220px; }
     .desc-textarea{ min-height: 140px; }
+    .guide-textarea{ min-height: 140px; }
 </style>
 
-{{-- Header --}}
 <div class="page-head mb-3">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         <div>
@@ -81,7 +80,6 @@
     </div>
 </div>
 
-{{-- Errors --}}
 @if($errors->any())
     <div class="alert alert-danger">
         <div class="fw-semibold">Please fix the following:</div>
@@ -99,7 +97,6 @@
 
     <div class="card-body p-4">
 
-        {{-- Name --}}
         <div class="mb-3">
             <label class="form-label fw-semibold brand-text mb-1">Scholarship Name <span class="text-danger">*</span></label>
             <input type="text"
@@ -108,10 +105,8 @@
                    value="{{ old('scholarship_name') }}"
                    placeholder="e.g., DOST, TES, TDP"
                    required>
-            {{-- <div class="help-text mt-1">Use the official scholarship title.</div> --}}
         </div>
 
-        {{-- Benefactor + Status --}}
         <div class="row g-3">
             <div class="col-12 col-md-8">
                 <label class="form-label fw-semibold brand-text mb-1">Benefactor <span class="text-danger">*</span></label>
@@ -129,11 +124,9 @@
                     <option value="open" {{ old('status','open') === 'open' ? 'selected' : '' }}>Open</option>
                     <option value="closed" {{ old('status') === 'closed' ? 'selected' : '' }}>Closed</option>
                 </select>
-                {{-- <div class="help-text mt-1">Set to Open when accepting applicants.</div> --}}
             </div>
         </div>
 
-        {{-- Dates --}}
         <div class="row g-3 mt-1">
             <div class="col-12 col-md-6">
                 <div class="section-box">
@@ -142,7 +135,6 @@
                            name="application_date"
                            class="form-control"
                            value="{{ old('application_date') }}">
-                    {{-- <div class="help-text mt-1">Optional. Leave blank if not applicable.</div> --}}
                 </div>
             </div>
 
@@ -153,12 +145,10 @@
                            name="deadline"
                            class="form-control"
                            value="{{ old('deadline') }}">
-                    {{-- <div class="help-text mt-1">Optional. Leave blank if there is no deadline.</div> --}}
                 </div>
             </div>
         </div>
 
-        {{-- Description --}}
         <div class="mt-3">
             <div class="section-box">
                 <div class="fw-bold brand-text mb-2">Description <span class="text-danger">*</span></div>
@@ -167,20 +157,46 @@
                           rows="5"
                           placeholder="Brief overview of the scholarship..."
                           required>{{ old('description') }}</textarea>
-                {{-- <div class="help-text mt-2">Keep it clear and student-friendly.</div> --}}
             </div>
         </div>
 
-        {{-- Requirements --}}
+        <div class="mt-3">
+            <div class="section-box">
+                <div class="fw-bold brand-text mb-2">Application Guide</div>
+                <textarea name="application_guide"
+                          class="form-control guide-textarea"
+                          rows="5"
+                          placeholder="Example:
+1. Prepare your requirements.
+2. Submit them to the scholarship office.">{{ old('application_guide') }}</textarea>
+                <div class="help-text mt-2">
+                    Add a short guide so students know how to apply and what to prepare.
+                </div>
+            </div>
+        </div>
+
         <div class="mt-3">
             <div class="section-box">
                 <div class="fw-bold brand-text mb-2">Requirements <span class="text-danger">*</span></div>
                 <textarea name="requirements"
                           class="form-control req-textarea"
                           rows="8"
-                          placeholder="Enter the requirement..."
+                          placeholder="Enter the requirements..."
                           required>{{ old('requirements') }}</textarea>
-                {{-- <div class="help-text mt-2">Tip: Use new lines for each requirement (e.g., Valid ID, COR, Grades).</div> --}}
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <div class="section-box">
+                <div class="fw-bold brand-text mb-2">Source / Verification Link</div>
+                <input type="text"
+                       name="source"
+                       class="form-control"
+                       value="{{ old('source') }}"
+                       placeholder="e.g., Facebook page, DOST website, https://facebook.com/...">
+                <div class="help-text mt-2">
+                    You may enter plain text like “Facebook Page” or paste a direct link.
+                </div>
             </div>
         </div>
 

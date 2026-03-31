@@ -77,14 +77,14 @@
           </select>
         </div>
 
-        <div class="col-12 col-md-6">
+        {{-- <div class="col-12 col-md-6">
           <label class="label">Received At</label>
           <input type="datetime-local"
                  name="received_at"
                  class="form-control form-control-sm"
-                 value="{{ $stipend->received_at ? \Carbon\Carbon::parse($stipend->received_at)->format('Y-m-d\TH:i') : '' }}">
+                 value="{{ $stipend->received_at ? \Carbon\Carbon::parse($stipend->received_at)->format('Y-m-d\TH:i') : '' }}"> --}}
           {{-- <div class="form-text">If Status = Received, leaving this empty will auto-set to now.</div> --}}
-        </div>
+        {{-- </div> --}}
 
       </div>
 

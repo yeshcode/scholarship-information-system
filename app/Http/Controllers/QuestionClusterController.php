@@ -6,7 +6,7 @@ use App\Models\Question;
 use App\Models\QuestionCluster;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+
 
 class QuestionClusterController extends Controller
 {
@@ -213,20 +213,16 @@ class QuestionClusterController extends Controller
         return back()->with('success', 'Topic renamed successfully.');
     }
 
-    public function destroy(QuestionCluster $cluster)
+   public function destroy(QuestionCluster $cluster)
     {
-        // Delete the whole thread safely (cluster + its questions)
-        DB::transaction(function () use ($cluster) {
-            // delete child questions first
-            $cluster->questions()->delete();
-
-            // delete the cluster itself
-            $cluster->delete();
-        });
+        // Delete only the cluster.
+        // Because questions.cluster_id is nullable + nullOnDelete(),
+        // the related student questions will remain and cluster_id will become NULL.
+        $cluster->delete();
 
         return redirect()
             ->route('clusters.index')
-            ->with('success', 'Thread deleted successfully.');
+            ->with('success', 'Thread deleted successfully. Student questions were kept in their records.');
     }
 
 }

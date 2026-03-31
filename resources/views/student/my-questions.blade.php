@@ -29,27 +29,45 @@
                             {{ $q->created_at ? $q->created_at->format('M d, Y • h:i A') : '' }}
                         </div>
 
-                        <div class="fw-semibold mb-1" style="color:#003366;">
-                            Question
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                            <div class="fw-semibold" style="color:#003366;">
+                                Question
+                            </div>
+
+                            @php
+                                $status = strtolower($q->status ?? 'pending');
+                                $badge = match(true) {
+                                    str_contains($status, 'answered') => 'bg-success',
+                                    str_contains($status, 'pending') => 'bg-warning text-dark',
+                                    str_contains($status, 'closed') => 'bg-secondary',
+                                    default => 'bg-light text-dark border',
+                                };
+                            @endphp
+
+                            <span class="badge {{ $badge }}">
+                                {{ ucfirst($q->status ?? 'Pending') }}
+                            </span>
+
+                            @if(is_null($q->cluster_id))
+                                <span class="badge bg-secondary">
+                                    Thread removed by coordinator
+                                </span>
+                            @endif
                         </div>
+
                         <div class="text-muted" style="white-space: pre-line;">
                             {{ $q->question_text }}
                         </div>
                     </div>
 
-                    @php
-                        $status = strtolower($q->status ?? 'pending');
-                        $badge = match(true) {
-                            str_contains($status, 'answered') => 'bg-success',
-                            str_contains($status, 'pending') => 'bg-warning text-dark',
-                            str_contains($status, 'closed') => 'bg-secondary',
-                            default => 'bg-light text-dark border',
-                        };
-                    @endphp
-
-                    <span class="badge {{ $badge }}">
-                        {{ ucfirst($q->status ?? 'Pending') }}
-                    </span>
+                    <form action="{{ route('questions.destroy', $q->id) }}" method="POST"
+                          onsubmit="return confirm('Are you sure you want to delete this question?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            Delete
+                        </button>
+                    </form>
                 </div>
 
                 @if(!empty($q->answer))

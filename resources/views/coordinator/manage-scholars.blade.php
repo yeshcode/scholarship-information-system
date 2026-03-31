@@ -96,7 +96,7 @@
             Add Scholar
         </a>
         <a href="{{ route('coordinator.scholars.upload') }}" class="btn btn-bisu btn-sm">
-            Upload File Scholars
+            Upload Scholar Info
         </a>
 
     </div>
@@ -194,6 +194,7 @@
                     <th>Date Added</th>
                     <th>Course</th>
                     <th>Year Level</th>
+                    <th>Status</th> 
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -239,6 +240,16 @@
                         <td>{{ $scholar->user->yearLevel->year_level_name ?? 'N/A' }}</td>
 
                         <td>
+                            @if($scholar->status === 'active' || is_null($scholar->status))
+                                <span class="badge bg-success">Scholar</span>
+                            @elseif($scholar->status === 'inactive')
+                                <span class="badge bg-secondary">Non-Scholar</span>
+                            @elseif($scholar->status === 'graduated')
+                                <span class="badge bg-info text-dark">Graduated</span>
+                            @endif
+                        </td>
+
+                        <td>
                             <div class="d-flex gap-1">
                                 <!-- Update -->
                                 <button
@@ -269,7 +280,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="text-center text-muted py-4">
+                        <td colspan="11" class="text-center text-muted py-4">
                             No scholars found.
                         </td>
                     </tr>

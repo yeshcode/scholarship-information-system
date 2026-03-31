@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use App\Models\Enrollment;
+use App\Models\Scholar;
+
 
 class ProfileController extends Controller
 {
@@ -45,12 +47,23 @@ class ProfileController extends Controller
                 ->get();
 
             // ✅ Scholar record (blank if none)
-            if (method_exists($user, 'isScholar') && $user->isScholar()) {
-                $scholarRecord = $user->scholarsAsStudent()
-                    ->with('scholarship')
-                    ->latest('id')
-                    ->first();
-            }
+            // if (method_exists($user, 'isScholar') && $user->isScholar()) {
+            //     $scholarRecord = $user->scholarsAsStudent()
+            //         ->with('scholarship')
+            //         ->latest('id')
+            //         ->first();
+            // }
+
+             $scholarRecord = Scholar::query()
+                ->with(['scholarship', 'scholarshipBatch'])
+                ->where('student_id', $user->id)
+                ->where(function ($q) {
+                    $q->whereNull('status')
+                      ->orWhere('status', 'active');
+                })
+                ->whereNull('date_removed')
+                ->latest('id')
+                ->first();
         }
 
         return view('profile', compact(

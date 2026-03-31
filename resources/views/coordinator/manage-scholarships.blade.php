@@ -228,6 +228,11 @@
                     </div>
 
                     <div class="modal-body">
+                        @php
+                            $sourceValue = trim((string)($scholarship->source ?? ''));
+                            $isSourceUrl = \Illuminate\Support\Str::startsWith(strtolower($sourceValue), ['http://', 'https://']);
+                        @endphp
+
                         <div class="row g-3 mb-3">
                             <div class="col-12 col-md-6">
                                 <div class="sch-meta h-100">
@@ -245,12 +250,38 @@
 
                         <div class="info-box mb-3">
                             <div class="info-title">Description</div>
-                            <div class="text-muted">{{ $scholarship->description }}</div>
+                            <div class="text-muted" style="white-space: pre-wrap;">{{ $scholarship->description }}</div>
+                        </div>
+
+                        <div class="info-box mb-3">
+                            <div class="info-title">Application Guide</div>
+                            <div class="text-muted" style="white-space: pre-wrap;">
+                                {{ $scholarship->application_guide ?: 'No application guide provided.' }}
+                            </div>
+                        </div>
+
+                        <div class="info-box mb-3">
+                            <div class="info-title">Requirements</div>
+                            <div class="text-muted" style="white-space: pre-wrap;">{{ $scholarship->requirements }}</div>
                         </div>
 
                         <div class="info-box">
-                            <div class="info-title">Requirements</div>
-                            <div class="text-muted" style="white-space: pre-wrap;">{{ $scholarship->requirements }}</div>
+                            <div class="info-title">Source / Verification</div>
+
+                            @if(!empty($sourceValue))
+                                @if($isSourceUrl)
+                                    <a href="{{ $sourceValue }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary mb-2">
+                                        Open Source Link
+                                    </a>
+                                    <div class="text-muted small" style="word-break: break-word;">
+                                        {{ $sourceValue }}
+                                    </div>
+                                @else
+                                    <div class="text-muted">{{ $sourceValue }}</div>
+                                @endif
+                            @else
+                                <div class="text-muted">No source provided.</div>
+                            @endif
                         </div>
                     </div>
 
@@ -330,130 +361,155 @@
         </div>
 
         <!-- ✅ EDIT MODAL -->
-<div class="modal fade modal-edit-scholarship" id="editScholarshipModal{{ $scholarship->id }}" tabindex="-1"
-     aria-labelledby="editScholarshipLabel{{ $scholarship->id }}" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-xl modal-dialog-scrollable">
-        <div class="modal-content" style="border-radius:16px; overflow:hidden;">
-            <div class="sch-topbar"></div>
+        <div class="modal fade modal-edit-scholarship" id="editScholarshipModal{{ $scholarship->id }}" tabindex="-1"
+            aria-labelledby="editScholarshipLabel{{ $scholarship->id }}" aria-hidden="true">
+            <div class="modal-dialog modal-fullscreen-lg-down modal-xl modal-dialog-scrollable">
+                <div class="modal-content" style="border-radius:16px; overflow:hidden;">
+                    <div class="sch-topbar"></div>
 
-            <form action="{{ route('coordinator.scholarships.update', $scholarship->id) }}" method="POST">
-                @csrf
-                @method('PUT')
+                    <form action="{{ route('coordinator.scholarships.update', $scholarship->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
 
-                <div class="modal-header" style="background: var(--brand); color:#fff;">
-                    <div>
-                        <h5 class="modal-title fw-bold mb-0" id="editScholarshipLabel{{ $scholarship->id }}">
-                            Edit Scholarship
-                        </h5>
-                        <div class="small opacity-75 mt-1">
-                            Update scholarship details, dates, and status.
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-
-                <div class="modal-body">
-                    {{-- Name --}}
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold brand-text mb-1">Scholarship Name</label>
-                        <input type="text"
-                               name="scholarship_name"
-                               value="{{ $scholarship->scholarship_name }}"
-                               class="form-control"
-                               required>
-                    </div>
-
-                    {{-- Benefactor + Status --}}
-                    <div class="row g-3">
-                        <div class="col-12 col-md-8">
-                            <label class="form-label fw-semibold brand-text mb-1">Benefactor</label>
-                            <input type="text"
-                                   name="benefactor"
-                                   value="{{ $scholarship->benefactor }}"
-                                   class="form-control"
-                                   required>
-                        </div>
-
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-semibold brand-text mb-1">Status</label>
-                            <select name="status" class="form-select" required>
-                                <option value="open" {{ ($scholarship->status === 'open') ? 'selected' : '' }}>Open</option>
-                                <option value="closed" {{ ($scholarship->status === 'closed') ? 'selected' : '' }}>Closed</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {{-- Dates --}}
-                    <div class="row g-3 mt-1">
-                        <div class="col-12 col-md-6">
-                            <div class="sch-meta">
-                                <label class="form-label fw-semibold brand-text mb-1">Application Date</label>
-                                <input type="date"
-                                       name="application_date"
-                                       value="{{ $scholarship->application_date ? \Carbon\Carbon::parse($scholarship->application_date)->format('Y-m-d') : '' }}"
-                                       class="form-control">
-                                {{-- <div class="form-text">Optional. Leave empty if not applicable.</div> --}}
+                        <div class="modal-header" style="background: var(--brand); color:#fff;">
+                            <div>
+                                <h5 class="modal-title fw-bold mb-0" id="editScholarshipLabel{{ $scholarship->id }}">
+                                    Edit Scholarship
+                                </h5>
+                                <div class="small opacity-75 mt-1">
+                                    Update scholarship details, guide, dates, source, and status.
+                                </div>
                             </div>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
-                        <div class="col-12 col-md-6">
-                            <div class="sch-meta">
-                                <label class="form-label fw-semibold brand-text mb-1">Deadline</label>
-                                <input type="date"
-                                       name="deadline"
-                                       value="{{ $scholarship->deadline ? \Carbon\Carbon::parse($scholarship->deadline)->format('Y-m-d') : '' }}"
-                                       class="form-control">
-                                {{-- <div class="form-text">Optional. Leave empty if not applicable.</div> --}}
+                        <div class="modal-body">
+                            {{-- Scholarship Name --}}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold brand-text mb-1">Scholarship Name</label>
+                                <input type="text"
+                                    name="scholarship_name"
+                                    value="{{ $scholarship->scholarship_name }}"
+                                    class="form-control"
+                                    required>
                             </div>
+
+                            {{-- Benefactor + Status --}}
+                            <div class="row g-3">
+                                <div class="col-12 col-md-8">
+                                    <label class="form-label fw-semibold brand-text mb-1">Benefactor</label>
+                                    <input type="text"
+                                        name="benefactor"
+                                        value="{{ $scholarship->benefactor }}"
+                                        class="form-control"
+                                        required>
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label fw-semibold brand-text mb-1">Status</label>
+                                    <select name="status" class="form-select" required>
+                                        <option value="open" {{ ($scholarship->status === 'open') ? 'selected' : '' }}>Open</option>
+                                        <option value="closed" {{ ($scholarship->status === 'closed') ? 'selected' : '' }}>Closed</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {{-- Dates --}}
+                            <div class="row g-3 mt-1">
+                                <div class="col-12 col-md-6">
+                                    <div class="sch-meta">
+                                        <label class="form-label fw-semibold brand-text mb-1">Application Date</label>
+                                        <input type="date"
+                                            name="application_date"
+                                            value="{{ $scholarship->application_date ? \Carbon\Carbon::parse($scholarship->application_date)->format('Y-m-d') : '' }}"
+                                            class="form-control">
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <div class="sch-meta">
+                                        <label class="form-label fw-semibold brand-text mb-1">Deadline</label>
+                                        <input type="date"
+                                            name="deadline"
+                                            value="{{ $scholarship->deadline ? \Carbon\Carbon::parse($scholarship->deadline)->format('Y-m-d') : '' }}"
+                                            class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Description --}}
+                            <div class="info-box mt-3">
+                                <div class="info-title">Description</div>
+                                <textarea name="description"
+                                        class="form-control"
+                                        rows="6"
+                                        style="min-height:150px;"
+                                        required>{{ $scholarship->description }}</textarea>
+                            </div>
+
+                            {{-- Application Guide --}}
+                            <div class="info-box mt-3">
+                                <div class="info-title">Application Guide</div>
+                                <textarea name="application_guide"
+                                        class="form-control"
+                                        rows="6"
+                                        style="min-height:150px;"
+                                        placeholder="Example:
+        1. Prepare all required documents.
+        2. Submit to the scholarship office.">{{ $scholarship->application_guide }}</textarea>
+                                <div class="form-text">
+                                    Add a short guide so students know how to apply and what to prepare.
+                                </div>
+                            </div>
+
+                            {{-- Requirements --}}
+                            <div class="info-box mt-3">
+                                <div class="info-title">Requirements</div>
+                                <textarea name="requirements"
+                                        class="form-control"
+                                        rows="8"
+                                        style="min-height:220px;"
+                                        required>{{ $scholarship->requirements }}</textarea>
+                            </div>
+
+                            {{-- Source --}}
+                            <div class="info-box mt-3">
+                                <div class="info-title">Source / Verification</div>
+                                <input type="text"
+                                    name="source"
+                                    value="{{ $scholarship->source }}"
+                                    class="form-control"
+                                    placeholder="Example: Facebook page, DOST page, or https://example.com/post">
+                                <div class="form-text">
+                                    You can type plain text or paste a direct link.
+                                </div>
+                            </div>
+
+                            {{-- Errors --}}
+                            @if($errors->any())
+                                <div class="alert alert-danger mt-3 mb-0">
+                                    <div class="fw-semibold">Please fix the errors:</div>
+                                    <ul class="mb-0">
+                                        @foreach($errors->all() as $e)
+                                            <li>{{ $e }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
                         </div>
-                    </div>
 
-                    {{-- Description --}}
-                    <div class="info-box mt-3">
-                        <div class="info-title">Description</div>
-                        <textarea name="description"
-                            class="form-control"
-                            rows="6"
-                            style="min-height:150px;"
-                            required>{{ $scholarship->description }}</textarea>
-                    </div>
-
-                    {{-- Requirements --}}
-                    <div class="info-box mt-3">
-                        <div class="info-title">Requirements</div>
-                        <textarea name="requirements"
-                            class="form-control"
-                            rows="8"
-                            style="min-height:220px;"
-                            required>{{ $scholarship->requirements }}</textarea>
-                        {{-- <div class="form-text">Tip: You can use new lines for each requirement.</div> --}}
-                    </div>
-
-                    {{-- Errors (if validation fails, Laravel usually redirects page; keeping this as backup) --}}
-                    @if($errors->any())
-                        <div class="alert alert-danger mt-3 mb-0">
-                            <div class="fw-semibold">Please fix the errors:</div>
-                            <ul class="mb-0">
-                                @foreach($errors->all() as $e)
-                                    <li>{{ $e }}</li>
-                                @endforeach
-                            </ul>
+                        <div class="modal-footer bg-white">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-brand">
+                                Save Changes
+                            </button>
                         </div>
-                    @endif
+                    </form>
                 </div>
-
-                <div class="modal-footer bg-white">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-brand">
-                        Save Changes
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
-</div>
 
     @empty
         <div class="col-12">

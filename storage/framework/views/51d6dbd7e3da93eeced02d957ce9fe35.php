@@ -248,57 +248,55 @@
     </div>
 
     
-    <?php if($cluster->questions_count == 0): ?>
-<div class="modal fade" id="deleteThreadModal-<?php echo e($cluster->id); ?>" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content" style="border-radius:14px;">
-      <div class="modal-header">
-        <h5 class="modal-title">Delete this thread?</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
+        <div class="modal fade" id="deleteThreadModal-<?php echo e($cluster->id); ?>" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:14px;">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete this thread?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
 
-      <div class="modal-body">
-        <div class="mb-2 text-muted">
-          This will permanently delete the entire thread and all posts under it.
+            <div class="modal-body">
+                <div class="mb-2 text-muted">
+                    This will delete the thread from the coordinator side only. Student questions will remain in their records.
+                </div>
+
+                <div class="p-3 rounded border" style="background:#fff;">
+                    <div class="fw-semibold" style="color: var(--brand);">
+                        <?php echo e($topic); ?>
+
+                    </div>
+                    <div class="small text-muted mt-1">
+                        <?php echo e($cluster->questions_count); ?> post<?php echo e($cluster->questions_count == 1 ? '' : 's'); ?>
+
+                        <?php if(!empty($cluster->created_at)): ?>
+                            • Created <?php echo e($cluster->created_at->format('M d, Y')); ?>
+
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning mt-3 mb-0">
+                    <span class="fw-semibold">Note:</span> The thread will be removed from this list, but student-submitted questions will still remain visible to the students.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-bisu-secondary" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <form method="POST" action="<?php echo e(route('clusters.destroy', $cluster->id)); ?>">
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('DELETE'); ?>
+                    <button type="submit" class="btn btn-danger">
+                        Yes, Delete
+                    </button>
+                </form>
+            </div>
         </div>
-
-        <div class="p-3 rounded border" style="background:#fff;">
-          <div class="fw-semibold" style="color: var(--brand);">
-            <?php echo e($topic); ?>
-
-          </div>
-          <div class="small text-muted mt-1">
-            <?php echo e($cluster->questions_count); ?> post<?php echo e($cluster->questions_count == 1 ? '' : 's'); ?>
-
-            <?php if(!empty($cluster->created_at)): ?>
-              • Created <?php echo e($cluster->created_at->format('M d, Y')); ?>
-
-            <?php endif; ?>
-          </div>
-        </div>
-
-        <div class="alert alert-warning mt-3 mb-0">
-          <span class="fw-semibold">Note:</span> This action cannot be undone.
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-bisu-secondary" data-bs-dismiss="modal">
-          Cancel
-        </button>
-
-        <form method="POST" action="<?php echo e(route('clusters.destroy', $cluster->id)); ?>">
-          <?php echo csrf_field(); ?>
-          <?php echo method_field('DELETE'); ?>
-          <button type="submit" class="btn btn-danger">
-            Yes, Delete
-          </button>
-        </form>
-      </div>
     </div>
-  </div>
 </div>
-<?php endif; ?>
 
 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
     <div class="text-center py-5">

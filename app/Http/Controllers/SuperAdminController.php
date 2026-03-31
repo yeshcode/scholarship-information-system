@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\StudentsBulkImport;
 use App\Http\Controllers\Concerns\UsesActiveSemester;
+use Spatie\Permission\Models\Role;
 
 
 
@@ -925,6 +926,11 @@ public function previewBulkUploadUsers(Request $request)
     $yearCache = [];
     $courseCache = [];
 
+    $seenStudentIds = [];
+    $seenEmails = [];
+
+
+
     // ✅ allowed suffix values (optional). You can edit this list.
     $allowedSuffix = ['JR','SR','II','III','IV','V'];
 
@@ -941,8 +947,28 @@ public function previewBulkUploadUsers(Request $request)
         $course     = $this->pickFromRow($r, ['course', 'course name', 'course_name', 'program', 'program name']);
         $yearLevel  = $this->pickFromRow($r, ['year_level', 'year level', 'yearlevel', 'year']);
 
-
         $issues = [];
+
+        // 🔹 CHECK DUPLICATES INSIDE THE CSV FILE
+        if ($student_id) {
+            $normalizedStudentId = mb_strtolower(trim($student_id));
+
+            if (isset($seenStudentIds[$normalizedStudentId])) {
+                $issues[] = 'Duplicate in file: Student ID appears more than once in the uploaded file.';
+            } else {
+                $seenStudentIds[$normalizedStudentId] = true;
+            }
+        }
+
+        if ($email) {
+            $normalizedEmail = mb_strtolower(trim($email));
+
+            if (isset($seenEmails[$normalizedEmail])) {
+                $issues[] = 'Duplicate in file: BISU email appears more than once in the uploaded file.';
+            } else {
+                $seenEmails[$normalizedEmail] = true;
+            }
+        }
 
         // Basic validation
         if (!$student_id) $issues[] = 'Missing student_id';
@@ -978,12 +1004,39 @@ public function previewBulkUploadUsers(Request $request)
         }
 
         // Check duplicates in DB
-        if ($student_id && \App\Models\User::where('student_id', $student_id)->exists()) {
-            $issues[] = 'Student ID exists.';
+        // if ($student_id && \App\Models\User::where('student_id', $student_id)->exists()) {
+        //     $issues[] = 'Student ID exists.';
+        // }
+        // if ($email && \App\Models\User::where('bisu_email', $email)->exists()) {
+        //     $issues[] = 'BISU email address exists.';
+        // }
+
+
+        // Check duplicates in DB
+if ($student_id) {
+    $existingUser = \App\Models\User::where('student_id', $student_id)->first();
+
+    if ($existingUser) {
+        $sameFirst = mb_strtolower(trim((string) $existingUser->firstname)) === mb_strtolower(trim((string) $firstname));
+        $sameLast  = mb_strtolower(trim((string) $existingUser->lastname)) === mb_strtolower(trim((string) $lastname));
+
+        if ($sameFirst && $sameLast) {
+            $issues[] = 'Duplicate: This student is already registered in the database.';
+        } else {
+            $issues[] = 'Conflict: Student ID already exists and belongs to another student.';
         }
-        if ($email && \App\Models\User::where('bisu_email', $email)->exists()) {
-            $issues[] = 'BISU email address exists.';
-        }
+    }
+}
+
+if ($email) {
+    $existingEmailUser = \App\Models\User::where('bisu_email', $email)->first();
+
+    if ($existingEmailUser) {
+        $issues[] = 'BISU email address already exists.';
+    }
+}
+
+
 
         if (!empty($issues)) $issuesCount++;
 
@@ -1022,105 +1075,75 @@ public function previewBulkUploadUsers(Request $request)
 //Confirm and save bulk upload
 public function confirmBulkUploadUsers(Request $request)
 {
-    // ⏱️ Prevent timeout (dev/local)
     set_time_limit(300);
 
     $preview       = session('bulk_upload.preview', []);
     $hash          = session('bulk_upload.hash');
     $studentTypeId = session('bulk_upload.student_type_id');
 
-    // ✅ session validation
     if (!$preview || !$hash || $hash !== hash('sha256', json_encode($preview))) {
         return redirect()->route('admin.users.bulk-upload-form')
             ->with('error', 'Upload session expired or invalid. Please upload again.');
     }
 
-    // ✅ Stop if preview has issues
+    // Stop if preview has issues
     $hasIssues = collect($preview)->contains(fn ($r) => !empty($r['issues']));
     if ($hasIssues) {
         return back()->with('error', 'Fix the issues first. Rows with errors cannot be confirmed.');
     }
 
-    // 🚀 SPEED-UP: load role ONCE (no repeated DB queries)
     $studentRole = \Spatie\Permission\Models\Role::where('name', 'Student')->first();
 
-    // Optional: counts for message
     $created = 0;
-    $updated = 0;
+    $skipped = 0;
 
-    DB::transaction(function () use ($preview, $studentTypeId, $studentRole, &$created, &$updated) {
-
+    DB::transaction(function () use ($preview, $studentTypeId, $studentRole, &$created, &$skipped) {
         foreach ($preview as $row) {
-
-            // ✅ REQUIRED fields (from preview)
             $studentId = $row['student_id'];
             $email     = $row['bisu_email'];
 
-            // ✅ Ensure user_id exists because your DB says NOT NULL
-            // If you want user_id to be student_id, do this:
             $userId = $row['user_id'] ?? $studentId;
-
-            // ✅ contact_no might be nullable now (as you said adviser recommended)
-            // But if your DB is still NOT NULL, set a safe default:
             $contactNo = $row['contact_no'] ?? 'N/A';
 
-            // ✅ Build user data
             $userData = [
                 'user_id'       => $userId,
                 'user_type_id'  => $studentTypeId,
                 'student_id'    => $studentId,
                 'lastname'      => $row['lastname'],
                 'firstname'     => $row['firstname'],
-                'middlename'    => $row['middlename'] ?? null, // ✅ added
-                'suffix'        => $row['suffix'] ?? null,     // ✅ added
+                'middlename'    => $row['middlename'] ?? null,
+                'suffix'        => $row['suffix'] ?? null,
                 'bisu_email'    => $email,
                 'college_id'    => $row['college_id'],
                 'course_id'     => $row['course_id'],
                 'year_level_id' => $row['year_level_id'],
                 'status'        => 'active',
-
-                // If your migration already made contact_no nullable, you can store null:
-                // 'contact_no' => $row['contact_no'] ?? null,
                 'contact_no'    => $contactNo,
             ];
 
-            /**
-             * ✅ Upsert rule:
-             * Use ONE unique key. Student ID is safest in your system.
-             */
-            $user = \App\Models\User::where('student_id', $studentId)->first();
+            // CREATE-ONLY logic
+            $existingUser = \App\Models\User::where('student_id', $studentId)->first();
+            $existingEmail = \App\Models\User::where('bisu_email', $email)->first();
 
-            if ($user) {
-                // Existing user: update fields
-                $user->fill($userData);
-
-                // Only reset password if you want to force default every upload:
-                // (optional)
-                // $user->password = Hash::make($studentId);
-
-                $user->save();
-                $updated++;
-            } else {
-                // New user: create + set default password
-                $userData['password'] = Hash::make($studentId);
-                $user = \App\Models\User::create($userData);
-                $created++;
+            if ($existingUser || $existingEmail) {
+                $skipped++;
+                continue;
             }
 
-            // ✅ Assign role WITHOUT querying role each loop
+            $userData['password'] = Hash::make($studentId);
+            $user = \App\Models\User::create($userData);
+            $created++;
+
             if ($studentRole) {
-                // syncRoles triggers DB writes; assignRole is lighter if no role yet
-                // but syncRoles is fine if you want to enforce exactly one role.
                 $user->syncRoles([$studentRole->name]);
             }
         }
     });
 
-    // ✅ Clear preview session
     session()->forget(['bulk_upload.preview', 'bulk_upload.hash', 'bulk_upload.student_type_id']);
 
     return redirect()->route('admin.dashboard', ['page' => 'manage-users'])
-        ->with('success', "Bulk upload confirmed! Created: {$created}, Updated: {$updated}");
+        ->with('success', "Bulk upload successful!");
 }
 
 
@@ -1634,7 +1657,7 @@ public function storeEnrollStudents(Request $request)
 
     return redirect()->back()->with(
         'success',
-        "Done! Enrolled: {$enrolledCount}, Graduated: {$graduatedCount}, Skipped: {$skippedCount}"
+        "Done! Successfully enrolled!"
     );
 }
 
@@ -2101,7 +2124,10 @@ public function storeUser(Request $request)
         'suffix'        => 'nullable|string|max:50',
         'contact_no'    => 'nullable|string|max:255',
 
-        'student_id'    => $isStudent ? 'required|string|max:255' : 'nullable|string|max:255',
+        'student_id' => $isStudent
+            ? 'required|string|max:255|unique:users,student_id'
+            : 'nullable|string|max:255',
+
         'user_type_id'  => 'required|exists:user_types,id',
 
         'college_id'    => $isStudent ? 'required|exists:colleges,id' : 'nullable|exists:colleges,id',
@@ -2139,6 +2165,23 @@ public function storeUser(Request $request)
         // ✅ Generate unique user_id automatically
         $generatedUserId = $this->generateUniqueUserId();
 
+        // $user = \App\Models\User::create([
+        //     'user_id'       => $generatedUserId,
+        //     'bisu_email'    => $request->bisu_email,
+        //     'firstname'     => $request->firstname,
+        //     'lastname'      => $request->lastname,
+        //     'middlename'    => $request->middlename,
+        //     'suffix'        => $request->suffix,
+        //     'contact_no'    => $request->contact_no,
+        //     'student_id'    => $request->student_id,
+        //     'user_type_id'  => $request->user_type_id,
+        //     'college_id'    => $request->college_id,
+        //     'year_level_id' => $request->year_level_id,
+        //     'course_id'     => $request->course_id,
+        //     'password'      => bcrypt($finalPassword),
+        //     'status'        => 'active', // ✅ default active always
+        // ]);
+
         $user = \App\Models\User::create([
             'user_id'       => $generatedUserId,
             'bisu_email'    => $request->bisu_email,
@@ -2147,20 +2190,42 @@ public function storeUser(Request $request)
             'middlename'    => $request->middlename,
             'suffix'        => $request->suffix,
             'contact_no'    => $request->contact_no,
-            'student_id'    => $request->student_id,
+
+            // ✅ ONLY students get these
+            'student_id'    => $isStudent ? $request->student_id : null,
+            'college_id'    => $isStudent ? $request->college_id : null,
+            'year_level_id' => $isStudent ? $request->year_level_id : null,
+            'course_id'     => $isStudent ? $request->course_id : null,
+
             'user_type_id'  => $request->user_type_id,
-            'college_id'    => $request->college_id,
-            'year_level_id' => $request->year_level_id,
-            'course_id'     => $request->course_id,
             'password'      => bcrypt($finalPassword),
-            'status'        => 'active', // ✅ default active always
+            'status'        => 'active',
         ]);
 
         // ✅ Assign role
-        if ($user->userType) {
-            $roleName = $user->userType->name;
-            if (\Spatie\Permission\Models\Role::where('name', $roleName)->exists()) {
-                $user->assignRole($roleName);
+        // if ($user->userType) {
+        //     $roleName = $user->userType->name;
+        //     if (\Spatie\Permission\Models\Role::where('name', $roleName)->exists()) {
+        //         $user->assignRole($roleName);
+        //     }
+        // }
+
+                if ($user->userType) {
+            $userTypeName = $user->userType->name;
+
+            // ✅ IMPORTANT: your admin routes require "Super Admin"
+            $roleMap = [
+                'Admin' => 'Super Admin',
+                'Scholarship Coordinator' => 'Scholarship Coordinator',
+                'Scholarship Staff' => 'Scholarship Staff',
+                'Student' => 'Student',
+            ];
+
+            $roleToAssign = $roleMap[$userTypeName] ?? null;
+
+            if ($roleToAssign && Role::where('name', $roleToAssign)->exists()) {
+                // better than assignRole (prevents multiple conflicting roles)
+                $user->syncRoles([$roleToAssign]);
             }
         }
 
@@ -2227,6 +2292,26 @@ public function updateUser(Request $request, $id)
 
     $user->save();
 
+    if ($user->userType) {
+    $userTypeName = $user->userType->name;
+
+    $roleMap = [
+        'Admin' => 'Super Admin',
+        'Scholarship Coordinator' => 'Scholarship Coordinator',
+        'Scholarship Staff' => 'Scholarship Staff',
+        'Student' => 'Student',
+    ];
+
+    $roleToAssign = $roleMap[$userTypeName] ?? null;
+
+    if ($roleToAssign && Role::where('name', $roleToAssign)->exists()) {
+        $user->syncRoles([$roleToAssign]);
+    } else {
+        // if no matching role, remove roles to avoid ghost access
+        $user->syncRoles([]);
+    }
+}
+
     return redirect()->route('admin.dashboard', ['page' => 'manage-users'])
         ->with('success', 'User updated successfully!');
 }
@@ -2253,6 +2338,25 @@ public function deleteUser($id)
 {
     $user = User::findOrFail($id);
     return view('super-admin.users-delete', compact('user'));
+}
+
+private function normalizePersonValue(?string $value): string
+{
+    $value = trim((string) $value);
+    $value = mb_strtolower($value);
+    $value = preg_replace('/\s+/', ' ', $value);
+    return $value;
+}
+
+private function isSameStudentOwner(User $user, array $row): bool
+{
+    $dbFirst = $this->normalizePersonValue($user->firstname);
+    $dbLast  = $this->normalizePersonValue($user->lastname);
+
+    $rowFirst = $this->normalizePersonValue($row['firstname'] ?? '');
+    $rowLast  = $this->normalizePersonValue($row['lastname'] ?? '');
+
+    return $dbFirst === $rowFirst && $dbLast === $rowLast;
 }
     // Add similar methods for other tables (e.g., createYearLevel, storeYearLevel, etc.)
 }

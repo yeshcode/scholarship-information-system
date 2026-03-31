@@ -25,7 +25,7 @@
         $yearLevel   = $user->yearLevel?->year_level_name ?? 'N/A';
 
         $scholarshipName = $scholarRecord?->scholarship?->scholarship_name ?? '';
-        $batchNumber     = $scholarRecord?->batch_number ?? '';
+        $batchNumber     = $scholarRecord?->scholarshipBatch?->batch_number ?? '';
     }
 
     $isScholar = ($isStudent && !$isAdminLike && !is_null($scholarRecord));

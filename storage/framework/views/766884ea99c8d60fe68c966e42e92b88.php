@@ -16,6 +16,8 @@
 
     <link rel="stylesheet" href="<?php echo e(asset('vendor/bootstrap-icons/bootstrap-icons.css')); ?>">
 
+    <link rel="icon" type="image/png" href="<?php echo e(asset('scholarship_logo.png')); ?>">
+
     <style>
         :root {
             --bisu-blue: #003366;

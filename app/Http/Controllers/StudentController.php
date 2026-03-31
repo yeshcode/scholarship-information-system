@@ -16,7 +16,7 @@ use App\Models\Question;     // <-- add this (if not yet)
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\AnnouncementComment;
 
 
 class StudentController extends Controller
@@ -65,24 +65,16 @@ use UsesActiveSemester;
     $studentYearLevel = $latestEnrollment->yearlevel_display ?? 'N/A';
                 
     // ✅ Announcements visible to student
-    $announcements = Announcement::query()
+        $announcements = Announcement::query()
         ->whereNotNull('posted_at')
         ->where('posted_at', '<=', now())
-        ->where(function ($q) use ($userId, $isScholar) {
-            $q->where('audience', 'all_students');
-
-            if ($isScholar) {
-                $q->orWhere('audience', 'all_scholars');
-            }
-
-            $q->orWhereHas('notifications', function ($n) use ($userId) {
-                $n->where('recipient_user_id', $userId)
-                  ->where('type', 'announcement');
-            });
+        ->whereHas('recipients', function ($q) use ($userId) {
+            $q->where('users.id', $userId);
         })
         ->orderByDesc('posted_at')
         ->take(3)
         ->get();
+
 
     // ✅ Notifications preview + unread count
     $notifications = Notification::where('recipient_user_id', $userId)
@@ -101,20 +93,11 @@ use UsesActiveSemester;
         ->get();
 
     // ✅ Summary counts
-    $announcementsCount = Announcement::query()
+       $announcementsCount = Announcement::query()
         ->whereNotNull('posted_at')
         ->where('posted_at', '<=', now())
-        ->where(function ($q) use ($userId, $isScholar) {
-            $q->where('audience', 'all_students');
-
-            if ($isScholar) {
-                $q->orWhere('audience', 'all_scholars');
-            }
-
-            $q->orWhereHas('notifications', function ($n) use ($userId) {
-                $n->where('recipient_user_id', $userId)
-                  ->where('type', 'announcement');
-            });
+        ->whereHas('recipients', function ($q) use ($userId) {
+            $q->where('users.id', $userId);
         })
         ->count();
 
@@ -141,35 +124,23 @@ use UsesActiveSemester;
 {
     $userId = Auth::id();
 
-    $isScholar = Scholar::where('student_id', $userId)->exists();
-
     $announcements = Announcement::query()
+        ->with(['creator', 'scholarship'])
         ->whereNotNull('posted_at')
         ->where('posted_at', '<=', now())
-        ->where(function ($q) use ($userId, $isScholar) {
-            $q->where('audience', 'all_students');
-
-            if ($isScholar) {
-                $q->orWhere('audience', 'all_scholars');
-            }
-
-            $q->orWhereHas('notifications', function ($n) use ($userId) {
-                $n->where('recipient_user_id', $userId)
-                  ->where('type', 'announcement');
-            });
+        ->whereHas('recipients', function ($q) use ($userId) {
+            $q->where('users.id', $userId);
         })
         ->orderByDesc('posted_at')
         ->paginate(10);
 
-        // ✅ Get IDs that the student already opened/read
-        $announcementIds = $announcements->getCollection()->pluck('id');
+    $announcementIds = $announcements->getCollection()->pluck('id');
 
-        $viewedIds = AnnouncementView::where('user_id', $userId)
-            ->whereIn('announcement_id', $announcementIds)
-            ->pluck('announcement_id')
-            ->map(fn($id) => (int)$id)
-            ->toArray();
-
+    $viewedIds = AnnouncementView::where('user_id', $userId)
+        ->whereIn('announcement_id', $announcementIds)
+        ->pluck('announcement_id')
+        ->map(fn($id) => (int) $id)
+        ->toArray();
 
     return view('student.announcements', compact('announcements', 'viewedIds'));
 }
@@ -231,19 +202,63 @@ public function markAsRead($id)
     }
 
    public function announcementShow(Announcement $announcement)
-    {
-        AnnouncementView::firstOrCreate(
-            [
-                'announcement_id' => $announcement->id,
-                'user_id' => Auth::id(),
-            ],
-            [
-                'seen_at' => now(),
-            ]
-        );
+{
+    $userId = Auth::id();
 
-        return view('student.announcement-show', compact('announcement'));
+    $allowed = $announcement->recipients()
+        ->where('users.id', $userId)
+        ->exists();
+
+    if (!$allowed) {
+        abort(403, 'You are not allowed to view this announcement.');
     }
+
+    AnnouncementView::firstOrCreate(
+        [
+            'announcement_id' => $announcement->id,
+            'user_id' => $userId,
+        ],
+        [
+            'seen_at' => now(),
+        ]
+    );
+
+    $announcement->load([
+        'scholarship',
+        'comments.user',
+        'comments.replies.user',
+    ]);
+
+    return view('student.announcement-show', compact('announcement'));
+}
+
+public function storeAnnouncementComment(Request $request, Announcement $announcement)
+{
+    $userId = Auth::id();
+
+    $allowed = $announcement->recipients()
+        ->where('users.id', $userId)
+        ->exists();
+
+    if (!$allowed) {
+        abort(403, 'You are not allowed to comment on this announcement.');
+    }
+
+    $request->validate([
+        'comment' => 'required|string|max:2000',
+    ]);
+
+    AnnouncementComment::create([
+        'announcement_id' => $announcement->id,
+        'user_id' => $userId,
+        'parent_id' => null, // student top-level comment
+        'comment' => $request->comment,
+    ]);
+
+    return redirect()
+        ->route('student.announcements.show', $announcement->id)
+        ->with('success', 'Comment posted successfully.');
+}
 
 
 public function open($id)
@@ -256,9 +271,14 @@ public function open($id)
         $notification->update(['is_read' => true]);
     }
 
-    // ✅ Use 'type' because that's what exists in your DB
     if ($notification->type === 'announcement') {
-        // You can redirect to announcements list (safe)
+        if (
+            $notification->related_type === 'announcement' &&
+            !empty($notification->related_id)
+        ) {
+            return redirect()->route('student.announcements.show', $notification->related_id);
+        }
+
         return redirect()->route('student.announcements');
     }
 
@@ -268,7 +288,6 @@ public function open($id)
 
     return redirect()->route('student.notifications');
 }
-
 
 public function claimStipend(Request $request, Stipend $stipend)
 {

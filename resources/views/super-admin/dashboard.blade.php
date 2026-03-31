@@ -174,9 +174,9 @@
                     <span class="badge rounded-pill mini-badge">{{ $activeSemesterName }}</span>
                 @endif
             </div>
-            <div class="dash-sub mt-1">
+            {{-- <div class="dash-sub mt-1">
                 Overview of students and enrollment status (auto-refresh every 10s)
-            </div>
+            </div> --}}
         </div>
 
         {{-- Desktop Quick Actions --}}
@@ -431,9 +431,9 @@
 
                     </div>
 
-                    <div class="mt-3 text-muted small">
+                    {{-- <div class="mt-3 text-muted small">
                         Tip: Use the Semester filter in the navbar to change dashboard scope.
-                    </div>
+                    </div> --}}
                 </div>
             </div>
         </div>

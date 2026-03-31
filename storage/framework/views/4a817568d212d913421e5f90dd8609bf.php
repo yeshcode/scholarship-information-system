@@ -3,7 +3,6 @@
 <?php $__env->startSection('content'); ?>
 <?php
     use Carbon\Carbon;
-    use Illuminate\Support\Str;
 
     $theme = '#003366';
     $brand2 = '#0b3d8f';
@@ -11,7 +10,6 @@
     $line = '#e5e7eb';
     $muted = '#6b7280';
 
-    // Group the paginator collection, not paginator object
     $items = method_exists($announcements, 'getCollection')
         ? $announcements->getCollection()
         : collect($announcements);
@@ -27,11 +25,7 @@
         return $dt->format('M d, Y');
     });
 
-    // viewedIds passed from controller
     $viewedIds = $viewedIds ?? [];
-
-    // for "see more"
-    $previewLimit = 220; // adjust if you want shorter/longer
 ?>
 
 <style>
@@ -41,21 +35,52 @@
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
     }
 
+    .page-shell{
+        max-width: 860px;
+        margin: 0 auto;
+    }
+
     .page-head{
         display:flex;
-        align-items:flex-end;
+        align-items:center;
         justify-content:space-between;
         gap:12px;
         flex-wrap:wrap;
-        margin-bottom: 14px;
+        margin-bottom: 16px;
     }
+
     .page-title{
         font-weight: 900;
         color: <?php echo e($theme); ?>;
         letter-spacing: .2px;
         margin: 0;
     }
-    .subtext{ color: <?php echo e($muted); ?>; font-size: .92rem; }
+
+    .subtext{
+        color: <?php echo e($muted); ?>;
+        font-size: .92rem;
+    }
+
+    .head-actions{
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+    }
+
+    .btn-ask{
+        background: linear-gradient(135deg, <?php echo e($theme); ?>, <?php echo e($brand2); ?>);
+        color:#fff;
+        border:none;
+        border-radius:14px;
+        padding:.62rem 1rem;
+        font-weight:800;
+        box-shadow: 0 10px 22px rgba(11,46,94,.14);
+        text-decoration:none;
+    }
+    .btn-ask:hover{
+        color:#fff;
+        transform: translateY(-1px);
+    }
 
     .timeline-label{
         display:flex;
@@ -63,7 +88,13 @@
         gap:12px;
         margin: 18px 0 12px;
     }
-    .timeline-label .line{ flex: 1; height:1px; background: <?php echo e($line); ?>; }
+
+    .timeline-label .line{
+        flex: 1;
+        height:1px;
+        background: <?php echo e($line); ?>;
+    }
+
     .timeline-label .tag{
         color: <?php echo e($muted); ?>;
         font-weight: 800;
@@ -71,32 +102,50 @@
         padding: .25rem .7rem;
         border-radius: 999px;
         border: 1px solid <?php echo e($line); ?>;
-        background: rgba(255,255,255,.8);
+        background: rgba(255,255,255,.86);
         white-space: nowrap;
     }
 
     .a-card{
+        position:relative;
         border: 1px solid <?php echo e($line); ?>;
-        border-radius: 18px;
-        box-shadow: 0 10px 26px rgba(0,0,0,.05);
+        border-radius: 22px;
+        box-shadow: 0 10px 26px rgba(0,0,0,.045);
         overflow: hidden;
         background: #fff;
-        transition: transform .12s ease, box-shadow .12s ease;
-    }
-    .a-card:hover{
-        transform: translateY(-1px);
-        box-shadow: 0 14px 34px rgba(0,0,0,.07);
+        transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
     }
 
-    .a-body{ padding: 14px; }
+    .a-card::before{
+        content:"";
+        position:absolute;
+        left:0; top:0; bottom:0;
+        width:4px;
+        background: linear-gradient(180deg, <?php echo e($theme); ?>, <?php echo e($brand2); ?>);
+        opacity:.92;
+    }
+
+    .a-card:hover{
+        transform: translateY(-3px);
+        box-shadow: 0 18px 38px rgba(11,46,94,.10);
+        border-color: rgba(11,46,94,.18);
+    }
+
+    .a-body{
+        padding: 16px 16px 16px 18px;
+    }
+
     @media (min-width: 768px){
-        .a-body{ padding: 18px 20px; }
+        .a-body{ padding: 18px 20px 18px 22px; }
     }
 
     .avatar{
-        width: 44px; height: 44px;
-        border-radius: 14px;
-        display:flex; align-items:center; justify-content:center;
+        width: 46px;
+        height: 46px;
+        border-radius: 15px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
         background: linear-gradient(135deg, <?php echo e($theme); ?>, <?php echo e($brand2); ?>);
         color:#fff;
         font-weight: 900;
@@ -110,6 +159,7 @@
         min-width: 0;
         width: 100%;
     }
+
     .meta-top{
         display:flex;
         align-items:flex-start;
@@ -117,12 +167,14 @@
         gap: 10px;
         flex-wrap: wrap;
     }
+
     .office{
         font-weight: 900;
         color: <?php echo e($theme); ?>;
         line-height: 1.15;
-        font-size: .95rem;
+        font-size: .96rem;
     }
+
     .time{
         color: <?php echo e($muted); ?>;
         font-size: .82rem;
@@ -144,7 +196,7 @@
         margin-top: 10px;
         font-weight: 900;
         color: #111827;
-        font-size: 1.02rem;
+        font-size: 1.05rem;
         line-height: 1.25;
     }
 
@@ -156,50 +208,75 @@
         white-space: pre-line;
         overflow-wrap:anywhere;
         word-break: break-word;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .chip-row{
+        display:flex;
+        flex-wrap:wrap;
+        gap:8px;
+        margin-top: 12px;
+    }
+
+    .chip-lite{
+        display:inline-flex;
+        align-items:center;
+        padding:.34rem .68rem;
+        border-radius:999px;
+        border:1px solid <?php echo e($line); ?>;
+        background:#f8fafc;
+        color:#334155;
+        font-weight:700;
+        font-size:.74rem;
     }
 
     .actions{
         display:flex;
-        gap: 8px;
-        margin-top: 12px;
-        flex-wrap: wrap;
+        justify-content:flex-end;
+        margin-top: 14px;
     }
 
-    .btn-brand{
+    .btn-open{
         background: <?php echo e($theme); ?>;
         border: none;
         color: #fff;
         font-weight: 800;
         border-radius: 12px;
-        padding: .5rem .9rem;
+        padding: .56rem 1rem;
+        text-decoration:none;
+        box-shadow: 0 8px 16px rgba(11,46,94,.12);
+        transition: transform .14s ease, box-shadow .14s ease, opacity .14s ease;
     }
-    .btn-brand:hover{ opacity:.92; color:#fff; }
 
-    .btn-soft{
-        border: 1px solid rgba(11,46,94,.18);
-        background: rgba(11,46,94,.06);
-        color: <?php echo e($theme); ?>;
-        font-weight: 800;
-        border-radius: 12px;
-        padding: .5rem .9rem;
+    .btn-open:hover{
+        color:#fff;
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(11,46,94,.18);
+        opacity:.96;
     }
-    .btn-soft:hover{ background: rgba(11,46,94,.10); color: <?php echo e($theme); ?>; }
 
-    /* Mobile: make buttons comfortable */
     @media (max-width: 575.98px){
-        .actions .btn{ width: 100%; }
+        .actions .btn-open{ width: 100%; text-align:center; }
         .time{ font-size: .78rem; }
     }
-
 </style>
 
 <div class="container py-3 py-md-4 page-wrap">
-    <div class="mx-auto" style="max-width: 820px;">
+    <div class="page-shell">
 
         <div class="page-head">
             <div>
                 <h2 class="page-title">Announcements</h2>
-                <div class="subtext">Your updates feed.</div>
+                <div class="subtext">Your updates feed and related questions.</div>
+            </div>
+
+            <div class="head-actions">
+                <a href="<?php echo e(route('questions.create')); ?>" class="btn-ask">
+                    Ask a Question
+                </a>
             </div>
         </div>
 
@@ -224,19 +301,11 @@
                         : 'N/A';
 
                     $isViewed = in_array((int)$announcement->id, $viewedIds, true);
-
-                    // "new" logic: show only if NOT viewed + posted within last 3 days (adjust if you want)
                     $showNew = (!$isViewed && $dt && $dt->gt(now()->subDays(3)));
-
-                    $desc = (string)($announcement->description ?? '');
-                    $isLong = Str::length($desc) > $previewLimit;
-
-                    $collapseId = 'ann_desc_'.$announcement->id;
                 ?>
 
                 <div class="a-card mb-3">
                     <div class="a-body">
-
                         <div class="d-flex align-items-start gap-3">
                             <div class="avatar">SO</div>
 
@@ -257,64 +326,34 @@
 
                                 </div>
 
-                                
                                 <div class="a-desc">
-                                    <?php if($isLong): ?>
-                                        
-                                        <div id="preview_<?php echo e($collapseId); ?>">
-                                            <?php echo e(Str::limit($desc, $previewLimit)); ?>
+                                    <?php echo e($announcement->description); ?>
 
-                                        </div>
+                                </div>
 
-                                        
-                                        <div class="collapse" id="<?php echo e($collapseId); ?>">
-                                            <?php echo e($desc); ?>
+                                <div class="chip-row">
+                                    <?php if($announcement->scholarship): ?>
+                                        <span class="chip-lite">
+                                            <?php echo e($announcement->scholarship->scholarship_name); ?>
 
-                                        </div>
-                                    <?php else: ?>
-                                        <?php echo e($desc); ?>
+                                        </span>
+                                    <?php endif; ?>
 
+                                    <?php if(in_array($announcement->audience, ['specific_students', 'specific_scholars'])): ?>
+                                        <span class="chip-lite">
+                                            Personal
+                                        </span>
                                     <?php endif; ?>
                                 </div>
 
                                 <div class="actions">
-                                    
                                     <a href="<?php echo e(route('student.announcements.show', $announcement->id)); ?>"
-                                       class="btn btn-brand btn-sm">
+                                       class="btn-open">
                                         Open
                                     </a>
-
-                                    <?php if($isLong): ?>
-                                        <button class="btn btn-soft btn-sm"
-                                                type="button"
-                                                data-bs-toggle="collapse"
-                                                data-bs-target="#<?php echo e($collapseId); ?>"
-                                                aria-expanded="false"
-                                                aria-controls="<?php echo e($collapseId); ?>"
-                                                onclick="
-                                                    const c = document.getElementById('<?php echo e($collapseId); ?>');
-                                                    const p = document.getElementById('preview_<?php echo e($collapseId); ?>');
-                                                    const btn = this;
-
-                                                    setTimeout(() => {
-                                                        const isShown = c.classList.contains('show');
-                                                        if(isShown){
-                                                            p.style.display = 'none';
-                                                            btn.textContent = 'See less';
-                                                        }else{
-                                                            p.style.display = 'block';
-                                                            btn.textContent = 'See more';
-                                                        }
-                                                    }, 50);
-                                                ">
-                                            See more
-                                        </button>
-                                    <?php endif; ?>
                                 </div>
-
                             </div>
                         </div>
-
                     </div>
                 </div>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -327,7 +366,6 @@
             </div>
         <?php endif; ?>
 
-        
         <?php if(method_exists($announcements, 'links')): ?>
             <div class="d-flex justify-content-center mt-4">
                 <?php echo e($announcements->links()); ?>
