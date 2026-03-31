@@ -1143,7 +1143,7 @@ public function confirmBulkUploadUsers(Request $request)
     session()->forget(['bulk_upload.preview', 'bulk_upload.hash', 'bulk_upload.student_type_id']);
 
     return redirect()->route('admin.dashboard', ['page' => 'manage-users'])
-        ->with('success', "Bulk upload confirmed! Created: {$created}, Skipped existing: {$skipped}");
+        ->with('success', "Bulk upload successful!");
 }
 
 
@@ -1657,7 +1657,7 @@ public function storeEnrollStudents(Request $request)
 
     return redirect()->back()->with(
         'success',
-        "Done! Enrolled: {$enrolledCount}, Graduated: {$graduatedCount}, Skipped: {$skippedCount}"
+        "Done! Successfully enrolled!"
     );
 }
 
