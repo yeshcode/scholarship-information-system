@@ -332,6 +332,7 @@ Route::get('/test-mail', function () {
             Route::get('/ask', [QuestionController::class, 'create'])->name('questions.create');
             Route::get('/my-questions', [QuestionController::class, 'myQuestions'])->name('questions.my');
             Route::post('/ask', [QuestionController::class, 'store'])->name('questions.store');
+            Route::delete('/my-questions/{question}', [QuestionController::class, 'destroyMyQuestion'])->name('questions.destroy');
         });
     });
 

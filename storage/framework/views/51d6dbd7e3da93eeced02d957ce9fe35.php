@@ -258,7 +258,7 @@
 
             <div class="modal-body">
                 <div class="mb-2 text-muted">
-                    This will permanently delete the entire thread and all posts under it.
+                    This will delete the thread from the coordinator side only. Student questions will remain in their records.
                 </div>
 
                 <div class="p-3 rounded border" style="background:#fff;">
@@ -277,7 +277,7 @@
                 </div>
 
                 <div class="alert alert-warning mt-3 mb-0">
-                    <span class="fw-semibold">Note:</span> This action cannot be undone.
+                    <span class="fw-semibold">Note:</span> The thread will be removed from this list, but student-submitted questions will still remain visible to the students.
                 </div>
             </div>
 
