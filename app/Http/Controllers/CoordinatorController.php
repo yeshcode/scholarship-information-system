@@ -1770,13 +1770,20 @@ private function buildPayrollFormData(StipendsRelease $release): array
             ?? $u?->year_level
             ?? '';
 
-        // stipend rows
+                // stipend rows for each semester
         $firstStipend = $s->stipends
-            ->first(fn($st) => (int) $st->stipend_release_id === (int) ($firstRelease?->id));
+            ->first(function ($st) use ($firstRelease) {
+                return (int) $st->stipend_release_id === (int) ($firstRelease?->id);
+            });
 
         $secondStipend = $s->stipends
-            ->first(fn($st) => (int) $st->stipend_release_id === (int) ($secondRelease?->id));
+            ->first(function ($st) use ($secondRelease) {
+                return (int) $st->stipend_release_id === (int) ($secondRelease?->id);
+            });
 
+        // ✅ show in form only if student already CLAIMED the cheque
+        $showFirst = $firstStipend && !empty($firstStipend->claimed_at);
+        $showSecond = $secondStipend && !empty($secondStipend->claimed_at);
 
             
         return (object) [
@@ -1789,12 +1796,12 @@ private function buildPayrollFormData(StipendsRelease $release): array
             'course' => $u?->course?->course_name ?? '',
             'year_level' => $yearLevel,
 
-            'first_amount' => $firstStipend?->amount_received,
-            'first_date_received' => $firstStipend?->received_at,
+            'first_amount' => $showFirst ? $firstStipend->amount_received : null,
+            'first_date_received' => $showFirst ? $firstStipend->claimed_at : null,
             'first_signature' => '',
 
-            'second_amount' => $secondStipend?->amount_received,
-            'second_date_received' => $secondStipend?->received_at,
+            'second_amount' => $showSecond ? $secondStipend->amount_received : null,
+            'second_date_received' => $showSecond ? $secondStipend->claimed_at : null,
             'second_signature' => '',
         ];
     });

@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 <style>
     :root{
         --bisu-blue:#0b2e5e;
@@ -133,15 +133,10 @@
         <div class="reports-subtitle">Generate official scholarship reports per semester.</div>
     </div>
 
-    {{-- <div class="semester-box">
-        <div class="semester-label">Active Semester</div>
-        <div class="semester-value">
-            {{ $activeSemester ? ($activeSemester->term . ' • ' . $activeSemester->academic_year) : 'No active semester set' }}
-        </div>
-    </div> --}}
+    
 
     <div class="report-list">
-        {{-- Summary of Scholarships --}}
+        
         <div class="report-item">
             <div class="report-left">
                 <div class="report-name">Summary of Scholarships</div>
@@ -152,18 +147,18 @@
 
             <div class="report-actions">
                 <a class="btn btn-bisu btn-sm"
-                   href="{{ route('coordinator.reports.summary-of-scholarships', ['semester_id' => $activeSemesterId]) }}">
+                   href="<?php echo e(route('coordinator.reports.summary-of-scholarships', ['semester_id' => $activeSemesterId])); ?>">
                     View Report
                 </a>
 
                 <a class="btn btn-outline-secondary btn-sm"
-                   href="{{ route('coordinator.reports.summary-of-scholarships.pdf', ['semester_id' => $activeSemesterId]) }}">
+                   href="<?php echo e(route('coordinator.reports.summary-of-scholarships.pdf', ['semester_id' => $activeSemesterId])); ?>">
                     Download PDF
                 </a>
             </div>
         </div>
 
-        {{-- List of Scholars and Grantees --}}
+        
         <div class="report-item">
             <div class="report-left">
                 <div class="report-name">List of Scholars and Grantees</div>
@@ -174,20 +169,19 @@
 
             <div class="report-actions">
                 <a class="btn btn-bisu btn-sm"
-                   href="{{ route('coordinator.reports.list-of-scholars', ['semester_id' => $activeSemesterId]) }}">
+                   href="<?php echo e(route('coordinator.reports.list-of-scholars', ['semester_id' => $activeSemesterId])); ?>">
                     View Report
                 </a>
 
                 <a class="btn btn-outline-secondary btn-sm"
-                   href="{{ route('coordinator.reports.list-of-scholars.pdf', ['semester_id' => $activeSemesterId]) }}">
+                   href="<?php echo e(route('coordinator.reports.list-of-scholars.pdf', ['semester_id' => $activeSemesterId])); ?>">
                     Download PDF
                 </a>
             </div>
         </div>
     </div>
 
-    {{-- <div class="tip-text">
-        Tip: Open the report first, then click <strong>Print / Save as PDF</strong> so the preview and printed format match.
-    </div> --}}
+    
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/reports.blade.php ENDPATH**/ ?>

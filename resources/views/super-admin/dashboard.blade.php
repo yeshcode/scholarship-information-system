@@ -461,6 +461,13 @@
     // INITIAL DATA
     // =====================
     let enrollCollegeLabels = @json($enrollCollegeLabels ?? []);
+    const collegeShortMap = {
+        'College of Business and Management': 'CBM',
+        'College of Teacher Education': 'CTE',
+        'College of Sciences': 'CoS',
+        'College of Fisheries': 'CoF',
+    };
+
     let enrollCollegeCounts = @json($enrollCollegeCounts ?? []);
 
     let yearLevelLabels = @json($yearLevelLabels ?? []);
@@ -489,7 +496,7 @@
             enrollByCollegeBar = new Chart(collegeCtx, {
                 type: 'bar',
                 data: {
-                    labels: enrollCollegeLabels,
+                    labels: enrollCollegeLabels.map(label => collegeShortMap[label] || label),
                     datasets: [{
                         label: 'Enrolled Students',
                         data: enrollCollegeCounts,
@@ -505,7 +512,13 @@
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y}`
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return enrollCollegeLabels[index] || '';
+                                },
+                                label: function(ctx) {
+                                    return ` Enrolled Students: ${ctx.parsed.y}`;
+                                }
                             }
                         }
                     },
@@ -631,7 +644,8 @@
             }
 
             if (enrollByCollegeBar && Array.isArray(data.enrollCollegeLabels) && Array.isArray(data.enrollCollegeCounts)) {
-                enrollByCollegeBar.data.labels = data.enrollCollegeLabels;
+                enrollCollegeLabels = data.enrollCollegeLabels; // keep original full names for tooltip
+                enrollByCollegeBar.data.labels = data.enrollCollegeLabels.map(label => collegeShortMap[label] || label);
                 enrollByCollegeBar.data.datasets[0].data = data.enrollCollegeCounts;
                 enrollByCollegeBar.update();
             }

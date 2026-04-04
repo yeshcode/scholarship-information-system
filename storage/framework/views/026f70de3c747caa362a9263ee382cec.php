@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 <style>
     :root{
         --bisu-blue:#0b2e5e;
@@ -155,20 +155,21 @@
 
 <div class="no-print">
     <div class="report-actions">
-        <a href="{{ route('coordinator.reports') }}" class="btn btn-sm btn-outline-secondary">Back</a>
+        <a href="<?php echo e(route('coordinator.reports')); ?>" class="btn btn-sm btn-outline-secondary">Back</a>
         <button class="btn btn-sm btn-bisu" onclick="window.print()">Print</button>
     </div>
 </div>
 
 <div class="report-wrap">
-    @include('coordinator.reports.partials.a4-header')
+    <?php echo $__env->make('coordinator.reports.partials.a4-header', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
     <div class="report-title">SUMMARY OF SCHOLARSHIPS</div>
 
     <div class="report-subtitle">
         <div class="campus">Candijay Campus</div>
         <div class="ay">
-            1st and 2nd Semester, {{ $academicYear ? ('AY ' . $academicYear) : 'AY not set' }}
+            1st and 2nd Semester, <?php echo e($academicYear ? ('AY ' . $academicYear) : 'AY not set'); ?>
+
         </div>
     </div>
 
@@ -180,35 +181,37 @@
                 <th colspan="2" style="width:220px;">Number of Scholars</th>
             </tr>
             <tr>
-                <th style="width:110px;">{{ $sem1?->term ?? '1st Sem' }}</th>
-                <th style="width:110px;">{{ $sem2?->term ?? '2nd Sem' }}</th>
+                <th style="width:110px;"><?php echo e($sem1?->term ?? '1st Sem'); ?></th>
+                <th style="width:110px;"><?php echo e($sem2?->term ?? '2nd Sem'); ?></th>
             </tr>
         </thead>
         <tbody>
-            @forelse($rows as $i => $r)
+            <?php $__empty_1 = true; $__currentLoopData = $rows; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <tr>
-                    <td style="text-align:center;">{{ $i + 1 }}</td>
-                    <td>{{ $r->scholarship_name }}</td>
-                    <td style="text-align:right;">{{ (int) $r->total_sem1 }}</td>
-                    <td style="text-align:right;">{{ (int) $r->total_sem2 }}</td>
+                    <td style="text-align:center;"><?php echo e($i + 1); ?></td>
+                    <td><?php echo e($r->scholarship_name); ?></td>
+                    <td style="text-align:right;"><?php echo e((int) $r->total_sem1); ?></td>
+                    <td style="text-align:right;"><?php echo e((int) $r->total_sem2); ?></td>
                 </tr>
-            @empty
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                 <tr>
                     <td colspan="4" style="text-align:center;">No data found for this academic year.</td>
                 </tr>
-            @endforelse
+            <?php endif; ?>
         </tbody>
         <tfoot>
             <tr>
                 <th colspan="2" style="text-align:right;">Grand Total</th>
-                <th style="text-align:right;">{{ $grandSem1 }}</th>
-                <th style="text-align:right;">{{ $grandSem2 }}</th>
+                <th style="text-align:right;"><?php echo e($grandSem1); ?></th>
+                <th style="text-align:right;"><?php echo e($grandSem2); ?></th>
             </tr>
         </tfoot>
     </table>
 
     <div class="meta-line">
-        <strong>Overall Total:</strong> {{ (int)$grandSem1 + (int)$grandSem2 }}
+        <strong>Overall Total:</strong> <?php echo e((int)$grandSem1 + (int)$grandSem2); ?>
+
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/reports/summary-of-scholarships.blade.php ENDPATH**/ ?>

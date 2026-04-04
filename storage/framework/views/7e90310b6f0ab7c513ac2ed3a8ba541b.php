@@ -51,16 +51,17 @@
 <body>
 <div class="report-wrap">
 
-    {{-- ✅ HEADER HERE --}}
-    @include('coordinator.reports.pdf.partials.a4-header')
+    
+    <?php echo $__env->make('coordinator.reports.pdf.partials.a4-header', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
-    {{-- TITLE --}}
+    
     <div class="title">
         LIST OF SCHOLARS AND GRANTEES<br>
-        {{ $semester ? ($semester->term.' • '.$semester->academic_year) : 'N/A' }}
+        <?php echo e($semester ? ($semester->term.' • '.$semester->academic_year) : 'N/A'); ?>
+
     </div>
 
-    {{-- TABLE --}}
+    
     <table>
         <thead>
             <tr>
@@ -73,24 +74,24 @@
         </thead>
 
         <tbody>
-            @foreach($scholars as $i => $s)
-                @php
+            <?php $__currentLoopData = $scholars; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php
                     $u = $s->user;
                     $en = $u?->enrollments?->first();
                     $yl = $en?->yearLevel?->year_level_name ?? $u?->yearLevel?->year_level_name ?? 'N/A';
-                @endphp
+                ?>
 
                 <tr>
-                    <td class="text-center">{{ $i + 1 }}</td>
-                    <td>{{ $u?->lastname }}, {{ $u?->firstname }}</td>
-                    <td>{{ $u?->course?->course_name ?? 'N/A' }}</td>
-                    <td class="text-center">{{ $yl }}</td>
-                    <td>{{ $s->scholarship?->scholarship_name ?? 'N/A' }}</td>
+                    <td class="text-center"><?php echo e($i + 1); ?></td>
+                    <td><?php echo e($u?->lastname); ?>, <?php echo e($u?->firstname); ?></td>
+                    <td><?php echo e($u?->course?->course_name ?? 'N/A'); ?></td>
+                    <td class="text-center"><?php echo e($yl); ?></td>
+                    <td><?php echo e($s->scholarship?->scholarship_name ?? 'N/A'); ?></td>
                 </tr>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </tbody>
     </table>
 
 </div>
 </body>
-</html>
+</html><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/reports/pdf/list-of-scholars.blade.php ENDPATH**/ ?>

@@ -1,6 +1,6 @@
-@extends('layouts.app')
 
-@section('content')
+
+<?php $__env->startSection('content'); ?>
 <div class="mx-auto" style="max-width: 760px;">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
@@ -8,31 +8,32 @@
             <small class="text-muted">Recent updates and alerts</small>
         </div>
 
-        @php
+        <?php
             $hasUnread = collect($notifications)->contains(function ($notification) {
                 return isset($notification->is_read) && !$notification->is_read;
             });
-        @endphp
+        ?>
 
-        @if($hasUnread)
-            <form action="{{ route('student.notifications.markAllRead') }}" method="POST" class="m-0">
-                @csrf
+        <?php if($hasUnread): ?>
+            <form action="<?php echo e(route('student.notifications.markAllRead')); ?>" method="POST" class="m-0">
+                <?php echo csrf_field(); ?>
                 <button type="submit" class="btn btn-sm rounded-pill px-3 fw-semibold"
                         style="border:1px solid #003366; color:#003366; background:#fff;">
                     Mark all as read
                 </button>
             </form>
-        @endif
+        <?php endif; ?>
     </div>
 
     <hr class="mt-2 mb-3">
 
-    @if(session('success'))
+    <?php if(session('success')): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
+            <?php echo e(session('success')); ?>
+
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    <?php endif; ?>
 
     <style>
         .notif-card{
@@ -140,8 +141,8 @@
         }
     </style>
 
-    @forelse($notifications as $notification)
-        @php
+    <?php $__empty_1 = true; $__currentLoopData = $notifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+        <?php
             $isUnread = isset($notification->is_read) ? !$notification->is_read : false;
             $openUrl = route('student.notifications.open', $notification->id);
 
@@ -186,46 +187,51 @@
                 $pillClass = 'notif-pill-personal';
                 $categoryLabel = 'Personal Notification';
             }
-        @endphp
+        ?>
 
-        <a href="{{ $openUrl }}" class="text-decoration-none text-dark d-block">
-            <div class="card notif-card mb-3 {{ $isUnread ? 'notif-unread' : '' }}">
+        <a href="<?php echo e($openUrl); ?>" class="text-decoration-none text-dark d-block">
+            <div class="card notif-card mb-3 <?php echo e($isUnread ? 'notif-unread' : ''); ?>">
                 <div class="card-body p-3 p-md-4">
                     <div class="d-flex align-items-start gap-3">
 
-                        {{-- LEFT TYPE UI --}}
-                        <div class="notif-type-box {{ $boxClass }}">
-                            {{ $boxLabel }}
+                        
+                        <div class="notif-type-box <?php echo e($boxClass); ?>">
+                            <?php echo e($boxLabel); ?>
+
                         </div>
 
-                        {{-- CONTENT --}}
+                        
                         <div class="w-100">
                             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
                                 <div>
                                     <div class="notif-title">
-                                        {{ $notification->title }}
+                                        <?php echo e($notification->title); ?>
+
                                     </div>
 
                                     <div class="d-flex flex-wrap gap-2">
-                                        <span class="notif-pill {{ $pillClass }}">
-                                            {{ $categoryLabel }}
+                                        <span class="notif-pill <?php echo e($pillClass); ?>">
+                                            <?php echo e($categoryLabel); ?>
+
                                         </span>
 
-                                        @if($isUnread)
+                                        <?php if($isUnread): ?>
                                             <span class="notif-pill notif-pill-new">New</span>
-                                        @endif
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="notif-message">
-                                {{ \Illuminate\Support\Str::limit($notification->message, 170) }}
+                                <?php echo e(\Illuminate\Support\Str::limit($notification->message, 170)); ?>
+
                             </div>
 
                             <div class="notif-meta">
-                                {{ $notification->sent_at
+                                <?php echo e($notification->sent_at
                                     ? $notification->sent_at->format('M d, Y • h:i A')
-                                    : 'N/A' }}
+                                    : 'N/A'); ?>
+
                             </div>
                         </div>
 
@@ -234,18 +240,20 @@
             </div>
         </a>
 
-    @empty
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <div class="text-center py-5">
             <div class="mb-2" style="font-size: 2rem;">🔔</div>
             <h5 class="fw-semibold mb-1" style="color:#003366;">No notifications</h5>
             <p class="text-muted mb-0">You’re all caught up.</p>
         </div>
-    @endforelse
+    <?php endif; ?>
 
-    @if(method_exists($notifications, 'links'))
+    <?php if(method_exists($notifications, 'links')): ?>
         <div class="d-flex justify-content-center mt-4">
-            {{ $notifications->links() }}
+            <?php echo e($notifications->links()); ?>
+
         </div>
-    @endif
+    <?php endif; ?>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/student/notifications.blade.php ENDPATH**/ ?>

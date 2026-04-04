@@ -325,6 +325,8 @@ Route::get('/test-mail', function () {
             Route::get('/notifications', [StudentController::class, 'notifications'])->name('student.notifications');
             Route::get('/notifications/{id}/open', [StudentController::class, 'open'])->name('student.notifications.open');
             Route::post('/notifications/{id}/read', [StudentController::class, 'markAsRead'])->name('student.notifications.read');
+            Route::post('/student/notifications/mark-all-read', [StudentController::class, 'markAllNotificationsAsRead'])->name('student.notifications.markAllRead');
+
 
             Route::post('/profile/update-contact', [ProfileController::class, 'updateContact'])->name('profile.update-contact');
 

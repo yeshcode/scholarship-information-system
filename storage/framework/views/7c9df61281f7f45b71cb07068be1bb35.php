@@ -1,6 +1,6 @@
-@extends('layouts.coordinator')
 
-@section('page-content')
+
+<?php $__env->startSection('page-content'); ?>
 <style>
     :root{
         --bisu-blue:#0b2e5e;
@@ -180,29 +180,30 @@
 
 <div class="no-print">
     <div class="report-actions">
-        <a href="{{ route('coordinator.reports') }}" class="btn btn-sm btn-outline-secondary">Back</a>
+        <a href="<?php echo e(route('coordinator.reports')); ?>" class="btn btn-sm btn-outline-secondary">Back</a>
         <button class="btn btn-sm btn-bisu" onclick="window.print()">Print</button>
     </div>
 </div>
 
 <div class="report-wrap">
-    @include('coordinator.reports.partials.a4-header')
+    <?php echo $__env->make('coordinator.reports.partials.a4-header', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
     <div class="report-title">LIST OF SCHOLARS AND GRANTEES</div>
 
-    @php
+    <?php
         $semLabel = $semester
             ? ($semester->term . ', AY ' . $semester->academic_year)
             : 'Semester not set';
-    @endphp
+    ?>
 
     <div class="report-subtitle">
         <div class="campus">Candijay Campus</div>
-        <div class="sem">{{ $semLabel }}</div>
+        <div class="sem"><?php echo e($semLabel); ?></div>
     </div>
 
     <div class="meta-line">
-        <strong>Total:</strong> {{ $scholars->count() }}
+        <strong>Total:</strong> <?php echo e($scholars->count()); ?>
+
     </div>
 
     <table class="table-report">
@@ -223,8 +224,8 @@
         </thead>
 
         <tbody>
-            @forelse($scholars as $i => $s)
-                @php
+            <?php $__empty_1 = true; $__currentLoopData = $scholars; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <?php
                     $u = $s->user;
 
                     $en = $u?->enrollments?->firstWhere('semester_id', $semesterId)
@@ -239,23 +240,23 @@
 
                     $miRaw = $u?->middlename ?? '';
                     $mi = $miRaw ? strtoupper(mb_substr($miRaw, 0, 1)) : '';
-                @endphp
+                ?>
 
                 <tr>
-                    <td style="text-align:center;">{{ $i + 1 }}</td>
-                    <td>{{ $s->scholarship->scholarship_name ?? '-' }}</td>
-                    <td>{{ $u?->lastname ?? '-' }}</td>
-                    <td>{{ $u?->firstname ?? '-' }}</td>
-                    <td style="text-align:center;">{{ $mi }}</td>
-                    <td style="text-align:center;">{{ $sex }}</td>
-                    <td>{{ $u?->course?->course_name ?? '-' }}</td>
-                    <td style="text-align:center;">{{ $yearLevelLabel }}</td>
+                    <td style="text-align:center;"><?php echo e($i + 1); ?></td>
+                    <td><?php echo e($s->scholarship->scholarship_name ?? '-'); ?></td>
+                    <td><?php echo e($u?->lastname ?? '-'); ?></td>
+                    <td><?php echo e($u?->firstname ?? '-'); ?></td>
+                    <td style="text-align:center;"><?php echo e($mi); ?></td>
+                    <td style="text-align:center;"><?php echo e($sex); ?></td>
+                    <td><?php echo e($u?->course?->course_name ?? '-'); ?></td>
+                    <td style="text-align:center;"><?php echo e($yearLevelLabel); ?></td>
                 </tr>
-            @empty
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                 <tr>
                     <td colspan="8" style="text-align:center;">No scholars found for this semester.</td>
                 </tr>
-            @endforelse
+            <?php endif; ?>
         </tbody>
     </table>
 
@@ -277,4 +278,5 @@
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.coordinator', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/reports/list-of-scholars.blade.php ENDPATH**/ ?>

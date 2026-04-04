@@ -412,7 +412,9 @@
 
     if (auth()->check() && auth()->user()->hasRole('Student')) {
         try {
-            $studentUnreadCount = auth()->user()->unreadNotifications()->count();
+            $studentUnreadCount = \App\Models\Notification::where('recipient_user_id', auth()->id())
+                ->where('is_read', false)
+                ->count();
         } catch (\Throwable $e) {
             $studentUnreadCount = 0;
         }
@@ -561,23 +563,10 @@
                                 </div>
                             </div>
 
-                            <div class="position-relative">
-                                <button type="button" id="enrollment-menu-button"
-                                        class="top-link {{ $enrollmentGroupActive ? 'top-link-active' : '' }}">
-                                    Enrollment
-                                    <svg fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd"
-                                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                              clip-rule="evenodd"></path>
-                                    </svg>
-                                </button>
-                                <div id="enrollment-menu" class="d-none position-absolute start-0 top-100 dropdown-bg" style="min-width: 16rem;">
-                                    <a href="{{ route('admin.dashboard', ['page' => 'enrollments']) }}"
-                                       class="dropdown-square {{ $page === 'enrollments' ? 'dropdown-square-active' : '' }}">
-                                        Enrollment Records
-                                    </a>
-                                </div>
-                            </div>
+                            <a href="{{ route('admin.dashboard', ['page' => 'enrollments']) }}"
+                                class="top-link {{ $enrollmentGroupActive ? 'top-link-active' : '' }}">
+                                    Enrollment Records
+                            </a>
 
                         {{-- COORDINATOR --}}
                         @elseif(auth()->user()->hasRole('Scholarship Coordinator'))
@@ -806,7 +795,7 @@
             <a class="off-link {{ $page === 'semesters' ? 'active' : '' }}"
                href="{{ route('admin.dashboard', ['page' => 'semesters']) }}">Semesters</a>
 
-            <div class="mt-2 px-2 text-muted small fw-bold">Enrollment</div>
+            
             <a class="off-link {{ $page === 'enrollments' ? 'active' : '' }}"
                href="{{ route('admin.dashboard', ['page' => 'enrollments']) }}">Enrollment Records</a>
 
@@ -964,7 +953,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     registerDropdown('users-menu-button', 'users-menu');
     registerDropdown('academic-menu-button', 'academic-menu');
-    registerDropdown('enrollment-menu-button', 'enrollment-menu');
+    
 
     registerDropdown('coord-scholars-menu-button', 'coord-scholars-menu');
     registerDropdown('coord-stipends-menu-button', 'coord-stipends-menu');

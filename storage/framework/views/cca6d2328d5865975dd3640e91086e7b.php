@@ -70,19 +70,20 @@
 <body>
 <div class="report-wrap">
 
-    {{-- ✅ HEADER HERE --}}
-    @include('coordinator.reports.pdf.partials.a4-header')
+    
+    <?php echo $__env->make('coordinator.reports.pdf.partials.a4-header', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
-    {{-- TITLE --}}
+    
     <div class="title">
         SUMMARY OF SCHOLARSHIPS
     </div>
 
     <div class="subtitle">
-        Candijay Campus • AY {{ $academicYear ?? 'N/A' }}
+        Candijay Campus • AY <?php echo e($academicYear ?? 'N/A'); ?>
+
     </div>
 
-    {{-- TABLE --}}
+    
     <table>
         <thead>
             <tr>
@@ -93,28 +94,29 @@
         </thead>
 
         <tbody>
-            @foreach($rows as $r)
+            <?php $__currentLoopData = $rows; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr>
-                    <td class="text-left">{{ $r->scholarship_name }}</td>
-                    <td class="text-center">{{ $r->total_sem1 }}</td>
-                    <td class="text-center">{{ $r->total_sem2 }}</td>
+                    <td class="text-left"><?php echo e($r->scholarship_name); ?></td>
+                    <td class="text-center"><?php echo e($r->total_sem1); ?></td>
+                    <td class="text-center"><?php echo e($r->total_sem2); ?></td>
                 </tr>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </tbody>
 
         <tfoot>
             <tr>
                 <th class="text-right">TOTAL</th>
-                <th class="text-center">{{ $grandSem1 }}</th>
-                <th class="text-center">{{ $grandSem2 }}</th>
+                <th class="text-center"><?php echo e($grandSem1); ?></th>
+                <th class="text-center"><?php echo e($grandSem2); ?></th>
             </tr>
         </tfoot>
     </table>
 
     <div class="meta-line">
-        <strong>Overall Total:</strong> {{ (int)$grandSem1 + (int)$grandSem2 }}
+        <strong>Overall Total:</strong> <?php echo e((int)$grandSem1 + (int)$grandSem2); ?>
+
     </div>
 
 </div>
 </body>
-</html>
+</html><?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/coordinator/reports/pdf/summary-of-scholarships.blade.php ENDPATH**/ ?>
