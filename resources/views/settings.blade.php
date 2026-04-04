@@ -66,7 +66,7 @@
                     </div>
                 @endif
 
-                <small class="text-muted">Recommended: PNG/JPG (128×128 or higher)</small>
+                {{-- <small class="text-muted">Recommended: PNG/JPG (128×128 or higher)</small> --}}
             </div>
 
             {{-- SAVE BUTTON --}}

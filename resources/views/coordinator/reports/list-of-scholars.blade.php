@@ -1,77 +1,188 @@
-@extends('layouts.app')
+@extends('layouts.coordinator')
 
-@section('content')
+@section('page-content')
 <style>
-@media print {
-    body { background:#fff !important; }
-    .no-print { display:none !important; }
-}
-.report-wrap{
-    max-width: 210mm;
-    margin: 0 auto;
-    padding: 12mm;
-    background: #fff;
-}
-@page { size: A4; margin: 12mm; }
+    :root{
+        --bisu-blue:#0b2e5e;
+        --paper-shadow:0 10px 25px rgba(0,0,0,.08);
+    }
 
-.hr-line{ border:0; border-top:2px solid #000; margin:10px 0 14px; }
+    body{
+        background:#f3f4f6;
+    }
 
-.report-title{
-    text-align:center;
-    font-weight:700;
-    margin: 6px 0 10px;
-    letter-spacing:.4px;
-    text-transform: uppercase;
-}
+    .no-print{
+        margin-bottom: 18px;
+    }
 
-.table-report th{
-    background:#f2f2f2;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing:.4px;
-    vertical-align: middle;
-    text-align: center;
-}
-.table-report td{
-    font-size: 11px;
-    vertical-align: middle;
-}
-.meta-line{ font-size:12px; margin-bottom:10px; }
+    .report-actions{
+        max-width: 210mm;
+        margin: 0 auto 16px auto;
+        display:flex;
+        gap:10px;
+        align-items:center;
+    }
 
-.footer-block{
-    margin-top: 26px;
-    font-size: 12px;
-}
-.footer-row{
-    display:flex;
-    justify-content: space-between;
-    gap: 16px;
-    margin-top: 18px;
-}
-.footer-sign{
-    width: 55%;
-    text-align: center;
-}
-.footer-date{
-    width: 30%;
-    text-align: center;
-}
-.footer-line{
-    border-top: 1px solid #000;
-    margin-top: 26px;
-}
-.doc-code{
-    margin-top: 8px;
-    font-size: 11px;
-    text-align: right;
-}
+    .btn-bisu{
+        background:var(--bisu-blue);
+        border-color:var(--bisu-blue);
+        color:#fff;
+        font-weight:600;
+    }
+
+    .btn-bisu:hover{
+        background:#174a8b;
+        border-color:#174a8b;
+        color:#fff;
+    }
+
+    .report-wrap{
+        width:210mm;
+        min-height:297mm;
+        margin:0 auto 24px auto;
+        padding:12mm;
+        background:#fff;
+        box-shadow:var(--paper-shadow);
+    }
+
+    @page{
+        size:A4;
+        margin:12mm;
+    }
+
+    .report-title{
+        text-align:center;
+        font-weight:700;
+        margin:6px 0 10px;
+        letter-spacing:.4px;
+        text-transform:uppercase;
+        font-size:16px;
+    }
+
+    .report-subtitle{
+        text-align:center;
+        margin-top:2px;
+        margin-bottom:10px;
+        line-height:1.2;
+        font-size:13px;
+    }
+
+    .report-subtitle .campus{
+        font-weight:600;
+    }
+
+    .report-subtitle .sem{
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+
+    .meta-line{
+        font-size:12px;
+        margin-bottom:10px;
+    }
+
+    .table-report{
+        width:100%;
+        border-collapse:collapse;
+    }
+
+    .table-report th,
+    .table-report td{
+        border:1px solid #000;
+        padding:6px 6px;
+    }
+
+    .table-report th{
+        background:#f2f2f2 !important;
+        font-size:11px;
+        text-transform:uppercase;
+        letter-spacing:.4px;
+        vertical-align:middle;
+        text-align:center;
+    }
+
+    .table-report td{
+        font-size:11px;
+        vertical-align:middle;
+    }
+
+    .footer-block{
+        margin-top: 26px;
+        font-size: 12px;
+    }
+
+    .footer-row{
+        display:flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 18px;
+    }
+
+    .footer-sign{
+        width: 55%;
+        text-align: center;
+    }
+
+    .footer-date{
+        width: 30%;
+        text-align: center;
+    }
+
+    .footer-line{
+        border-top: 1px solid #000;
+        margin-top: 26px;
+    }
+
+    .doc-code{
+        margin-top: 8px;
+        font-size: 11px;
+        text-align: right;
+    }
+
+    @media print{
+        body{
+            background:#fff !important;
+        }
+
+        .no-print,
+        .sidebar,
+        .navbar,
+        .main-header,
+        .app-header,
+        .menu,
+        .topbar,
+        .footer,
+        aside,
+        nav{
+            display:none !important;
+        }
+
+        .content-wrapper,
+        .main-content,
+        .container,
+        .container-fluid,
+        .page-content{
+            margin:0 !important;
+            padding:0 !important;
+            width:100% !important;
+            max-width:100% !important;
+        }
+
+        .report-wrap{
+            width:100% !important;
+            min-height:auto !important;
+            margin:0 !important;
+            padding:0 !important;
+            box-shadow:none !important;
+        }
+    }
 </style>
 
-<div class="container py-3 no-print">
-    <a href="{{ route('coordinator.reports') }}" class="btn btn-sm btn-outline-secondary">Back</a>
-    <button class="btn btn-sm btn-primary" style="background:#0b2e5e;border-color:#0b2e5e;" onclick="window.print()">
-        Print / Save as PDF
-    </button>
+<div class="no-print">
+    <div class="report-actions">
+        <a href="{{ route('coordinator.reports') }}" class="btn btn-sm btn-outline-secondary">Back</a>
+        <button class="btn btn-sm btn-bisu" onclick="window.print()">Print</button>
+    </div>
 </div>
 
 <div class="report-wrap">
@@ -80,24 +191,21 @@
     <div class="report-title">LIST OF SCHOLARS AND GRANTEES</div>
 
     @php
-        // Semester label (safe)
         $semLabel = $semester
             ? ($semester->term . ', AY ' . $semester->academic_year)
             : 'Semester not set';
     @endphp
 
-    <div class="text-center" style="margin-top:2px; margin-bottom:10px; line-height:1.2;">
-        <div style="font-weight:600;">Candijay Campus</div>
-        <div style="text-decoration: underline; text-underline-offset: 3px;">
-            {{ $semLabel }}
-        </div>
+    <div class="report-subtitle">
+        <div class="campus">Candijay Campus</div>
+        <div class="sem">{{ $semLabel }}</div>
     </div>
 
     <div class="meta-line">
-        <span><strong>Total:</strong> {{ $scholars->count() }}</span>
+        <strong>Total:</strong> {{ $scholars->count() }}
     </div>
 
-    <table class="table table-bordered table-report">
+    <table class="table-report">
         <thead>
             <tr>
                 <th rowspan="2" style="width:38px;">No.</th>
@@ -119,7 +227,6 @@
                 @php
                     $u = $s->user;
 
-                    // Find enrollment for selected semester first (if enrollments are eager loaded)
                     $en = $u?->enrollments?->firstWhere('semester_id', $semesterId)
                         ?? $u?->enrollments?->first();
 
@@ -135,20 +242,18 @@
                 @endphp
 
                 <tr>
-                    <td class="text-center">{{ $i + 1 }}</td>
+                    <td style="text-align:center;">{{ $i + 1 }}</td>
                     <td>{{ $s->scholarship->scholarship_name ?? '-' }}</td>
-
                     <td>{{ $u?->lastname ?? '-' }}</td>
                     <td>{{ $u?->firstname ?? '-' }}</td>
-                    <td class="text-center">{{ $mi }}</td>
-
-                    <td class="text-center">{{ $sex }}</td>
+                    <td style="text-align:center;">{{ $mi }}</td>
+                    <td style="text-align:center;">{{ $sex }}</td>
                     <td>{{ $u?->course?->course_name ?? '-' }}</td>
-                    <td class="text-center">{{ $yearLevelLabel }}</td>
+                    <td style="text-align:center;">{{ $yearLevelLabel }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="text-center text-muted">No scholars found for this semester.</td>
+                    <td colspan="8" style="text-align:center;">No scholars found for this semester.</td>
                 </tr>
             @endforelse
         </tbody>

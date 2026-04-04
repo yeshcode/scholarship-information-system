@@ -1,13 +1,13 @@
-{{-- resources/views/landing.blade.php --}}
+
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="<?php echo e(str_replace('_', '-', app()->getLocale())); ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Scholarship Information Management System</title>
 
-    {{-- ✅ Local Bootstrap (NO VITE) --}}
-    <link rel="stylesheet" href="{{ asset('bootstrap/css/bootstrap.min.css') }}">
+    
+    <link rel="stylesheet" href="<?php echo e(asset('bootstrap/css/bootstrap.min.css')); ?>">
 
     <style>
         :root{
@@ -187,11 +187,11 @@
 </head>
 <body>
 
-{{-- ✅ Guest Navbar --}}
+
 <nav class="navbar navbar-expand-lg sticky-top nav-guest">
     <div class="container py-2">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="{{ route('landing') }}">
-            <img src="{{ asset('images/scholarship_logo.jpg') }}"
+        <a class="navbar-brand d-flex align-items-center gap-2" href="<?php echo e(route('landing')); ?>">
+            <img src="<?php echo e(asset('images/scholarship_logo.jpg')); ?>"
                 alt="Logo"
                 class="brand-logo">
 
@@ -231,7 +231,7 @@
                 </li>
 
                 <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                    <a href="{{ route('login') }}" class="btn btn-login text-white w-100">
+                    <a href="<?php echo e(route('login')); ?>" class="btn btn-login text-white w-100">
                         Login
                     </a>
                 </li>
@@ -242,7 +242,7 @@
 
 <div class="container my-4" id="home">
 
-    {{-- ✅ HERO --}}
+    
     <div class="hero p-4 p-lg-5 mb-4">
         <div class="row align-items-center g-4">
             <div class="col-lg-7">
@@ -279,15 +279,15 @@
                     <div class="mt-3">
                         <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
                             <div class="muted">Live Scholars Count</div>
-                            <div class="fw-bold">{{ number_format($scholarsCount) }}</div>
+                            <div class="fw-bold"><?php echo e(number_format($scholarsCount)); ?></div>
                         </div>
                         <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
                             <div class="muted">Scholarships Shown</div>
-                            <div class="fw-bold">{{ number_format($scholarships->count()) }}</div>
+                            <div class="fw-bold"><?php echo e(number_format($scholarships->count())); ?></div>
                         </div>
                         <div class="d-flex align-items-center justify-content-between py-2">
                             <div class="muted">Latest Announcements</div>
-                            <div class="fw-bold">{{ number_format($announcements->count()) }}</div>
+                            <div class="fw-bold"><?php echo e(number_format($announcements->count())); ?></div>
                         </div>
                     </div>
 
@@ -302,12 +302,12 @@
         </div>
     </div>
 
-    {{-- ✅ STATS --}}
+    
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="stat-card p-3">
                 <div class="muted">Total Scholars</div>
-                <div class="display-6 fw-bold" style="color:var(--brand)">{{ number_format($scholarsCount) }}</div>
+                <div class="display-6 fw-bold" style="color:var(--brand)"><?php echo e(number_format($scholarsCount)); ?></div>
                 <div class="muted">Real-time count from database</div>
             </div>
         </div>
@@ -315,7 +315,7 @@
         <div class="col-md-4">
             <div class="stat-card p-3">
                 <div class="muted">Scholarships (Latest)</div>
-                <div class="display-6 fw-bold" style="color:var(--brand)">{{ number_format($scholarships->count()) }}</div>
+                <div class="display-6 fw-bold" style="color:var(--brand)"><?php echo e(number_format($scholarships->count())); ?></div>
                 <div class="muted">Recently created scholarships</div>
             </div>
         </div>
@@ -323,53 +323,56 @@
         <div class="col-md-4">
             <div class="stat-card p-3">
                 <div class="muted">Announcements (Latest)</div>
-                <div class="display-6 fw-bold" style="color:var(--brand)">{{ number_format($announcements->count()) }}</div>
+                <div class="display-6 fw-bold" style="color:var(--brand)"><?php echo e(number_format($announcements->count())); ?></div>
                 <div class="muted">Most recent posts</div>
             </div>
         </div>
     </div>
 
-    {{-- ✅ SCHOLARSHIPS --}}
+    
     <div class="mb-4" id="scholarships">
         <div class="mb-2">
             <h3 class="section-title mb-0">Available Scholarships</h3>
             <div class="muted">Showing your latest entries (real-time).</div>
         </div>
 
-        @if($scholarships->isEmpty())
+        <?php if($scholarships->isEmpty()): ?>
             <div class="soft-card p-4">
                 <div class="alert alert-light border mb-0">No scholarships found yet.</div>
             </div>
-        @else
+        <?php else: ?>
             <div class="row g-3">
-                @foreach($scholarships as $s)
-                    @php
+                <?php $__currentLoopData = $scholarships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php
                         $status = strtolower($s->status ?? '');
                         $isOpen = $status === 'open';
-                    @endphp
+                    ?>
 
                     <div class="col-md-6 col-lg-4">
                         <div class="soft-card p-3 h-100">
                             <div class="d-flex justify-content-between align-items-start gap-2">
                                 <div class="fw-bold" style="color:var(--brand)">
-                                    {{ $s->scholarship_name ?? '—' }}
+                                    <?php echo e($s->scholarship_name ?? '—'); ?>
+
                                 </div>
-                                <span class="badge-status {{ $isOpen ? 'badge-open' : 'badge-closed' }}">
-                                    {{ strtoupper($s->status ?? '—') }}
+                                <span class="badge-status <?php echo e($isOpen ? 'badge-open' : 'badge-closed'); ?>">
+                                    <?php echo e(strtoupper($s->status ?? '—')); ?>
+
                                 </span>
                             </div>
 
-                            @if(!empty($s->benefactor))
+                            <?php if(!empty($s->benefactor)): ?>
                                 <div class="mt-2 muted">
-                                    Benefactor: <span class="fw-semibold">{{ $s->benefactor }}</span>
+                                    Benefactor: <span class="fw-semibold"><?php echo e($s->benefactor); ?></span>
                                 </div>
-                            @endif
+                            <?php endif; ?>
 
-                            @if(!empty($s->description))
+                            <?php if(!empty($s->description)): ?>
                                 <div class="mt-2">
-                                    {{ \Illuminate\Support\Str::limit($s->description, 150) }}
+                                    <?php echo e(\Illuminate\Support\Str::limit($s->description, 150)); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
 
                             <div class="mt-3">
                                 <a href="#howto" class="btn btn-outline-secondary btn-sm fw-bold rounded-3">
@@ -378,12 +381,12 @@
                             </div>
                         </div>
                     </div>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 
-    {{-- ✅ REQUIREMENTS --}}
+    
     <div class="soft-card p-4 mb-4" id="requirements">
         <h3 class="section-title mb-1">Requirements (General Guide)</h3>
         <div class="muted mb-3">
@@ -418,7 +421,7 @@
         </div>
     </div>
 
-    {{-- ✅ HOW TO APPLY --}}
+    
     <div class="soft-card p-4 mb-4" id="howto">
         <h3 class="section-title mb-1">How to Apply</h3>
         <div class="muted mb-3">Simple steps students can follow.</div>
@@ -455,50 +458,52 @@
         </div>
 
         <div class="mt-3">
-            <a href="{{ route('login') }}" class="btn btn-primary fw-bold rounded-3"
+            <a href="<?php echo e(route('login')); ?>" class="btn btn-primary fw-bold rounded-3"
                style="background:var(--brand); border:none;">
                 Login to access your dashboard
             </a>
         </div>
     </div>
 
-    {{-- ✅ ANNOUNCEMENTS --}}
+    
     <div class="mb-4" id="announcements">
         <div class="mb-2">
             <h3 class="section-title mb-0">Announcements</h3>
             <div class="muted">Latest updates from the scholarship office.</div>
         </div>
 
-        @if($announcements->isEmpty())
+        <?php if($announcements->isEmpty()): ?>
             <div class="soft-card p-4">
                 <div class="alert alert-light border mb-0">No announcements posted yet.</div>
             </div>
-        @else
+        <?php else: ?>
             <div class="row g-3">
-                @foreach($announcements as $a)
-                    @php $date = $a->posted_at ?? $a->created_at; @endphp
+                <?php $__currentLoopData = $announcements; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $a): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php $date = $a->posted_at ?? $a->created_at; ?>
                     <div class="col-lg-6">
                         <div class="list-item h-100">
                             <div class="d-flex justify-content-between align-items-start gap-2">
-                                <div class="fw-bold">{{ $a->title ?? 'Announcement' }}</div>
+                                <div class="fw-bold"><?php echo e($a->title ?? 'Announcement'); ?></div>
                                 <small class="muted text-nowrap">
-                                    {{ \Carbon\Carbon::parse($date)->format('M d, Y') }}
+                                    <?php echo e(\Carbon\Carbon::parse($date)->format('M d, Y')); ?>
+
                                 </small>
                             </div>
 
-                            @if(!empty($a->description))
+                            <?php if(!empty($a->description)): ?>
                                 <div class="mt-2 muted">
-                                    {{ \Illuminate\Support\Str::limit($a->description, 180) }}
+                                    <?php echo e(\Illuminate\Support\Str::limit($a->description, 180)); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 
-    {{-- ✅ FAQ --}}
+    
     <div class="soft-card p-4 mb-4" id="faq">
         <h3 class="section-title mb-1">FAQ</h3>
         <div class="muted mb-3">Quick answers for common student questions.</div>
@@ -580,11 +585,12 @@
             <div class="fw-bold" style="color:var(--brand)">Bohol Island State University - Candijay Campus</div>
             <div class="muted">Scholarship Information Management System</div>
         </div>
-        <div class="muted">© {{ now()->year }}</div>
+        <div class="muted">© <?php echo e(now()->year); ?></div>
     </div>
 </footer>
 
-{{-- ✅ Local Bootstrap JS (NO VITE) --}}
-<script src="{{ asset('bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+<script src="<?php echo e(asset('bootstrap/js/bootstrap.bundle.min.js')); ?>"></script>
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\scholarship-information\resources\views/landing.blade.php ENDPATH**/ ?>

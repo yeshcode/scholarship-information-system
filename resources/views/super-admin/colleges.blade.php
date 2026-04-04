@@ -343,7 +343,7 @@
 
         <div class="modal-footer border-top-0">
           <button type="button" class="btn btn-bisu btn-bisu-outline" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-bisu btn-bisu-primary">💾 Save Changes</button>
+          <button type="submit" class="btn btn-bisu btn-bisu-primary">Save Changes</button>
         </div>
 
       </form>

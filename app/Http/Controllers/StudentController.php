@@ -177,21 +177,19 @@ public function markAsRead($id)
     }
 
 
-    public function stipendHistory()
+   public function stipendHistory()
 {
-    $activeSemesterId = $this->activeSemesterId();
-
     $stipends = Stipend::query()
         ->where('student_id', Auth::id())
-        ->with('stipendRelease.scholarshipBatch.semester')
-        ->when($activeSemesterId, function($q) use ($activeSemesterId){
-            $q->whereHas('stipendRelease.scholarshipBatch', fn($b) => $b->where('semester_id', $activeSemesterId));
-        })
+        ->with([
+            'stipendRelease.semester',
+            'stipendRelease.scholarshipBatch.semester',
+        ])
         ->orderByDesc('id')
         ->paginate(10)
         ->withQueryString();
 
-    return view('student.stipend-history', compact('stipends', 'activeSemesterId'));
+    return view('student.stipend-history', compact('stipends'));
 }
 
 
@@ -200,6 +198,17 @@ public function markAsRead($id)
         $notifications = Notification::where('recipient_user_id', Auth::id())->latest()->paginate(10);  // Use Auth::id()
         return view('student.notifications', compact('notifications'));
     }
+
+    public function markAllNotificationsAsRead()
+{
+    Notification::where('recipient_user_id', Auth::id())
+        ->where('is_read', false)
+        ->update([
+            'is_read' => true,
+        ]);
+
+    return back()->with('success', 'All notifications marked as read.');
+}
 
    public function announcementShow(Announcement $announcement)
 {

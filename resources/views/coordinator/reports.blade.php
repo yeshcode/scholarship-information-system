@@ -1,103 +1,193 @@
-@extends('layouts.app')
+@extends('layouts.coordinator')
 
-@section('content')
-<div class="container py-4">
+@section('page-content')
+<style>
+    :root{
+        --bisu-blue:#0b2e5e;
+        --bisu-blue-2:#174a8b;
+        --line:#e5e7eb;
+        --soft:#f8fafc;
+    }
 
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-        <div>
-            <h3 class="mb-1" style="color:#0b2e5e;">Reports</h3>
-            <div class="text-muted">Generate official scholarship reports per semester.</div>
-        </div>
+    .reports-wrap{
+        max-width: 920px;
+        margin: 0 auto;
+    }
 
-        <form class="d-flex align-items-center gap-2" method="GET" action="{{ route('coordinator.reports') }}">
-            <span class="text-muted small">Semester:</span>
-            <select class="form-select form-select-sm" style="min-width:260px;" disabled>
-                <option>
-                    {{ $activeSemester ? ($activeSemester->term.' • '.$activeSemester->academic_year) : 'No active semester set' }}
-                </option>
-            </select>
-        </form>
+    .reports-title{
+        color: var(--bisu-blue);
+        font-weight: 800;
+        margin-bottom: 4px;
+    }
+
+    .reports-subtitle{
+        color:#6b7280;
+        font-size:.95rem;
+    }
+
+    .semester-box{
+        background:#fff;
+        border:1px solid var(--line);
+        border-radius:12px;
+        padding:14px 16px;
+        margin-top:18px;
+        margin-bottom:18px;
+    }
+
+    .semester-label{
+        font-size:.82rem;
+        color:#6b7280;
+        margin-bottom:6px;
+        font-weight:600;
+        text-transform:uppercase;
+        letter-spacing:.04em;
+    }
+
+    .semester-value{
+        color:var(--bisu-blue);
+        font-weight:700;
+    }
+
+    .report-list{
+        background:#fff;
+        border:1px solid var(--line);
+        border-radius:14px;
+        overflow:hidden;
+        box-shadow:0 4px 14px rgba(15,23,42,.05);
+    }
+
+    .report-item{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:18px;
+        padding:18px 20px;
+        border-bottom:1px solid var(--line);
+    }
+
+    .report-item:last-child{
+        border-bottom:none;
+    }
+
+    .report-item:hover{
+        background:#fbfdff;
+    }
+
+    .report-left{
+        min-width:0;
+    }
+
+    .report-name{
+        color:var(--bisu-blue);
+        font-weight:700;
+        margin-bottom:4px;
+    }
+
+    .report-desc{
+        color:#6b7280;
+        font-size:.92rem;
+        margin:0;
+    }
+
+    .report-actions{
+        display:flex;
+        gap:8px;
+        flex-wrap:wrap;
+        justify-content:flex-end;
+    }
+
+    .btn-bisu{
+        background:var(--bisu-blue);
+        border-color:var(--bisu-blue);
+        color:#fff;
+        font-weight:600;
+    }
+
+    .btn-bisu:hover{
+        background:var(--bisu-blue-2);
+        border-color:var(--bisu-blue-2);
+        color:#fff;
+    }
+
+    .tip-text{
+        margin-top:12px;
+        color:#6b7280;
+        font-size:.9rem;
+    }
+
+    @media (max-width: 768px){
+        .report-item{
+            flex-direction:column;
+            align-items:flex-start;
+        }
+
+        .report-actions{
+            justify-content:flex-start;
+        }
+    }
+</style>
+
+<div class="reports-wrap py-4">
+    <div>
+        <h3 class="reports-title">Reports</h3>
+        <div class="reports-subtitle">Generate official scholarship reports per semester.</div>
     </div>
 
-    <div class="row g-3">
+    {{-- <div class="semester-box">
+        <div class="semester-label">Active Semester</div>
+        <div class="semester-value">
+            {{ $activeSemester ? ($activeSemester->term . ' • ' . $activeSemester->academic_year) : 'No active semester set' }}
+        </div>
+    </div> --}}
+
+    <div class="report-list">
         {{-- Summary of Scholarships --}}
-        <div class="col-12 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-3 p-md-4">
-                    <div class="d-flex align-items-start justify-content-between">
-                        <div>
-                            <h5 class="mb-1">Summary of Scholarships</h5>
-                            <div class="text-muted small">
-                                Official semester summary of scholarships and total scholars.
-                            </div>
-                        </div>
-                        <span class="badge bg-light text-dark border">A4</span>
-                    </div>
+        <div class="report-item">
+            <div class="report-left">
+                <div class="report-name">Summary of Scholarships</div>
+                <p class="report-desc">
+                    Official semester summary of scholarships and total scholars.
+                </p>
+            </div>
 
-                    <div class="mt-3 d-flex flex-wrap gap-2">
-                        <a class="btn btn-primary btn-sm"
-                           style="background:#0b2e5e;border-color:#0b2e5e;"
-                           href="{{ route('coordinator.reports.summary-of-scholarships', ['semester_id' => $activeSemesterId]) }}">
-                            View Report
-                        </a>
-                        <a class="btn btn-outline-secondary btn-sm"
-                            href="{{ route('coordinator.reports.summary-of-scholarships.pdf', ['semester_id' => $activeSemesterId]) }}">
-                                Download PDF
-                        </a>
-                        <a class="btn btn-outline-secondary btn-sm"
-                            href="{{ route('coordinator.reports.summary-of-scholarships.docx', ['semester_id' => $activeSemesterId]) }}">
-                                Download DOCX
-                        </a>
-                    </div>
+            <div class="report-actions">
+                <a class="btn btn-bisu btn-sm"
+                   href="{{ route('coordinator.reports.summary-of-scholarships', ['semester_id' => $activeSemesterId]) }}">
+                    View Report
+                </a>
 
-                    {{-- <div class="mt-3 small text-muted">
-                        Uses the current semester filter ({{ $activeSemester?->term ?? 'N/A' }}).
-                    </div> --}}
-                </div>
+                <a class="btn btn-outline-secondary btn-sm"
+                   href="{{ route('coordinator.reports.summary-of-scholarships.pdf', ['semester_id' => $activeSemesterId]) }}">
+                    Download PDF
+                </a>
             </div>
         </div>
 
         {{-- List of Scholars and Grantees --}}
-        <div class="col-12 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-3 p-md-4">
-                    <div class="d-flex align-items-start justify-content-between">
-                        <div>
-                            <h5 class="mb-1">List of Scholars and Grantees</h5>
-                            <div class="text-muted small">
-                                Official list of all scholars for the selected semester.
-                            </div>
-                        </div>
-                        <span class="badge bg-light text-dark border">A4</span>
-                    </div>
+        <div class="report-item">
+            <div class="report-left">
+                <div class="report-name">List of Scholars and Grantees</div>
+                <p class="report-desc">
+                    Official list of all scholars for the selected semester.
+                </p>
+            </div>
 
-                    <div class="mt-3 d-flex flex-wrap gap-2">
-                        <a class="btn btn-primary btn-sm"
-                           style="background:#0b2e5e;border-color:#0b2e5e;"
-                           href="{{ route('coordinator.reports.list-of-scholars', ['semester_id' => $activeSemesterId]) }}">
-                            View Report
-                        </a>
-                        <a class="btn btn-outline-secondary btn-sm"
-                            href="{{ route('coordinator.reports.list-of-scholars.pdf', ['semester_id' => $activeSemesterId]) }}">
-                                Download PDF
-                        </a>
-                        <a class="btn btn-outline-secondary btn-sm"
-                            href="{{ route('coordinator.reports.list-of-scholars.docx', ['semester_id' => $activeSemesterId]) }}">
-                                Download DOCX
-                        </a>
-                    </div>
+            <div class="report-actions">
+                <a class="btn btn-bisu btn-sm"
+                   href="{{ route('coordinator.reports.list-of-scholars', ['semester_id' => $activeSemesterId]) }}">
+                    View Report
+                </a>
 
-                    {{-- <div class="mt-3 small text-muted">
-                        Sorted alphabetically by last name.
-                    </div> --}}
-                </div>
+                <a class="btn btn-outline-secondary btn-sm"
+                   href="{{ route('coordinator.reports.list-of-scholars.pdf', ['semester_id' => $activeSemesterId]) }}">
+                    Download PDF
+                </a>
             </div>
         </div>
     </div>
 
-    {{-- <div class="mt-4 text-muted small">
-        Note: Data is generated automatically based on scholarships and scholars stored in the system.
+    {{-- <div class="tip-text">
+        Tip: Open the report first, then click <strong>Print / Save as PDF</strong> so the preview and printed format match.
     </div> --}}
-
 </div>
 @endsection
