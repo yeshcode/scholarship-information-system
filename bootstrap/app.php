@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             // Other aliases
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'no-back-history' => \App\Http\Middleware\NoBackHistory::class,
         ]);
 
         $middleware->append(

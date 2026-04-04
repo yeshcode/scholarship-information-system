@@ -36,7 +36,7 @@ Route::get('/test-mail', function () {
 });
 
     // Protected routes (authenticated users only)
-    Route::middleware(['auth'])->group(function () {
+    Route::middleware(['auth', 'no-back-history'])->group(function () {
         // NEW: Profile routes (accessible to all logged-in users) - Added here, before role-specific groups
         Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
         Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
@@ -325,7 +325,7 @@ Route::get('/test-mail', function () {
             Route::get('/notifications', [StudentController::class, 'notifications'])->name('student.notifications');
             Route::get('/notifications/{id}/open', [StudentController::class, 'open'])->name('student.notifications.open');
             Route::post('/notifications/{id}/read', [StudentController::class, 'markAsRead'])->name('student.notifications.read');
-            Route::post('/student/notifications/mark-all-read', [StudentController::class, 'markAllNotificationsAsRead'])->name('student.notifications.markAllRead');
+            Route::post('/notifications/mark-all-read', [StudentController::class, 'markAllNotificationsAsRead'])->name('student.notifications.markAllRead');
 
 
             Route::post('/profile/update-contact', [ProfileController::class, 'updateContact'])->name('profile.update-contact');

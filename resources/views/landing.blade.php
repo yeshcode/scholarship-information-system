@@ -521,12 +521,12 @@
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
-                        Where can I see announcements and deadlines?
+                        How can I apply for a scholarship?
                     </button>
                 </h2>
                 <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
                     <div class="accordion-body muted">
-                        Check the Announcements section on this landing page. After login, students can view updates in the dashboard.
+                         Students can view available scholarships in the system and follow the application instructions provided in each scholarship posting.
                     </div>
                 </div>
             </div>
@@ -534,12 +534,38 @@
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
-                        Do I need to login to apply?
+                        What is the Scholarship Management Information System (SMIS)?
                     </button>
                 </h2>
                 <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
                     <div class="accordion-body muted">
-                        You can browse scholarship info as a guest, but personal features (notifications, tracking) require login.
+                        SMIS is a centralized platform that helps manage scholarship programs, student records, announcements, and stipend releases efficiently for BISU Candijay Campus.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                        How will I know if I am qualified for a scholarship?
+                    </button>
+                </h2>
+                <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
+                    <div class="accordion-body muted">
+                        Qualification details and requirements are listed in each scholarship announcement. Only students who meet the criteria will be selected and notified.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                        Can I use the system without logging in?
+                    </button>
+                </h2>
+                <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
+                    <div class="accordion-body muted">
+                        Yes, you can browse available scholarships and announcements without logging in. However, you will need to log in to apply for a scholarship or access your personal information.
                     </div>
                 </div>
             </div>
