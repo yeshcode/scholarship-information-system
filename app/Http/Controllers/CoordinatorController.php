@@ -1169,7 +1169,7 @@ public function bulkAssignStipendsV2(Request $request)
     ) {
         foreach ($request->scholar_ids as $sid) {
 
-            $scholar = Scholar::find($sid);
+            $scholar = Scholar::lockForUpdate()->find($sid);
             if (!$scholar) {
                 $skipped++;
                 continue;
