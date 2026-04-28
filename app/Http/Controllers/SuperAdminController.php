@@ -895,6 +895,15 @@ public function previewBulkUploadUsers(Request $request)
         'year_level' => ['year_level', 'yearlevel', 'year level', 'year', 'yearlevel_name', 'year level name'],
     ];
 
+    // ✅ Collect ALL valid header aliases (normalized)
+    $allValidHeaders = [];
+
+    foreach ($requiredMap as $aliases) {
+        foreach ($aliases as $alias) {
+            $allValidHeaders[] = $this->normHeaderKey($alias);
+        }
+    }
+
     // check which required fields cannot be found in the header row
     $missing = [];
     foreach ($requiredMap as $field => $aliases) {
@@ -915,6 +924,17 @@ public function previewBulkUploadUsers(Request $request)
     if (!empty($missing)) {
         return back()->with('error', 'Missing required column(s): ' . implode(', ', $missing)
             . '. Format Name Column: FIRSTNAME');
+    }
+
+    // ✅ Detect extra/invalid headers (DO NOT BLOCK upload)
+    $invalidHeaders = [];
+
+    foreach (array_keys($firstRow) as $actualKey) {
+        $normalized = $this->normHeaderKey((string)$actualKey);
+
+        if (!in_array($normalized, $allValidHeaders)) {
+            $invalidHeaders[] = $actualKey;
+        }
     }
 
 
@@ -1069,6 +1089,7 @@ if ($email) {
         'preview' => $preview,
         'issuesCount' => $issuesCount,
         'totalCount' => count($preview),
+        'invalidHeaders' => $invalidHeaders, // ✅ ADD THIS
     ]);
 }
 
