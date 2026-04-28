@@ -83,6 +83,12 @@
         cursor: not-allowed;
          transition: all 0.2s ease;
     }
+
+    .form-label-sm {
+        font-size: 0.8rem;
+        color: #475569;
+        font-weight: 600;
+    }
 </style>
 
 @if ($errors->any())
@@ -421,6 +427,7 @@
                 <th>Enrollment Status</th>
                 <th>Scholarship</th>
                 <th>Batch</th>
+                <th>Date Scheduled</th>
                 <th>Note</th>
               </tr>
             </thead>
@@ -450,7 +457,7 @@
 
                   <td>{{ $row->scholarship->scholarship_name ?? '' }}</td>
                   <td>Batch {{ $row->scholarshipBatch->batch_number ?? '' }}</td>
-
+                  <td class="dateScheduled">—</td>
                   <td class="small text-muted">
                     <span class="noteText">{{ $row->note }}</span>
                   </td>
@@ -519,14 +526,30 @@
             </div>
 
             <div class="col-12">
-              <label class="filter-label">Release Date & Time <span class="req">*</span></label>
-              <input type="datetime-local"
-                  name="release_at"
-                  id="s2_release_at"
-                  class="form-control form-control-sm"
-                  value="{{ old('release_at') }}"
-                  required>
-              <div class="form-text text-danger">Required.</div>
+              <label class="filter-label">Release Date Range <span class="req">*</span></label>
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label form-label-sm">From <span class="text-danger">*</span></label>
+                  <input type="datetime-local"
+                      name="release_from"
+                      id="s2_release_from"
+                      class="form-control form-control-sm"
+                      value="{{ old('release_from') }}"
+                      required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label form-label-sm">To <span class="text-danger">*</span></label>
+                  <input type="datetime-local"
+                      name="release_to"
+                      id="s2_release_to"
+                      class="form-control form-control-sm"
+                      value="{{ old('release_to') }}"
+                      required>
+                </div>
+              </div>
+              <div class="form-text text-muted small mt-1">
+                Select the start and end date/time for the release period.
+              </div>
             </div>
 
             <div class="col-12">
@@ -710,11 +733,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const statusFilter = document.getElementById('stipend_status');
   const qFilter = document.getElementById('q');
 
-  function submitFiltersDebounced(){
-    clearTimeout(window.__stipendFilterTT);
-    window.__stipendFilterTT = setTimeout(() => filterForm.submit(), 300);
-  }
-
   // ✅ Filter batch dropdown based on scholarship (PAGE FILTERS ONLY)
   function filterBatchByScholarship(){
     if (!batchFilter) return;
@@ -749,7 +767,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   batchFilter?.addEventListener('change', () => filterForm.submit());
   statusFilter?.addEventListener('change', () => filterForm.submit());
-  qFilter?.addEventListener('input', submitFiltersDebounced);
+
+  // Search input is filtered live on the page; server submit remains available as a fallback.
 
   // =========================
   // BULK MODALS
@@ -795,6 +814,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let metaBlocked   = new Set();
   let metaLoaded    = false;
   let metaStatusMap = {};
+  let metaExistingReleaseDates = {};
 
   // =========================
   // UI HELPERS
@@ -910,12 +930,28 @@ function sortRowsInModal(){
       // priority #1 blocked
       if (metaBlocked.has(sid)) {
         setRowDisabled(tr, 'Already scheduled for this semester.', 'ENROLLED');
+        const dateTd = tr.querySelector('.dateScheduled');
+        const existingDate = metaExistingReleaseDates[sid];
+        if (existingDate) {
+          const date = new Date(existingDate);
+          dateTd.textContent = date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          });
+        } else {
+          dateTd.textContent = '—';
+        }
         return;
       }
 
       // priority #2 not eligible
       if (!metaEligible.has(sid)) {
         setRowDisabled(tr, 'Not enrolled in the release semester.', statusLabel);
+        const dateTd = tr.querySelector('.dateScheduled');
+        dateTd.textContent = '—';
         return;
       }
 
@@ -923,6 +959,8 @@ function sortRowsInModal(){
       setRowEnabled(tr);
       const badge = tr.querySelector('.statusBadge');
       if (badge) badge.textContent = statusLabel;
+      const dateTd = tr.querySelector('.dateScheduled');
+      dateTd.textContent = '—';
     });
 
       // after you setRowEnabled / setRowDisabled for all rows
@@ -1000,6 +1038,7 @@ function sortRowsInModal(){
     metaEligible = new Set();
     metaBlocked = new Set();
     metaStatusMap = {};
+    metaExistingReleaseDates = {};
 
     if (!batchId) {
       mRelease.innerHTML = '<option value="">Select batch first…</option>';
@@ -1041,6 +1080,7 @@ function sortRowsInModal(){
     metaEligible = new Set();
     metaBlocked = new Set();
     metaStatusMap = {};
+    metaExistingReleaseDates = {};
 
     if (!releaseId) {
       applyEligibilityAndBlock();
@@ -1055,6 +1095,7 @@ function sortRowsInModal(){
       metaEligible  = new Set((meta.eligible_ids || []).map(String));
       metaBlocked   = new Set((meta.blocked_ids  || []).map(String));
       metaStatusMap = meta.status_map || {};
+      metaExistingReleaseDates = meta.existing_release_dates || {};
       metaLoaded = true;
 
       // unlock search only after release selected
@@ -1090,6 +1131,7 @@ function sortRowsInModal(){
     metaEligible = new Set();
     metaBlocked = new Set();
     metaStatusMap = {};
+    metaExistingReleaseDates = {};
 
     // reset selection
     checkAllEligible.checked = false;
@@ -1215,10 +1257,17 @@ function sortRowsInModal(){
       preview.appendChild(li);
     }
 
-    // ✅ Default date/time in Step 2 (editable)
-    const s2ReleaseAt = document.getElementById('s2_release_at');
-    if (s2ReleaseAt && !s2ReleaseAt.value) {
-      s2ReleaseAt.value = toLocalDatetimeValue(new Date());
+    // ✅ Default date/time range in Step 2 (editable)
+    const s2ReleaseFrom = document.getElementById('s2_release_from');
+    const s2ReleaseTo   = document.getElementById('s2_release_to');
+    if ((s2ReleaseFrom || s2ReleaseTo) && !s2ReleaseFrom?.value) {
+      const now = new Date();
+      s2ReleaseFrom.value = toLocalDatetimeValue(now);
+      
+      // Set default "to" date as 7 days later
+      const weekLater = new Date(now);
+      weekLater.setDate(weekLater.getDate() + 7);
+      s2ReleaseTo.value = toLocalDatetimeValue(weekLater);
     }
 
     bootstrap.Modal.getOrCreateInstance(selectModalEl).hide();

@@ -286,12 +286,13 @@ Route::get('/test-mail', function () {
 
         // Reports
         Route::get('/reports', [CoordinatorController::class, 'reports'])->name('coordinator.reports');
-       // Reports (Coordinator)
         Route::get('/reports/list-of-scholars', [CoordinatorController::class, 'reportListOfScholars'])->name('coordinator.reports.list-of-scholars');
         Route::get('/reports/summary-of-scholarships', [CoordinatorController::class, 'reportSummaryOfScholarships'])->name('coordinator.reports.summary-of-scholarships');
+        Route::get('/reports/scholarship-summary', [CoordinatorController::class, 'reportScholarshipSummary'])->name('coordinator.reports.scholarship-summary');
         // ✅ DOWNLOAD PDF
         Route::get('/reports/list-of-scholars/pdf', [CoordinatorController::class, 'reportListOfScholarsPdf'])->name('coordinator.reports.list-of-scholars.pdf');
         Route::get('/reports/summary-of-scholarships/pdf', [CoordinatorController::class, 'reportSummaryOfScholarshipsPdf'])->name('coordinator.reports.summary-of-scholarships.pdf');
+        Route::get('/reports/scholarship-summary/pdf', [CoordinatorController::class, 'reportScholarshipSummaryPdf'])->name('coordinator.reports.scholarship-summary.pdf');
         // ✅ DOWNLOAD DOCX
         Route::get('/reports/list-of-scholars/docx', [CoordinatorController::class, 'reportListOfScholarsDocx'])->name('coordinator.reports.list-of-scholars.docx');
         Route::get('/reports/summary-of-scholarships/docx', [CoordinatorController::class, 'reportSummaryOfScholarshipsDocx'])->name('coordinator.reports.summary-of-scholarships.docx');

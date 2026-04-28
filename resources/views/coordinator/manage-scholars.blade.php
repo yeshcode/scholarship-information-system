@@ -417,11 +417,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   batch?.addEventListener('change', () => filterForm?.submit());
 
-  let t = null;
-  q?.addEventListener('input', () => {
-    clearTimeout(t);
-    t = setTimeout(() => filterForm?.submit(), 350);
-  });
+  // Search input is filtered live on the page; server submit remains available as a fallback.
 
 
   // =========================

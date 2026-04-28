@@ -7,45 +7,51 @@
 ?>
 
 <style>
-    .report-header{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:12px;
-        margin-bottom:6px;
+    .report-header {
+        display: grid;
+        grid-template-columns: 90px 1fr 90px;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 6px;
     }
-    .report-header .logo{
-        width:90px;
-        flex:0 0 90px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-    }
-    .report-header .logo img{
-        max-width:90px;
-        height:auto;
-        display:block;
-    }
-    .report-header .center{
-        flex:1 1 auto;
-        text-align:center;
-        line-height:1.15;
-    }
-    .report-header .center .line.small{ font-size:12px; }
-    .report-header .center .line.title{ font-size:15px; font-weight:700; letter-spacing:.3px; }
-    .report-header .center .line.office{ font-size:12px; font-weight:600; margin-top:2px; }
-    .report-header .center .line.motto{ font-size:11px; margin-top:4px; }
 
-    .report-header .logo.right{
-        display:flex;
-        flex-direction:column;
-        gap:6px;
+    .report-header .logo {
+        width: 90px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
-    .report-header .logo.right img{
-        max-width:90px;
+
+    .report-header .logo img {
+        max-width: 90px;
+        height: auto;
+        display: block;
     }
-    .report-header .logo.right img.tuv{
-        max-width:70px;
+
+    .report-header .center {
+        text-align: left;
+        line-height: 1.15;
+    }
+
+    .report-header .center .line.small { font-size: 12px; }
+    .report-header .center .line.title { font-size: 15px; font-weight: 700; letter-spacing: .3px; }
+    .report-header .center .line.office { font-size: 12px; font-weight: 600; margin-top: 2px; }
+    .report-header .center .line.motto { font-size: 11px; margin-top: 4px; }
+
+    .report-header .logo.right {
+        display: flex;
+        flex-direction: row;
+        gap: 6px;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .report-header .logo.right img {
+        max-width: 90px;
+    }
+
+    .report-header .logo.right img.tuv {
+        max-width: 70px;
     }
 </style>
 
