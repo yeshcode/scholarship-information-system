@@ -567,14 +567,7 @@
         const input = document.getElementById('student-search');
         if(!input) return;
 
-        const form = input.closest('form');
-        if(!form) return;
-
-        let t = null;
-        input.addEventListener('input', function(){
-            clearTimeout(t);
-            t = setTimeout(() => form.submit(), 450); // auto-search after typing
-        });
+        // Live filtering now happens on the page without requiring a full reload.
     })();
 </script>
 

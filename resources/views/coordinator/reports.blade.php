@@ -184,6 +184,28 @@
                 </a>
             </div>
         </div>
+
+        {{-- Scholarship Summary by Program --}}
+        <div class="report-item">
+            <div class="report-left">
+                <div class="report-name">Scholarship Summary by Program</div>
+                <p class="report-desc">
+                    Shows total scholar counts per scholarship program for the selected academic year.
+                </p>
+            </div>
+
+            <div class="report-actions">
+                <a class="btn btn-bisu btn-sm"
+                   href="{{ route('coordinator.reports.scholarship-summary', ['semester_id' => $activeSemesterId]) }}">
+                    View Report
+                </a>
+
+                <a class="btn btn-outline-secondary btn-sm"
+                   href="{{ route('coordinator.reports.scholarship-summary.pdf', ['semester_id' => $activeSemesterId]) }}">
+                    Download PDF
+                </a>
+            </div>
+        </div>
     </div>
 
     {{-- <div class="tip-text">

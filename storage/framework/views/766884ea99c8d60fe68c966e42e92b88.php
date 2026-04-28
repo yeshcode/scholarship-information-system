@@ -151,6 +151,98 @@ html, body{
     <!-- ✅ Bootstrap JS (local) -->
     <script src="<?php echo e(asset('bootstrap/js/bootstrap.bundle.min.js')); ?>"></script>
 
+    <!-- ✅ Live table search: auto-filter matching rows on typing -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const debounce = (fn, delay = 250) => {
+                let timer;
+                return function (...args) {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => fn.apply(this, args), delay);
+                };
+            };
+
+            const getSearchInputs = () => {
+                return Array.from(document.querySelectorAll('input[type="search"], input[type="text"], input[type="search"]'))
+                    .filter(input => {
+                        const name = (input.name || '').toLowerCase();
+                        const id = (input.id || '').toLowerCase();
+                        const placeholder = (input.placeholder || '').toLowerCase();
+
+                        return name === 'search'
+                            || name === 'q'
+                            || id.includes('search')
+                            || id === 'q'
+                            || placeholder.includes('search')
+                            || placeholder.includes('student id');
+                    });
+            };
+
+            const findNearestTable = (input) => {
+                const form = input.closest('form');
+
+                if (form) {
+                    const tableInsideForm = form.querySelector('table');
+                    if (tableInsideForm) return tableInsideForm;
+
+                    let node = form.nextElementSibling;
+                    while (node) {
+                        if (node.querySelector) {
+                            const table = node.querySelector('table');
+                            if (table) return table;
+                        }
+                        node = node.nextElementSibling;
+                    }
+                }
+
+                const card = input.closest('.card, .table-card, section, main, .content-card');
+                if (card) {
+                    return card.querySelector('table');
+                }
+
+                return null;
+            };
+
+            const renderNoMatchRow = (tbody, colspan) => {
+                const row = document.createElement('tr');
+                row.dataset.liveSearchNoMatch = '1';
+                row.innerHTML = `<td class="text-center text-muted py-4" colspan="${colspan}">No matching records found.</td>`;
+                tbody.appendChild(row);
+            };
+
+            const applyQueryToTable = (input, table) => {
+                const query = (input.value || '').trim().toLowerCase();
+                const tbody = table.tBodies[0];
+                if (!tbody) return;
+
+                const rows = Array.from(tbody.rows).filter(row => !row.dataset.liveSearchNoMatch);
+                let anyVisible = false;
+                rows.forEach(row => {
+                    const text = row.textContent.trim().toLowerCase();
+                    const visible = !query || text.includes(query);
+                    row.style.display = visible ? '' : 'none';
+                    anyVisible = anyVisible || visible;
+                });
+
+                const existingNoMatch = tbody.querySelector('tr[data-live-search-no-match]');
+                if (!anyVisible && query) {
+                    if (!existingNoMatch) {
+                        const colspan = table.tHead?.rows[0]?.cells.length || 1;
+                        renderNoMatchRow(tbody, colspan);
+                    }
+                } else if (existingNoMatch) {
+                    existingNoMatch.remove();
+                }
+            };
+
+            getSearchInputs().forEach(input => {
+                const table = findNearestTable(input);
+                if (!table) return;
+                input.addEventListener('input', debounce(() => applyQueryToTable(input, table), 200));
+            });
+        });
+    </script>
+
         
     <?php echo $__env->yieldPushContent('scripts'); ?>
 

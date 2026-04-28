@@ -1140,7 +1140,8 @@ public function bulkAssignStipendsV2(Request $request)
         'scholarship_id'      => 'required|integer|exists:scholarships,id',
         'batch_id'            => 'required|integer|exists:scholarship_batches,id',
         'stipend_release_id'  => 'required|integer|exists:stipend_releases,id',
-        'release_at'          => 'required|date_format:Y-m-d\TH:i',
+        'release_from'        => 'required|date_format:Y-m-d\TH:i',
+        'release_to'          => 'required|date_format:Y-m-d\TH:i|after:release_from',
         'scholar_ids'         => 'required|array|min:1',
         'scholar_ids.*'       => 'integer|exists:scholars,id',
     ]);
@@ -1209,7 +1210,7 @@ public function bulkAssignStipendsV2(Request $request)
                 'updated_by'         => $creatorId,
                 'amount_received'    => $release->amount,
                 'status'             => 'for_release',
-                'release_at'         => $request->release_at,
+                'release_at'         => $request->release_from,
                 'received_at'        => null,
             ]);
 
@@ -1219,7 +1220,9 @@ public function bulkAssignStipendsV2(Request $request)
                 'type'              => 'stipend', // ok (if your DB allows this column too)
                 'title'             => 'Stipend Scheduled: ' . ($release->title ?? 'Stipend Release'),
                 'message'           => 'You have a scheduled stipend release for ' . ($release->title ?? 'a release schedule') .
-                                    '. Release date: ' . \Carbon\Carbon::parse($request->release_at)->format('M d, Y h:i A') . '.',
+                                    '. Release period: ' . 
+                                    \Carbon\Carbon::parse($request->release_from)->format('M d, Y h:i A') . ' to ' .
+                                    \Carbon\Carbon::parse($request->release_to)->format('M d, Y h:i A') . '.',
 
                 // ✅ MUST be one of: announcement, stipend, scholarship
                 'related_type'      => 'stipend',
@@ -1313,11 +1316,20 @@ public function stipendPickMeta(Request $request)
         ->unique()
         ->values();
 
+    // Existing release dates for blocked scholars
+    $existingReleaseDates = Stipend::query()
+        ->join('stipend_releases', 'stipend_releases.id', '=', 'stipends.stipend_release_id')
+        ->where('stipend_releases.batch_id', $batchId)
+        ->where('stipend_releases.semester_id', $semesterId)
+        ->pluck('stipends.release_at', 'stipends.scholar_id')
+        ->toArray();
+
     return response()->json([
         'semester_id'  => $semesterId,
         'eligible_ids' => $eligibleScholarIds,
         'blocked_ids'  => $blockedScholarIds,
         'status_map'   => $statusMap, // ✅ NEW
+        'existing_release_dates' => $existingReleaseDates, // ✅ NEW
     ]);
 }
 
@@ -2395,6 +2407,44 @@ public function reportSummaryOfScholarships(Request $request)
     ));
 }
 
+public function reportScholarshipSummary(Request $request)
+{
+    $activeSemesterId = $this->activeSemesterId();
+    $semesterId = (int) ($request->get('semester_id') ?: $activeSemesterId);
+    $scholarshipId = (int) $request->get('scholarship_id');
+
+    $semester = $semesterId ? Semester::findOrFail($semesterId) : null;
+    $academicYear = $semester?->academic_year;
+
+    $scholarships = Scholarship::query()
+        ->orderBy('scholarship_name')
+        ->with(['scholars' => function ($q) use ($academicYear) {
+            $q->with(['user.course', 'user.yearLevel', 'scholarshipBatch.semester'])
+                ->when($academicYear, function ($q) use ($academicYear) {
+                    $q->where(function ($w) use ($academicYear) {
+                        $w->whereNull('batch_id')
+                          ->orWhereHas('scholarshipBatch.semester', function ($sem) use ($academicYear) {
+                              $sem->where('academic_year', $academicYear);
+                          });
+                    });
+                })
+                ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+                ->select('scholars.*')
+                ->orderBy('users.lastname')
+                ->orderBy('users.firstname');
+        }])
+        ->get();
+
+    $selectedScholarship = $scholarshipId ? $scholarships->firstWhere('id', $scholarshipId) : null;
+
+    return view('coordinator.reports.scholarship-summary', compact(
+        'semester',
+        'semesterId',
+        'scholarships',
+        'selectedScholarship'
+    ));
+}
+
 public function reportListOfScholars(Request $request)
 {
     $activeSemesterId = $this->activeSemesterId();
@@ -2502,6 +2552,47 @@ public function reportSummaryOfScholarshipsPdf(Request $request)
     ))->setPaper('a4', 'portrait');
 
     $fileName = 'summary_of_scholarships_' . ($academicYear ?: 'report') . '.pdf';
+    return $pdf->download($fileName);
+}
+
+public function reportScholarshipSummaryPdf(Request $request)
+{
+    $activeSemesterId = $this->activeSemesterId();
+    $semesterId = (int) ($request->get('semester_id') ?: $activeSemesterId);
+    $scholarshipId = (int) $request->get('scholarship_id');
+
+    $semester = $semesterId ? Semester::findOrFail($semesterId) : null;
+    $academicYear = $semester?->academic_year;
+
+    $scholarships = Scholarship::query()
+        ->orderBy('scholarship_name')
+        ->with(['scholars' => function ($q) use ($academicYear) {
+            $q->with(['user.course', 'user.yearLevel', 'scholarshipBatch.semester'])
+                ->when($academicYear, function ($q) use ($academicYear) {
+                    $q->where(function ($w) use ($academicYear) {
+                        $w->whereNull('batch_id')
+                          ->orWhereHas('scholarshipBatch.semester', function ($sem) use ($academicYear) {
+                              $sem->where('academic_year', $academicYear);
+                          });
+                    });
+                })
+                ->leftJoin('users', 'users.id', '=', 'scholars.student_id')
+                ->select('scholars.*')
+                ->orderBy('users.lastname')
+                ->orderBy('users.firstname');
+        }])
+        ->get();
+
+    $selectedScholarship = $scholarshipId ? $scholarships->firstWhere('id', $scholarshipId) : null;
+
+    $pdf = Pdf::loadView('coordinator.reports.pdf.scholarship-summary', compact(
+        'semester',
+        'semesterId',
+        'scholarships',
+        'selectedScholarship'
+    ))->setPaper('a4', 'portrait');
+
+    $fileName = 'scholarship_summary_' . ($academicYear ?: 'report') . '.pdf';
     return $pdf->download($fileName);
 }
 
@@ -3067,4 +3158,3 @@ private function normEnrollStatus(?string $s): string
 }
 
 }
-
